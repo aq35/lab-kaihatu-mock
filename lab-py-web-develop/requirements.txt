@@ -1,0 +1,12 @@
+Django>=5.0           # Webフレームワーク
+gunicorn==21.2.0     # 本番用WSGIサーバー
+sqlalchemy>=2.0.25   # SQLのORM
+aiomysql>=0.2.0      # 非同期MySQLドライバ
+sqlalchemy-stubs==0.4 # SQLAlchemy型補完
+
+# オプショナル（使用する機能に応じて）
+boto3==1.34.14           # AWS S3利用時
+django-storages==1.14.2  # S3ストレージ利用時
+django-cors-headers==4.3.1 # CORS設定必要時
+django-environ==0.11.2   # 環境変数管理用
+cryptography>=41.0.0
