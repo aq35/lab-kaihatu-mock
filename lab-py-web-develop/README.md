@@ -1,3 +1,8 @@
+```
+.env
+SECRET_KEY = env("SECRET_KEY")
+```
+
 docker compose build
 docker compose up
 
