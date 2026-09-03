@@ -5,10 +5,10 @@
  * arbitrary value / 小さな custom layer に「逃げる」。その逃げを記録する（TW-3/TW-4）。
  */
 const PAL = {
-  graphite: { dark:'bg-slate-900 text-slate-50', light:'bg-slate-50 text-slate-900', accent:'blue-400', darkInk2:'text-slate-300', lightInk2:'text-slate-600' },
-  warm:     { dark:'bg-orange-950 text-orange-50', light:'bg-orange-50 text-orange-950', accent:'orange-500', darkInk2:'text-orange-200', lightInk2:'text-orange-800' },
-  cool:     { dark:'bg-sky-950 text-sky-50', light:'bg-sky-50 text-sky-950', accent:'sky-500', darkInk2:'text-sky-200', lightInk2:'text-sky-800' },
-  'high-contrast': { dark:'bg-black text-white', light:'bg-white text-black', accent:'blue-800', darkInk2:'text-zinc-200', lightInk2:'text-zinc-700' },
+  graphite: { dark:'bg-slate-900 text-slate-50', light:'bg-slate-50 text-slate-900', accent:'blue-400', accentBg:'blue-600', darkInk2:'text-slate-300', lightInk2:'text-slate-600' },
+  warm:     { dark:'bg-orange-950 text-orange-50', light:'bg-orange-50 text-orange-950', accent:'orange-500', accentBg:'orange-700', darkInk2:'text-orange-200', lightInk2:'text-orange-800' },
+  cool:     { dark:'bg-sky-950 text-sky-50', light:'bg-sky-50 text-sky-950', accent:'sky-500', accentBg:'sky-700', darkInk2:'text-sky-200', lightInk2:'text-sky-800' },
+  'high-contrast': { dark:'bg-black text-white', light:'bg-white text-black', accent:'blue-800', accentBg:'blue-800', darkInk2:'text-zinc-200', lightInk2:'text-zinc-700' },
 };
 const TYPE = { grand:{h1:'text-[clamp(2.5rem,1.5rem+5vw,5rem)]',h2:'text-[clamp(1.8rem,1.2rem+2.5vw,3rem)]'},
   editorial:{h1:'text-[clamp(2rem,1.4rem+3vw,3.5rem)]',h2:'text-[clamp(1.5rem,1.1rem+1.8vw,2.4rem)]'},
@@ -24,8 +24,8 @@ export function twClassMap(recipe) {
   const p = PAL[recipe.palette], t = TYPE[recipe.typeScale], pad = RHYTHM[recipe.sceneRhythm];
   const heroLayout = recipe.heroLayout === 'split' ? 'md:grid-cols-2 items-center' : 'place-items-center text-center';
   const ctaPrimary = recipe.ctaStyle === 'outline'
-    ? `bg-transparent text-${p.accent} border-2 border-${p.accent}`
-    : `bg-${p.accent} text-white border-2 border-${p.accent}`;
+    ? `bg-transparent text-${p.accentBg} border-2 border-${p.accentBg}`
+    : `bg-${p.accentBg} text-white border-2 border-${p.accentBg}`;
   const px = 'px-[clamp(1rem,0.5rem+3vw,4rem)]';
   return {
     'ci-hero': trackArb(`grid ${heroLayout} min-h-[80vh] ${pad} ${px} ${p.dark}`),

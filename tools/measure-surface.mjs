@@ -1,7 +1,7 @@
 /**
  * Cinematic surface の全条件を同一基準で計測する（初回生成実験）。
  *   node tools/measure-surface.mjs
- * 対象: dist/surfaces/{c,d} と scratchpad の ui2-a-*/ui2-b-*（AI 生成）。
+ * 対象: dist/surfaces/ の c,d と scratchpad の A/B 生成物。
  * 測る: fidelity(target 契約との一致) / no-JS / hostile overflow / a11y(axe) /
  *       CSS bytes / arbitrary-value & escape ratio(A) / 意味フィールド可視。
  */
@@ -23,7 +23,7 @@ function serve(root) {
     try { let p = normalize(decodeURIComponent(new URL(req.url,'http://x').pathname)).replace(/^(\.\.[/\\])+/,'');
       let f = join(root, p); const st = await stat(f).catch(()=>null); if (st?.isDirectory()) f = join(f,'index.html');
       res.writeHead(200,{'content-type':TYPES[extname(f)]??'application/octet-stream','cache-control':'no-store'}); res.end(await readFile(f)); }
-    catch { res.writeHead(404); res.end('nf'); }
+    catch { if (!res.headersSent) res.writeHead(404); res.end('nf'); }
   });
   return new Promise((r)=>s.listen(0,'127.0.0.1',()=>r({s,port:s.address().port})));
 }
@@ -50,8 +50,16 @@ for (const [name, root] of Object.entries(roots)) {
     await page.addStyleTag({ content: '*{animation:none!important;transition:none!important}' }).catch(()=>{});
     row.geom = await page.evaluate((t) => {
       const q = (s) => document.querySelector(s);
-      const heroSel = '[data-section="hero"], header, .hero, [class*="hero"]';
-      const hero = q(heroSel);
+      // hero は sticky header ではなく最初の大きな section。data-section 優先、無ければ header/nav 以外の最初の section、それも無ければ最大高さの上部ブロック
+      let hero = q('[data-section="hero"]');
+      if (!hero) {
+        const secs = [...document.querySelectorAll('section, main > div, [class*="hero" i]')]
+          .filter(e => !e.closest('header,nav'));
+        // 上部にあり高さが大きいものを hero とみなす
+        hero = secs.map(e => ({e, h: e.getBoundingClientRect().height, top: e.getBoundingClientRect().top}))
+          .filter(x => x.top < window.innerHeight)
+          .sort((a,b) => b.h - a.h)[0]?.e ?? null;
+      }
       const h1 = q('h1');
       const cta = q('a[href],button');
       const sections = document.querySelectorAll('section, [data-section]').length;

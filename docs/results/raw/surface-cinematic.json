@@ -1,0 +1,221 @@
+{
+  "ranAt": "2026-09-03T23:56:03.470Z",
+  "results": {
+    "c": {
+      "root": "dist/surfaces/c",
+      "geom": {
+        "heroVh": 91,
+        "h1px": 80,
+        "sections": 6,
+        "imgs": 4,
+        "hOverflow": 0
+      },
+      "fidelity": {
+        "heroTall": true,
+        "headlineBig": true,
+        "sectionsEnough": true,
+        "noOverflow1280": true
+      },
+      "axe": 0,
+      "mobileOverflow": 0,
+      "noJs": {
+        "h1": true,
+        "cta": true,
+        "textLen": 240
+      },
+      "cssBytes": 3505,
+      "arbitraryValues": 0,
+      "inlineStyle": 0,
+      "styleTags": 0
+    },
+    "d": {
+      "root": "dist/surfaces/d",
+      "geom": {
+        "heroVh": 91,
+        "h1px": 80,
+        "sections": 6,
+        "imgs": 4,
+        "hOverflow": 0
+      },
+      "fidelity": {
+        "heroTall": true,
+        "headlineBig": true,
+        "sectionsEnough": true,
+        "noOverflow1280": true
+      },
+      "axe": 0,
+      "mobileOverflow": 0,
+      "noJs": {
+        "h1": true,
+        "cta": true,
+        "textLen": 240
+      },
+      "cssBytes": 28823,
+      "arbitraryValues": 37,
+      "inlineStyle": 0,
+      "styleTags": 0
+    },
+    "a1": {
+      "root": "/tmp/claude-0/-home-user-lab-kaihatu-mock/51dc3877-856d-5de2-99d7-cd06401472c5/scratchpad/ui2-a-1",
+      "geom": {
+        "heroVh": 87,
+        "h1px": 67,
+        "sections": 6,
+        "imgs": 4,
+        "hOverflow": 0
+      },
+      "fidelity": {
+        "heroTall": true,
+        "headlineBig": true,
+        "sectionsEnough": true,
+        "noOverflow1280": true
+      },
+      "axe": 0,
+      "mobileOverflow": 0,
+      "noJs": {
+        "h1": true,
+        "cta": true,
+        "textLen": 315
+      },
+      "cssBytes": 31460,
+      "arbitraryValues": 30,
+      "inlineStyle": 0,
+      "styleTags": 0
+    },
+    "a2": {
+      "root": "/tmp/claude-0/-home-user-lab-kaihatu-mock/51dc3877-856d-5de2-99d7-cd06401472c5/scratchpad/ui2-a-2",
+      "geom": {
+        "heroVh": 100,
+        "h1px": 67,
+        "sections": 5,
+        "imgs": 0,
+        "hOverflow": 0
+      },
+      "fidelity": {
+        "heroTall": true,
+        "headlineBig": true,
+        "sectionsEnough": true,
+        "noOverflow1280": true
+      },
+      "axe": 0,
+      "mobileOverflow": 0,
+      "noJs": {
+        "h1": true,
+        "cta": true,
+        "textLen": 256
+      },
+      "cssBytes": 24608,
+      "arbitraryValues": 60,
+      "inlineStyle": 0,
+      "styleTags": 1
+    },
+    "a3": {
+      "root": "/tmp/claude-0/-home-user-lab-kaihatu-mock/51dc3877-856d-5de2-99d7-cd06401472c5/scratchpad/ui2-a-3",
+      "geom": {
+        "heroVh": 100,
+        "h1px": 70,
+        "sections": 6,
+        "imgs": 3,
+        "hOverflow": 0
+      },
+      "fidelity": {
+        "heroTall": true,
+        "headlineBig": true,
+        "sectionsEnough": true,
+        "noOverflow1280": true
+      },
+      "axe": 0,
+      "mobileOverflow": 0,
+      "noJs": {
+        "h1": true,
+        "cta": true,
+        "textLen": 358
+      },
+      "cssBytes": 34811,
+      "arbitraryValues": 61,
+      "inlineStyle": 0,
+      "styleTags": 0
+    },
+    "b1": {
+      "root": "/tmp/claude-0/-home-user-lab-kaihatu-mock/51dc3877-856d-5de2-99d7-cd06401472c5/scratchpad/ui2-b-1",
+      "geom": {
+        "heroVh": 110,
+        "h1px": 80,
+        "sections": 6,
+        "imgs": 4,
+        "hOverflow": 0
+      },
+      "fidelity": {
+        "heroTall": true,
+        "headlineBig": true,
+        "sectionsEnough": true,
+        "noOverflow1280": true
+      },
+      "axe": 1,
+      "mobileOverflow": 0,
+      "noJs": {
+        "h1": true,
+        "cta": true,
+        "textLen": 291
+      },
+      "cssBytes": 15549,
+      "arbitraryValues": 0,
+      "inlineStyle": 0,
+      "styleTags": 0
+    },
+    "b2": {
+      "root": "/tmp/claude-0/-home-user-lab-kaihatu-mock/51dc3877-856d-5de2-99d7-cd06401472c5/scratchpad/ui2-b-2",
+      "geom": {
+        "heroVh": 0,
+        "h1px": 75,
+        "sections": 1,
+        "imgs": 4,
+        "hOverflow": 0
+      },
+      "fidelity": {
+        "heroTall": false,
+        "headlineBig": true,
+        "sectionsEnough": false,
+        "noOverflow1280": true
+      },
+      "axe": 1,
+      "mobileOverflow": 0,
+      "noJs": {
+        "h1": true,
+        "cta": true,
+        "textLen": 301
+      },
+      "cssBytes": 15855,
+      "arbitraryValues": 1,
+      "inlineStyle": 0,
+      "styleTags": 0
+    },
+    "b3": {
+      "root": "/tmp/claude-0/-home-user-lab-kaihatu-mock/51dc3877-856d-5de2-99d7-cd06401472c5/scratchpad/ui2-b-3",
+      "geom": {
+        "heroVh": 201,
+        "h1px": 89,
+        "sections": 4,
+        "imgs": 0,
+        "hOverflow": 0
+      },
+      "fidelity": {
+        "heroTall": true,
+        "headlineBig": true,
+        "sectionsEnough": false,
+        "noOverflow1280": true
+      },
+      "axe": 0,
+      "mobileOverflow": 0,
+      "noJs": {
+        "h1": true,
+        "cta": true,
+        "textLen": 264
+      },
+      "cssBytes": 15329,
+      "arbitraryValues": 0,
+      "inlineStyle": 4,
+      "styleTags": 0
+    }
+  }
+}
