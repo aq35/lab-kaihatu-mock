@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kas.local/contracts/recipe-version.schema.json",
+  "title": "Recipe/Compiler version binding と語彙ガバナンス",
+  "description": "語彙(PresentationRecipe の enum)の進化を安全に扱う。AI が語彙を提案することと、production 語彙へ採用することを分離する（§9）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["compilerVersion", "recipeSchemaVersion", "vocabularyStatus"],
+  "properties": {
+    "compilerVersion": { "type": "string", "description": "Compiler の semver。Recipe はこれに束縛される" },
+    "recipeSchemaVersion": { "type": "string" },
+    "compatibility": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "minRecipeSchema": { "type": "string" },
+        "reproducesOldRecipes": { "type": "boolean", "description": "古い Recipe を同じ bytes で再現できるか" }
+      }
+    },
+    "vocabularyStatus": {
+      "type": "object",
+      "description": "各軸/値のライフサイクル。自己生成 Run が自分で追加した語彙を直接 ENABLED へ昇格してはならない。",
+      "additionalProperties": {
+        "enum": ["PROPOSED", "TESTED", "OWNER_REVIEWED", "ENABLED", "DEPRECATED", "REMOVED"]
+      }
+    },
+    "governance": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "whoProposes": { "enum": ["ai", "developer", "owner"] },
+        "whoEnables": { "const": "owner", "description": "ENABLED への昇格は Owner のみ。AI/Foundry 単独では不可" },
+        "requiresOnCompilerChange": {
+          "type": "array",
+          "items": { "enum": ["code-review", "contract-hash-update", "all-attack-tests", "counter-proof", "artifact-diff", "owner-review", "new-compiler-version", "rollback-plan"] }
+        }
+      }
+    }
+  }
+}

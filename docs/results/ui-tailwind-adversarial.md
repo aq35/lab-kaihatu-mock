@@ -119,3 +119,36 @@ AI が競合に気づくには computed style を実測する必要があり、b
   「閉じた語彙を保つ」には Tailwind では外部の lint が要る（E は構造で保証）
 
 counter-proof CT3（arbitrary 禁止 lint）を入れれば A でも閉じた語彙を保てる。
+
+---
+
+## T5 再検証 — 条件F は静的検出制約を回避する（訂正 C2 / HF5）
+
+前サイクルの T5 は「runtime 連結 class は静的走査で検出されない」の一例だけを示した。
+条件F（Recipe→Tailwind Compiler）は **build 前に完全な class 文字列を生成**する。
+`tools/tailwind/dynamic-class.mjs` と F のビルドで確認したこと:
+
+| 生成方法 | build 後 CSS に含まれる |
+|---|---|
+| runtime 連結 `bg-${c}-600`（従来の T5） | ❌ |
+| **F: Compiler が完全文字列を静的生成** | ✅（126 の完全文字列を `_classes.txt` に列挙して Tailwind に走査させる） |
+
+→ **T5 の「静的検出」問題は、Recipe Compiler で完全文字列を生成すれば消える。**
+これは訂正 C2 のとおりで、T5 を「Tailwind 固有の根本欠陥」と断定できない根拠。
+`STRUCTURAL_LIMIT` の認定は「runtime 連結が必要な場合」に限定し、
+Compiler 方式（E も F も）はこの制約を受けない。
+
+### ただし F には Tailwind 固有の残余が残った（HF2 の裏付け）
+
+F を E と同機能にする過程で、Native CSS(E) には無い作業が必要になった:
+
+1. **`!hidden`（important 修飾）**: 期限切れボタンを隠す `hidden`(display:none) が
+   `kbtn` の `inline-flex` に負ける（T8）。E は普通の CSS 規則で済む
+2. **`[overflow-wrap:anywhere]`（arbitrary value）**: 標準 utility の `break-words`(=break-word) では
+   hostile content に不足。`anywhere` は arbitrary value でしか書けない。E は 1 つの native 規則
+3. **`min-w-0` の多段 stamp**: grid item が縮まない問題を、構造の各階層に手で刻む必要。
+   E は `*{min-inline-size:0}` 相当を cascade で 1 回
+
+→ F は「静的検出」は回避したが、**utility 競合(T8)・cross-cutting 規則・arbitrary value** という
+Tailwind backend 固有の残余を持つ（HF2）。これらは `IMPLEMENTATION_MISUSE`〜`STRUCTURAL_LIMIT` の中間で、
+merge tool や arbitrary value で回避できるが、**Native CSS backend(E) では最初から発生しない**。

@@ -1,0 +1,15 @@
+{
+  "compilerVersion": "0.1.0",
+  "recipeSchemaVersion": "0.1.0",
+  "compatibility": { "minRecipeSchema": "0.1.0", "reproducesOldRecipes": true },
+  "vocabularyStatus": {
+    "palette:calm": "ENABLED", "palette:editorial": "ENABLED", "palette:command-center": "ENABLED",
+    "palette:conversational": "ENABLED", "palette:high-contrast": "ENABLED",
+    "readingMode:*": "PROPOSED"
+  },
+  "governance": {
+    "whoProposes": "ai",
+    "whoEnables": "owner",
+    "requiresOnCompilerChange": ["code-review", "all-attack-tests", "counter-proof", "artifact-diff", "owner-review", "new-compiler-version", "rollback-plan"]
+  }
+}

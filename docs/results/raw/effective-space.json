@@ -1,0 +1,80 @@
+{
+  "totalCombinations": 38880,
+  "enumerated": 38880,
+  "a11yViolatingCombinations": 0,
+  "distinctCssAfterA11y": 12960,
+  "note": "distinctCssAfterA11y = a11y を満たし、かつ CSS bytes が互いに異なる組合せ数。知覚的多様性ではない（Owner 評価が別途必要）",
+  "paletteAA": {
+    "calm": true,
+    "editorial": true,
+    "command-center": true,
+    "conversational": true,
+    "high-contrast": true
+  },
+  "axisEffect": {
+    "readingMode": {
+      "values": 3,
+      "distinctOutputs": 1,
+      "affectsCss": false
+    },
+    "density": {
+      "values": 3,
+      "distinctOutputs": 3,
+      "affectsCss": true
+    },
+    "effectEmphasis": {
+      "values": 2,
+      "distinctOutputs": 2,
+      "affectsCss": true
+    },
+    "scopePresentation": {
+      "values": 3,
+      "distinctOutputs": 3,
+      "affectsCss": true
+    },
+    "evidencePresentation": {
+      "values": 2,
+      "distinctOutputs": 2,
+      "affectsCss": true
+    },
+    "uncertaintyPresentation": {
+      "values": 2,
+      "distinctOutputs": 2,
+      "affectsCss": true
+    },
+    "actionLayout": {
+      "values": 3,
+      "distinctOutputs": 3,
+      "affectsCss": true
+    },
+    "palette": {
+      "values": 5,
+      "distinctOutputs": 5,
+      "affectsCss": true
+    },
+    "cardShape": {
+      "values": 4,
+      "distinctOutputs": 4,
+      "affectsCss": true
+    },
+    "typography": {
+      "values": 3,
+      "distinctOutputs": 3,
+      "affectsCss": true
+    }
+  },
+  "axesThatAffectCss": [
+    "density",
+    "effectEmphasis",
+    "scopePresentation",
+    "evidencePresentation",
+    "uncertaintyPresentation",
+    "actionLayout",
+    "palette",
+    "cardShape",
+    "typography"
+  ],
+  "axesWithNoCssEffect": [
+    "readingMode"
+  ]
+}

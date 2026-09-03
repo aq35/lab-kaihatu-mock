@@ -1,0 +1,31 @@
+{
+  "ranAt": "2026-09-03T22:08:37.245Z",
+  "tokenizer": "gpt-tokenizer (GPT; Claude の代理指標)",
+  "note": "「AI が最低限読む source」の下限見積り。実際に AI が読んだ量は agent ログで別途",
+  "rows": [
+    {
+      "changeClass": "(1) 既存語彙内の変更（density=compact）",
+      "A": 4346,
+      "C": 1136,
+      "E": 94,
+      "F": 94,
+      "note": "E/F は recipe の 1 値変更。A は utility の在処を探す"
+    },
+    {
+      "changeClass": "(2) 組合せ変更（承認カードだけ強調）",
+      "A": 4346,
+      "C": 1163,
+      "E": 94,
+      "F": 94,
+      "note": "E/F は per-card 不可。palette 全体を変える（T2）。粒度が粗い"
+    },
+    {
+      "changeClass": "(3) 新しい表現軸の追加（unverifiedEmphasis）",
+      "A": 4346,
+      "C": 700,
+      "E": 1129,
+      "F": 1129,
+      "note": "訂正 C5: E/F の新語彙追加は recipe だけでない。schema+compiler+tests+docs を含む"
+    }
+  ]
+}

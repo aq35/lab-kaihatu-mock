@@ -1,0 +1,20 @@
+{
+  "ranAt": "2026-09-03T22:07:31.202Z",
+  "results": [
+    {
+      "actor": "untrusted Recipe 入力",
+      "canHideRequiredField": false,
+      "reason": "enum 外キーは RecipeError(RecipeError) で拒否。enum 内の値に required field を隠す表現が無い"
+    },
+    {
+      "actor": "trusted Compiler を変更する開発者/AI",
+      "canHideRequiredField": true,
+      "reason": "Compiler の CSS 生成に 1 行足すだけで [data-field=\"effect\"]{display:none} が出る。これを止めるのは Compiler の code review と生成物 Verifier（contract test）であって、Recipe の閉じ方ではない"
+    },
+    {
+      "actor": "生成物 Verifier(contract test)",
+      "catchesTrustedSabotage": true,
+      "reason": "実測可視性の contract test / theme lint と同じ検査を Compiler 出力に当てれば検出できる。ただし Verifier 自体を外せば通る（CT-C7）"
+    }
+  ]
+}
