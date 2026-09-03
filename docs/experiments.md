@@ -169,3 +169,33 @@
 | H10 token 数は保守性に単調寄与しない | 未検証 |
 
 詳細と根拠は [`docs/results/ui-1-comparison.md`](results/ui-1-comparison.md) §8。
+
+---
+
+## 追加サイクル: Tailwind 構造監査（T1-T10）
+
+仮説凍結: `docs/research/_hypotheses-tailwind.md`（凍結 SHA は git log --diff-filter=A で確認）
+条件E（Semantic UI Compiler）を追加。A/C/E の 3 モデル比較。
+
+| 仮説 | 判定 | 分類 | receipt |
+|------|------|------|---------|
+| T1 表現が意味を持たない | 支持だが KAS の問題にならない | DISPROVED | results/ui-tailwind-adversarial.md |
+| T2 非正規表現問題 | 支持（発散でなく非決定。A byte一致 0/3, E 3/3） | KAS_MISMATCH | results/ui-creative-convergence.md |
+| T3 局所最適と全体規律 | 未計測 | — | 次サイクル |
+| T4 外観と意味DOM の同居 | 支持（露出増。破壊は未実証） | KAS_MISMATCH | results/ui-tailwind-edit-surface.md |
+| T5 静的走査 vs 動的生成 | 支持 | STRUCTURAL_LIMIT | results/ui-tailwind-adversarial.md |
+| T6 arbitrary value の迂回 | 支持（弱。暴走は再現せず） | KAS_MISMATCH | results/ui-creative-convergence.md |
+| T7 context 消費 | 支持（1変更 A 4346 / E 94 token） | KAS_MISMATCH | results/ui-ai-context-cost.md |
+| T8 競合が意図と逆 | 支持（3例中2例。実地でも再現） | IMPLEMENTATION_MISUSE | results/ui-tailwind-adversarial.md |
+| T9 創造の収束 | 保留 | SELF_TESTED | results/ui-creative-convergence.md |
+| T10 意図単位の変更 | 条件依存（C 最軽・E は語彙拡張要） | — | results/ui-tailwind-edit-surface.md |
+
+結論: `docs/decisions/0002-tailwind-verdict.md`。
+「根本的欠陥」= STRUCTURAL_LIMIT + counter-proof 済みは T5 のみ、かつ KAS の要求に対してのみ成立。
+E は決定論・context・protected DOM 分離・fail closed で優位を実証。克服の宣言は Owner 評価まで保留。
+
+### 未了（正直に残す）
+- T3（12 回編集後の規律）
+- T9 の Owner blind comparison（E の 38,880 通りが「明確に異なる」か）
+- E の Owner 判断正答率（理解しやすさ）
+- CT1（Tailwind component 化で T7 差が縮むか）の定量
