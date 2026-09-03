@@ -1,0 +1,144 @@
+{
+  "ranAt": "2026-09-03T23:13:14.651Z",
+  "env": {
+    "node": "v22.22.2",
+    "chromium": "141.0.7390.37",
+    "cpuThrottle": 4
+  },
+  "conditions": [
+    "a-tailwind",
+    "c-semantic-css",
+    "c-bundled",
+    "e-compiler",
+    "f-recipe-tailwind"
+  ],
+  "N_1000": 8,
+  "N_100": 20,
+  "summary": {
+    "a-tailwind": {
+      "size": {
+        "html": 30676,
+        "css": 20027,
+        "js": 6863,
+        "requests": 5,
+        "domNodesHappy": 251
+      },
+      "load1000ms": {
+        "median": 33262,
+        "p95": 36992,
+        "min": 31852,
+        "max": 36992,
+        "stddev": 1850.4,
+        "n": 8
+      },
+      "filter100ms": {
+        "median": 46.1,
+        "p95": 63.5,
+        "min": 41.7,
+        "max": 75.5,
+        "stddev": 8,
+        "n": 20
+      }
+    },
+    "c-semantic-css": {
+      "size": {
+        "html": 17448,
+        "css": 27386,
+        "js": 8542,
+        "requests": 26,
+        "domNodesHappy": 278
+      },
+      "load1000ms": {
+        "median": 9315.5,
+        "p95": 10291,
+        "min": 8520,
+        "max": 10291,
+        "stddev": 479.9,
+        "n": 8
+      },
+      "filter100ms": {
+        "median": 56.5,
+        "p95": 69.1,
+        "min": 48.3,
+        "max": 74.8,
+        "stddev": 7.1,
+        "n": 20
+      }
+    },
+    "c-bundled": {
+      "size": {
+        "html": 16283,
+        "css": 28081,
+        "js": 8542,
+        "requests": 7,
+        "domNodesHappy": 259
+      },
+      "load1000ms": {
+        "median": 9160,
+        "p95": 10762,
+        "min": 8674,
+        "max": 10762,
+        "stddev": 707.4,
+        "n": 8
+      },
+      "filter100ms": {
+        "median": 59,
+        "p95": 78.7,
+        "min": 44.5,
+        "max": 91.2,
+        "stddev": 11.2,
+        "n": 20
+      }
+    },
+    "e-compiler": {
+      "size": {
+        "html": 15509,
+        "css": 7553,
+        "js": 6886,
+        "requests": 5,
+        "domNodesHappy": 250
+      },
+      "load1000ms": {
+        "median": 9839,
+        "p95": 10242,
+        "min": 8939,
+        "max": 10242,
+        "stddev": 425.9,
+        "n": 8
+      },
+      "filter100ms": {
+        "median": 53.2,
+        "p95": 89.4,
+        "min": 46.6,
+        "max": 89.4,
+        "stddev": 12.9,
+        "n": 20
+      }
+    },
+    "f-recipe-tailwind": {
+      "size": {
+        "html": 29323,
+        "css": 25123,
+        "js": 6865,
+        "requests": 5,
+        "domNodesHappy": 250
+      },
+      "load1000ms": {
+        "median": 29860.5,
+        "p95": 49669,
+        "min": 26814,
+        "max": 49669,
+        "stddev": 6837.2,
+        "n": 8
+      },
+      "filter100ms": {
+        "median": 40.2,
+        "p95": 50.2,
+        "min": 34.1,
+        "max": 58.5,
+        "stddev": 6.2,
+        "n": 20
+      }
+    }
+  }
+}
