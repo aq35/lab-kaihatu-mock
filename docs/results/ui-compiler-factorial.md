@@ -80,8 +80,9 @@ F を E と同機能にする過程で、E には無い作業が F だけに発�
 ## 残る差（Native CSS backend が Tailwind backend に勝る点）
 
 F は E と同じ Compiler 利益を得たが、backend 由来の残余（!important・arbitrary・stamp・完全文字列列挙）を負う。
-→ **Compiler を使うなら、backend は Native CSS の方が残余が少ない**（E > F、ただし小さな差）。
-性能の実測差は `ui-performance-repeated.md`（反復測定）を参照。
+→ **Compiler を使うなら、backend は Native CSS の方が残余が少なく、かつ速い。**
+反復測定（`ui-performance-repeated.md`）で E(Native) は 1,000 カード load 中央値 9.8s、
+F(Tailwind) は 29.9s（p95 49.7s）。同じ Recipe・同じ意味 DOM で **backend だけの差が約 3 倍**。
 
 ## まだ答えていない問い（正直に）
 

@@ -79,7 +79,7 @@ backend は Native CSS を既定とし、Tailwind は比較・移行用に留め
 5. `readingMode`（inert 軸）を実装するか語彙から外す。inert な軸を残さない
 
 ## この決定を覆す/更新する条件
-- 反復測定で Native backend(E) が Tailwind backend(F) に性能で劣ると判明
+- ~~反復測定で Native backend(E) が Tailwind backend(F) に性能で劣ると判明~~ → 逆に E が約 3 倍速いと判明（`ui-performance-repeated.md`）
 - Owner blind comparison で Recipe 方式の創造性が direct editing に大きく劣ると判明
 - T3（12 回連続変更）で Compiler 方式が direct editing より劣化すると判明
 - 新軸追加の頻度が高く、C の `:has()` の軽さが Compiler の型安全より重要と判明

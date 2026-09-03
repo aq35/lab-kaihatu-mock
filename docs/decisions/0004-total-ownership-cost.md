@@ -77,7 +77,8 @@ KAS ViewModel
 
 ## 覆す/更新する条件
 - 16 変更列(T3)で自作 Compiler が上限(1,500 行/3 ファイル)を超える、または残骸が累積する
-- Native backend の性能が Tailwind backend に明確に劣る（`ui-performance-repeated.md` 反復測定次第）
+- ~~Native backend の性能が Tailwind backend に明確に劣る~~ → **反対の結果が出た**: E(Native) は
+  1,000 カードで F(Tailwind) の約 3 倍速い（9.8s vs 29.9s median）。Native 既定を性能面でも支持
 - 外部 governance コスト（release 追従・security）の実運用ログが、自作保守より小さいと判明
 - Owner 評価で Recipe 方式の正確性・創造性が direct editing に劣ると判明
 
