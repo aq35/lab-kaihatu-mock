@@ -817,3 +817,114 @@ Meaning Contract → Owner Communication ViewModel → PresentationRecipe
 
 Tailwind の弱点を探すこと自体を目的にしない。
 Tailwind の人間中心の前提を明らかにし、AI 中心の KAS UI に必要な新しい抽象化を発見することを目的にする。
+
+---
+
+# 追加指示 — 外部依存と自作保守を含む総所有コストの検証
+
+> Owner から渡された 3 回目の指示の原文。実施は docs/research/ownership-*.md と
+> docs/results/ui-ownership-*.md、docs/decisions/0004-total-ownership-cost.md。
+
+## 0. 問い
+
+Tailwind の**思想**と、Tailwind**パッケージへの依存**を分けて評価する。
+
+仮説: Tailwind の制約・token・局所性という思想には価値がある。一方、KAS の意味契約を
+外部パッケージの class 語彙・source scanner・build 仕様・release cycle へ結合すると、
+長期運用上の限界が生じる。
+
+同時に検証: Tailwind を外した結果、KAS が独自 CSS framework や巨大 Compiler を保守するなら、
+外部依存より総負担が大きくなる可能性がある。
+
+**「依存 0」を目的にしない。「Owner が長期間維持する総負担が最小」を目的にする。**
+
+## 1. 所有境界
+
+KAS が所有するもの: ViewModel / card type / required fields / action semantics /
+effect・scope・cost・expiry / evidence 表現 / PresentationRecipe / reason code /
+安全性検査 / Recipe・Compiler version / 生成結果の検証規則。
+
+KAS が原則として所有しないもの: CSS parser / minifier / vendor prefix DB /
+browser 互換性 DB / color conversion engine / JS bundler 全体 / 汎用 component framework /
+汎用 utility framework。
+
+**KAS 固有の意味は外部へ預けず、Web 標準の汎用処理を再実装しない。**
+
+## 2. 比較条件
+
+- A — Direct Tailwind（AI が utility を直接編集）
+- F — Recipe + Tailwind Backend
+- E — Recipe + Native CSS Backend
+- **G — Minimal Owned Core**（E から不要な汎用機能を削り、KAS 固有の意味変換だけを所有する最小構成）
+
+G の目標: production CSS framework dependency 0 / runtime Node dependency 0 /
+生成済み CSS は静的 asset / Compiler は小さく読める / 外部 class 名を contract に含めない /
+backend を交換しても Recipe と ViewModel を維持できる。
+
+## 3. Tailwind パッケージ依存の限界を測る
+
+- **Version drift**: Tailwind の version を変え、生成 CSS bytes/hash・computed style・class sort・
+  default token・Preflight・build 時間・bundle size・既存 Recipe の再現性を記録
+- **Build coupling**: npm 接続不可 / node_modules 無し / lockfile 無し / cache のみ / 異なる Node・OS /
+  clean checkout / 数年後を模した更新。「生成済み CSS で起動」と「新 UI を build」を分けて測る
+- **External governance**: release 追従頻度 / breaking change / security advisory / transitive 数 /
+  install 容量・時間 / CI 時間 / 更新時の人間判断。**外部が保守を代行する利益も数値化する**
+
+## 4. 自作 Compiler 側の負担を測る（E/G）
+
+手書き行数 / complexity / test 行数 / schema 行数 / 語彙追加手順 / migration / Compiler bug /
+互換性 / doc 量 / 新セッションの理解時間 / browser 仕様変更 1 件への対応 / 削除可能コード量。
+**Compiler が増え続ける場合は失敗とする。**
+
+上限仮説を先に固定する（実測前に決め、都合よく変えない）。
+
+## 5. 3 年間の保守を模した変更列（16 変更）
+
+新カード型 / effect 表現 / scope 表示 / 新テーマ / dark・high-contrast / token 廃止 /
+語彙 rename / 古い Recipe 読込 / browser fallback 削除 / 依存更新 / security fix /
+大量カード性能 / a11y 基準追加 / Owner 局所調整 / 不要テーマ削除 / rollback。
+各変更を別 AI セッション（会話履歴なし）で実行。**16 変更後の状態を主要結果にする。**
+
+## 6. Package なしでも残る外部依存
+
+「Tailwind を使わない＝外部依存なし」と報告してはならない。browser / HTML・CSS 仕様 /
+Playwright・Chromium / axe / JSON Schema validator / build tool / runtime / OS・font への依存は残る。
+分類: RUNTIME_REQUIRED / BUILD_REQUIRED / TEST_ONLY / DEVELOPMENT_ONLY / OPTIONAL /
+VENDORED_ARTIFACT / WEB_STANDARD。
+
+## 7. 推奨構造（反証可能に）
+
+```
+KAS ViewModel → versioned PresentationRecipe → small KAS-owned Compiler
+  → semantic HTML + native CSS → optional standard minifier → static assets
+```
+
+production 実行時に Tailwind 不要 / 通常表示に Node・npm 不要 / npm 停止でも既存画面は動く /
+Compiler 停止でも既存生成物は動く / 生成物に Recipe・Compiler hash / clean env で rebuild 確認 /
+backend は interface で交換可能 / Recipe は CSS framework 固有語彙を含まない。
+
+## 8. 禁止事項
+
+Tailwind 相当の巨大 utility 一覧を自作しない / 汎用 CSS framework を作らない /
+browser 互換処理を独自実装しない / 独自 CSS parser を作らない / 「依存 0」と宣伝しない /
+初期コード量だけで保守性を判断しない / 外部更新コストだけ数え自作更新コストを無視しない /
+自作 Compiler のバグを「設計上不可能」と表現しない / 生成済み asset が動くことを再 build 可能性と混同しない。
+
+## 9. 採用判断
+
+```
+Total Ownership Cost = implementation + dependency updates + security response + AI context
+  + regression investigation + compatibility migration + CI/build + operational recovery + deletion cost
+```
+
+E/G 採用条件: Tailwind より production dependency が少ない / 長期変更後の regression が少ない /
+自作コードが上限内 / 語彙追加が局所的 / 古い Recipe を再現可能 / clean env で rebuild 可能 /
+既存生成物は build 環境なしで動く / Owner Communication の正確性が同等以上 / 性能が同等以上 /
+rollback が容易。満たさなければ F または Tailwind の固定 version の方が総負担が小さい可能性を認める。
+
+## 10. 最終原則
+
+Tailwind の思想を学び、Tailwind そのものを再実装しない。
+KAS の意味契約だけを所有し、表現は小さな交換可能 Compiler から Web 標準へ落とす。
+**外部依存の少なさではなく、長期間の総運用保守負担が最小の構成を採用する。**
+「思想は取り込む、支配権は渡さない、汎用保守は背負わない」。
