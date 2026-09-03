@@ -1,0 +1,14 @@
+{
+  "features": [
+    { "id": "5 カード型を描画する", "check": "cardTypes5" },
+    { "id": "種別で絞り込む filter", "check": "filter" },
+    { "id": "JS なしで必須情報が読める", "check": "noJsReadable" },
+    { "id": "決定フォームを submit できる", "check": "submitForm" },
+    { "id": "二重 submit を防ぐ", "check": "doubleSubmitGuard" },
+    { "id": "evidence 水準を表示する", "check": "evidenceDisplay" },
+    { "id": "OUTCOME_UNKNOWN の retry が secondary", "check": "outcomeUnknown" },
+    { "id": "keyboard で全 action に到達", "check": "keyboard" },
+    { "id": "敵対的 content で横溢れしない", "check": "hostileNoOverflow" },
+    { "id": "1,000 件を描画できる", "check": "scale1000" }
+  ]
+}

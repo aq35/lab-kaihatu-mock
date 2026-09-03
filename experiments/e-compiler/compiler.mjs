@@ -171,6 +171,10 @@ ${primaryOrder}
 .kdecision-status[data-kind="unknown"],.kdecision-status[data-kind="refused"]{color:var(--k-danger);font-weight:600}
 @container kcard (max-width:22rem){.kcard{--k-pad:.75rem;--k-gap:.5rem}.kactions{flex-direction:column;align-items:stretch}}
 .kempty{color:var(--k-quiet);padding:3rem;text-align:center}
+.kcontrol{display:grid;gap:.25rem;margin-block-start:1rem}
+.kcontrol label{font-size:.75rem;font-weight:600;color:var(--k-quiet)}
+.kcontrol select{min-block-size:2.75rem;padding-inline:.5rem;background:var(--k-card);color:var(--k-ink);border:1px solid var(--k-border-strong);border-radius:6px}
+.kslot[hidden]{display:none}
 .kskip{position:absolute;inset-block-start:.5rem;inset-inline-start:.5rem;padding:.5rem 1rem;background:var(--k-card);border:2px solid var(--k-accent);border-radius:6px;transform:translateY(-200%)}
 .kskip:focus{transform:none}
 .kvh:not(:focus-within){position:absolute;inline-size:1px;block-size:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}

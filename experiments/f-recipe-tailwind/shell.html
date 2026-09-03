@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} — Owner Control Center (F: Recipe→Tailwind)</title>
+<!-- CSS backend は Tailwind。ただし AI は class を書かず、recipe から Compiler が完全な class 文字列を生成した -->
+<link rel="stylesheet" href="{{BASE}}styles/tailwind.css">
+</head>
+<body class="bg-slate-50">
+<a class="kskip absolute start-2 top-2 z-10 -translate-y-[200%] rounded-md border-2 border-blue-700 bg-white px-4 py-2 focus:translate-y-0" href="#main">本文へ移動</a>
+<div class="kpage mx-auto max-w-5xl px-4 py-8">
+  <header class="mb-8">
+    <h1 class="mb-2 text-2xl font-bold text-slate-900">Owner Control Center</h1>
+    <p class="text-slate-700">対応が必要: <strong data-attention-count>—</strong> 件</p>
+    <p class="sr-only" role="status" aria-live="polite" data-filter-status></p>
+    <form class="mt-4 flex flex-wrap gap-4" method="get" action="">
+      <p class="grid gap-0.5"><label for="type-filter" class="text-xs font-semibold text-slate-600">種別で絞り込む</label>
+        <select id="type-filter" name="type" data-type-filter class="min-h-11 rounded-md border border-slate-400 bg-white px-2">
+          <option value="ALL">すべて</option><option value="OWNER_QUESTION">質問</option>
+          <option value="ACTION_APPROVAL">承認</option><option value="OUTCOME_UNKNOWN_REVIEW">結果不明</option>
+          <option value="RESULT_REVIEW">結果</option><option value="INFORMATION">お知らせ</option>
+        </select></p>
+      <noscript><button type="submit" class="min-h-11 px-4 rounded-md border border-slate-400">適用</button></noscript>
+    </form>
+  </header>
+  <main id="main">
+    <h2 class="sr-only">対応が必要な項目</h2>
+    {{CARDS}}
+  </main>
+</div>
+<script type="module" src="{{BASE}}scripts/boot.js"></script>
+</body>
+</html>

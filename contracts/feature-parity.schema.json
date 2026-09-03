@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kas.local/contracts/feature-parity.schema.json",
+  "title": "Feature parity manifest",
+  "description": "性能を比較する前に、全条件が同じ機能を持つことを機械検査する。1 項目でも欠ける条件は総合性能比較から除外する。",
+  "type": "object",
+  "required": ["features"],
+  "properties": {
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "check"],
+        "properties": {
+          "id": { "type": "string" },
+          "check": { "enum": ["cardTypes5", "filter", "noJsReadable", "submitForm", "abortController", "staleGuard", "doubleSubmitGuard", "evidenceDisplay", "outcomeUnknown", "keyboard", "hostileNoOverflow", "scale1000"] }
+        }
+      }
+    }
+  }
+}

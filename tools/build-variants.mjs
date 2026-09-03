@@ -13,7 +13,8 @@ export const VARIANTS = [
   { id: 'c-semantic-css', label: 'C: Semantic CSS（分割のまま）' },
   { id: 'c-bundled', label: 'C+: Semantic CSS（バンドル済み）', bundleOf: 'c-semantic-css' },
   { id: 'd-web-components', label: 'D: Web Components' },
-  { id: 'e-compiler', label: 'E: Semantic UI Compiler' },
+  { id: 'e-compiler', label: 'E: Semantic UI Compiler (Native CSS)' },
+  { id: 'f-recipe-tailwind', label: 'F: Recipe → Tailwind Compiler' },
 ];
 
 const FIXTURES = readdirSync('fixtures').filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, ''));

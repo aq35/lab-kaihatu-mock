@@ -1,0 +1,96 @@
+{
+  "ranAt": "2026-09-03T22:05:09.482Z",
+  "results": {
+    "a-tailwind": {
+      "cardTypes5": true,
+      "filter": true,
+      "submitForm": true,
+      "evidenceDisplay": true,
+      "outcomeUnknown": true,
+      "keyboard": true,
+      "noJsReadable": true,
+      "doubleSubmitGuard": true,
+      "hostileNoOverflow": true,
+      "scale1000": true,
+      "__complete": true
+    },
+    "b-raw-css": {
+      "cardTypes5": true,
+      "filter": true,
+      "submitForm": true,
+      "evidenceDisplay": true,
+      "outcomeUnknown": true,
+      "keyboard": true,
+      "noJsReadable": true,
+      "doubleSubmitGuard": true,
+      "hostileNoOverflow": false,
+      "scale1000": true,
+      "__complete": false
+    },
+    "c-semantic-css": {
+      "cardTypes5": true,
+      "filter": true,
+      "submitForm": true,
+      "evidenceDisplay": true,
+      "outcomeUnknown": true,
+      "keyboard": true,
+      "noJsReadable": true,
+      "doubleSubmitGuard": true,
+      "hostileNoOverflow": true,
+      "scale1000": true,
+      "__complete": true
+    },
+    "c-bundled": {
+      "cardTypes5": true,
+      "filter": true,
+      "submitForm": true,
+      "evidenceDisplay": true,
+      "outcomeUnknown": true,
+      "keyboard": true,
+      "noJsReadable": true,
+      "doubleSubmitGuard": true,
+      "hostileNoOverflow": true,
+      "scale1000": true,
+      "__complete": true
+    },
+    "d-web-components": {
+      "cardTypes5": true,
+      "filter": true,
+      "submitForm": true,
+      "evidenceDisplay": true,
+      "outcomeUnknown": null,
+      "keyboard": false,
+      "noJsReadable": false,
+      "doubleSubmitGuard": false,
+      "hostileNoOverflow": false,
+      "scale1000": true,
+      "__complete": false
+    },
+    "e-compiler": {
+      "cardTypes5": true,
+      "filter": true,
+      "submitForm": true,
+      "evidenceDisplay": true,
+      "outcomeUnknown": true,
+      "keyboard": true,
+      "noJsReadable": true,
+      "doubleSubmitGuard": true,
+      "hostileNoOverflow": true,
+      "scale1000": true,
+      "__complete": true
+    },
+    "f-recipe-tailwind": {
+      "cardTypes5": true,
+      "filter": true,
+      "submitForm": true,
+      "evidenceDisplay": true,
+      "outcomeUnknown": true,
+      "keyboard": true,
+      "noJsReadable": true,
+      "doubleSubmitGuard": true,
+      "hostileNoOverflow": true,
+      "scale1000": true,
+      "__complete": true
+    }
+  }
+}

@@ -65,13 +65,6 @@
     {{CARDS}}
   </main>
 </div>
-<script type="module">
-  import { initNavigation } from '{{BASE}}scripts/navigation.js';
-  import { enhanceDecisionForms } from '{{BASE}}scripts/forms.js';
-  const main = document.querySelector('#main');
-  const disposeNav = initNavigation(main);
-  const disposeForms = enhanceDecisionForms(main);
-  window.addEventListener('pagehide', () => { disposeNav(); disposeForms(); }, { once: true });
-</script>
+<script type="module" src="{{BASE}}scripts/boot.js"></script>
 </body>
 </html>

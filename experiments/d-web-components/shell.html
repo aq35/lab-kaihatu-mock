@@ -45,29 +45,6 @@
     {{CARDS}}
   </main>
 </div>
-<script type="module">
-  import '{{BASE}}components/kas-card.js';
-  import '{{BASE}}components/kas-decision-form.js';
-  const doc = document, main = doc.querySelector('#main');
-  const themeSelect = doc.querySelector('[data-theme-select]');
-  themeSelect?.addEventListener('change', () => {
-    const v = themeSelect.value;
-    if (v === 'auto') doc.documentElement.removeAttribute('data-theme');
-    else doc.documentElement.dataset.theme = v;
-  });
-  const filter = doc.querySelector('[data-type-filter]');
-  filter?.addEventListener('change', () => {
-    let n = 0;
-    for (const slot of main.querySelectorAll('.card-slot')) {
-      const card = slot.querySelector('[data-card-type]');
-      const ok = filter.value === 'ALL' || card?.dataset.cardType === filter.value;
-      slot.hidden = !ok; if (ok) n++;
-    }
-    doc.querySelector('[data-filter-status]').textContent = `${n} 件を表示しています。`;
-  });
-  const counter = doc.querySelector('[data-attention-count]');
-  if (counter) counter.textContent = String(main.querySelectorAll(
-    '[data-card-type="OWNER_QUESTION"][data-card-state="LIVE"],[data-card-type="ACTION_APPROVAL"][data-card-state="LIVE"],[data-card-type="OUTCOME_UNKNOWN_REVIEW"][data-card-state="LIVE"]').length);
-</script>
+<script type="module" src="{{BASE}}scripts/boot.js"></script>
 </body>
 </html>

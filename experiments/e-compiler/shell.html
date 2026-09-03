@@ -13,21 +13,22 @@
   <header>
     <h1>Owner Control Center</h1>
     <p>KAS があなたの判断を必要としている項目です。対応が必要: <strong data-attention-count>—</strong> 件</p>
-    <form method="get" action=""><p class="kvh" role="status" aria-live="polite" data-filter-status></p></form>
+    <p class="kvh" role="status" aria-live="polite" data-filter-status></p>
+    <form method="get" action="">
+      <p class="kcontrol"><label for="type-filter">種別で絞り込む</label>
+        <select id="type-filter" name="type" data-type-filter>
+          <option value="ALL">すべて</option><option value="OWNER_QUESTION">質問</option>
+          <option value="ACTION_APPROVAL">承認</option><option value="OUTCOME_UNKNOWN_REVIEW">結果不明</option>
+          <option value="RESULT_REVIEW">結果</option><option value="INFORMATION">お知らせ</option>
+        </select></p>
+      <noscript><button type="submit">適用</button></noscript>
+    </form>
   </header>
   <main id="main">
     <h2 class="kvh">対応が必要な項目</h2>
     {{CARDS}}
   </main>
 </div>
-<script type="module">
-  import { enhanceDecisionForms } from '{{BASE}}scripts/forms.js';
-  const main = document.querySelector('#main');
-  const dispose = enhanceDecisionForms(main);
-  const counter = document.querySelector('[data-attention-count]');
-  if (counter) counter.textContent = String(main.querySelectorAll(
-    '[data-card-type="OWNER_QUESTION"][data-card-state="LIVE"],[data-card-type="ACTION_APPROVAL"][data-card-state="LIVE"],[data-card-type="OUTCOME_UNKNOWN_REVIEW"][data-card-state="LIVE"]').length);
-  window.addEventListener('pagehide', () => dispose(), { once: true });
-</script>
+<script type="module" src="{{BASE}}scripts/boot.js"></script>
 </body>
 </html>
