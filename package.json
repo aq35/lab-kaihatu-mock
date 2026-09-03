@@ -19,6 +19,7 @@
     "@playwright/test": "^1.56.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "axe-core": "^4.10.2"
+    "axe-core": "^4.10.2",
+    "gpt-tokenizer": "^4.0.0"
   }
 }

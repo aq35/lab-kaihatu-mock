@@ -691,3 +691,129 @@ Tailwindなしの参照実装を採用するには次を満たす。
 結果が支持しなければ、理由を隠さず設計を変更する。
 最終目的はTailwindを排除することではない。
 KASがOwnerと正確に話せる意味構造を守りながら、AIが新しい視覚表現を自由に作れる状態を実証することである。
+
+---
+
+# 追加指示 — Tailwind CSS の前提を疑う構造監査
+
+> この章は Owner から渡された 2 回目の指示の原文である。
+> 実施状況は `docs/research/` と `docs/results/ui-tailwind-*.md`、`docs/decisions/0002-tailwind-verdict.md` を参照。
+
+## 0. 目的
+
+Semantic UI Compiler を実装する前に、Tailwind CSS の表面的な不便ではなく、
+設計思想と KAS の要求との間に根本的な不一致があるかを実験する。
+
+Tailwind は、AI が一般利用される前に、人間が HTML を読み、utility class を選び、
+局所的に画面を組み立てる開発を主対象として成立した。調査対象は次の問いである。
+
+> 人間にとって便利な utility-first 表現は、AI が長期間・複数セッションにわたり、
+> 安全性が重要な KAS UI を創造・保守する中間表現としても最適なのか。
+
+「古いから悪い」「Tailwind を使わないから優れている」という結論は禁止する。
+Tailwind の最善構成を用意し、それでも残る制約だけを構造的欠陥または KAS 固有の不適合として扱う。
+
+一番大きな仮説:
+> **Tailwind は CSS フレームワークではなく、人間が外観命令を HTML へ手早く記述する言語である。
+> 一方 KAS に必要なのは、AI が意味を保ったまま表現意図を宣言する言語である。**
+
+## 1. 発見の 4 分類（最初に固定する）
+
+- `STRUCTURAL_LIMIT` — 利用方法を改善しても残る、方式そのものの制約
+- `KAS_MISMATCH` — 一般 Web UI には問題ないが、KAS の意味契約・authority・evidence・長期 AI 保守に適さない性質
+- `IMPLEMENTATION_MISUSE` — Tailwind の問題ではなく、比較実装・設定・命名・component 設計の誤り
+- `DISPROVED` — 実験したが差が出なかった、または Tailwind が同等以上だったもの
+
+「根本的欠陥」という言葉は、`STRUCTURAL_LIMIT` を counter-proof 付きで確認できた場合だけ使う。
+
+## 2. Tailwind 条件を弱く作らない
+
+比較する Tailwind 条件（A）には最低限: 現行安定版 / theme variables / component 抽出 /
+class 名の共通化 / responsive variants / dark mode / 適切な build・minify /
+重複・競合 class の検査 / 公式推奨の source detection / custom CSS。
+
+巨大な class 文字列を繰り返すだけの実装を代表にしない。
+逆に custom CSS へ全設計を移して実質 Semantic CSS にして勝たせることも禁止する。
+どこまでが Tailwind の価値で、どこからが別方式かを記録する。
+
+## 3. 検証する根本仮説 T1-T10
+
+- T1 表現が意味を持たない（class 列から KAS の意味を回復できるか）
+- T2 同じ描画結果に多数の表現が存在する（非正規表現問題）
+- T3 局所最適が全体規律を保証しない
+- T4 外観変更と意味 DOM が同じ編集面にある（n≥5、12 課題）
+- T5 静的クラス検出と動的 AI 生成の不一致
+- T6 arbitrary value が設計規律を迂回する
+- T7 utility class 列が AI の context を消費する（実際の LLM tokenizer で測る）
+- T8 utility 競合の最終結果が意図から離れている
+- T9 創造性が既存 utility 語彙へ収束する
+- T10 意図単位の変更が存在しない
+
+## 4. AI 以前の前提を特定する
+
+Tailwind が暗黙に置く前提を列挙し、各々を
+`Assumption / Why reasonable / Why AI changes it / Experiment / Tailwind mitigation / Residual / Verdict / Evidence`
+の形式で記録する（`docs/research/tailwind-assumptions.md`）。
+
+## 5. 最重要の比較 — 3 モデル
+
+```
+A: Best-practice Tailwind        要素ごとに外観命令を指定する
+C: Handwritten Semantic CSS      意味 class と CSS 規則を書く
+E: Semantic UI Compiler          AI は表現意図(PresentationRecipe)だけを宣言し、Compiler が決定論的に HTML/CSS を生成する
+```
+
+E の PresentationRecipe 例:
+```json
+{ "readingMode":"decision-first","density":"compact","effectEmphasis":"strong",
+  "scopePresentation":"bounded-list","evidencePresentation":"claim-vs-verified",
+  "uncertaintyPresentation":"interruptive","actionLayout":"single-primary" }
+```
+
+## 6. Tailwind を上回ったとする条件（全部満たさない限り「克服」と報告しない）
+
+変更成功率 / accessibility / hostile 耐性 / 性能が Tailwind 以上、かつ
+protected DOM 接触・契約破壊・同一意図の編集箇所・セッション間出力差・必要 context token が有意に少なく、
+20 案で表現多様性が Tailwind 以上、Owner 判断正答率が同等以上、production dependency に Tailwind なし。
+一部だけ勝った場合はその軸だけを報告する。
+
+## 7. counter-proof（Tailwind だけに厳しくしない）
+
+component 化 / theme variables / arbitrary 禁止 / safelist で Tailwind 側の差が消えるか。
+Semantic CSS 側でも意味 DOM を直接編集させると同じ事故が出るか。
+Compiler の Recipe を自由形式にすると Tailwind と同じ発散が起きるか。
+Compiler の検証を外すと required field を隠せるか。決定論生成を外すと同入力から異なる bytes が出るか。
+
+## 8. 成果物
+
+```
+docs/research/tailwind-assumptions.md
+docs/research/tailwind-structural-limits.md
+docs/results/ui-tailwind-adversarial.md
+docs/results/ui-ai-context-cost.md
+docs/results/ui-creative-convergence.md
+docs/decisions/0002-tailwind-verdict.md
+fixtures/tailwind-attacks/
+tests/tailwind/
+```
+
+`0002-tailwind-verdict.md` には必ず次の表を置く:
+
+| Finding | Classification | Reproduced | Mitigation tried | Residual | Evidence level |
+
+仮説が全部反証された場合もそのまま保存する。
+
+## 9. 最終的に探すもの
+
+Tailwind が最適化しているのは「人間が要素ごとに外観を指定する速度」。
+KAS で最適化するのは「AI が意味を壊さず表現意図を変更し、同じ入力から同じ成果物を生成し、
+機械検証と Owner 判断を通して安全に採用できること」。
+
+最終候補:
+```
+Meaning Contract → Owner Communication ViewModel → PresentationRecipe
+  → Deterministic UI Compiler → Proof Engine → Owner Evaluation
+```
+
+Tailwind の弱点を探すこと自体を目的にしない。
+Tailwind の人間中心の前提を明らかにし、AI 中心の KAS UI に必要な新しい抽象化を発見することを目的にする。
