@@ -1,0 +1,49 @@
+{
+  "surface": "cinematic",
+  "product": "Aurora Pro Max Ultra Extended Edition 超長名モデル",
+  "hero": {
+    "eyebrow": "🚀 新登場 🚀",
+    "headline": "光を、あなたの手のひらに。光を、あなたの手のひらに。光を、あなたの手のひらに。",
+    "subhead": "非常に長い日本語の連続テキストで折返しと段組みの破綻を検出する非常に長い日本語の連続テキストで折返しと段組みの破綻を検出する非常に長い日本語の連続テキストで折返しと段組みの破綻を検出する非常に長い日本語の連続テキストで折返しと段組みの破綻を検出する非常に長い日本語の連続テキストで折返しと段組みの破綻を検出する非常に長い日本語の連続テキストで折返しと段組みの破綻を検出する",
+    "primaryCta": {
+      "label": "購入する（在庫わずか・お早めに）",
+      "href": "/buy",
+      "semantic": "PRIMARY"
+    },
+    "image": {
+      "ref": "MISSING",
+      "w": 1600,
+      "h": 900,
+      "alt": "取得失敗する画像"
+    }
+  },
+  "scenes": [
+    {
+      "id": "long",
+      "heading": "とても長い見出しとても長い見出しとても長い見出しとても長い見出しとても長い見出しとても長い見出しとても長い見出しとても長い見出し",
+      "body": "https://example.invalid/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "emphasis": "strong",
+      "theme": "dark",
+      "image": {
+        "ref": "MISSING",
+        "w": 1200,
+        "h": 1400,
+        "alt": "壊れた画像"
+      }
+    }
+  ],
+  "spec": {
+    "heading": "仕様",
+    "rows": [
+      {
+        "k": "非常に長い項目名非常に長い項目名非常に長い項目名非常に長い項目名",
+        "v": "非常に長い値非常に長い値非常に長い値非常に長い値"
+      }
+    ]
+  },
+  "footerCta": {
+    "label": "購入",
+    "href": "/buy",
+    "semantic": "PRIMARY"
+  }
+}

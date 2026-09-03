@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kas.local/contracts/cinematic-recipe.schema.json",
+  "title": "Cinematic PresentationRecipe",
+  "description": "Cinematic surface 用の閉じた表現 Recipe。AI が生成するのはこれだけ。class も CSS も生成しない。C(native) と D(tailwind) が同じ Recipe を消費する。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mood", "heroLayout", "typeScale", "sceneRhythm", "sectionTheme", "motion", "ctaStyle", "palette"],
+  "properties": {
+    "mood": { "enum": ["premium", "calm", "playful", "urgent"] },
+    "heroLayout": { "enum": ["center", "split", "full-bleed"] },
+    "typeScale": { "enum": ["grand", "editorial", "compact"] },
+    "sceneRhythm": { "enum": ["spacious", "tight"] },
+    "sectionTheme": { "enum": ["alternating", "dark-first", "light"] },
+    "motion": { "enum": ["cinematic", "subtle", "none"] },
+    "ctaStyle": { "enum": ["solid", "outline", "sticky"] },
+    "palette": { "enum": ["graphite", "warm", "cool", "high-contrast"] }
+  }
+}

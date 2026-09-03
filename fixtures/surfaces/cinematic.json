@@ -1,0 +1,28 @@
+{
+  "surface": "cinematic",
+  "note": "架空製品 Aurora。Apple 等の商標・文章・画像は複製しない。特徴を抽象化した独自 fixture。画像は固定寸法のプレースホルダ参照(色 SVG)。",
+  "product": "Aurora",
+  "hero": {
+    "eyebrow": "新登場",
+    "headline": "光を、あなたの手のひらに。",
+    "subhead": "Aurora は一日中続くバッテリーと、目にやさしい有機ディスプレイを一台に。",
+    "primaryCta": { "label": "購入する", "href": "/buy", "semantic": "PRIMARY" },
+    "secondaryCta": { "label": "詳しく見る", "href": "/learn", "semantic": "SECONDARY" },
+    "image": { "ref": "hero", "w": 1600, "h": 900, "alt": "Aurora 本体の正面" }
+  },
+  "scenes": [
+    { "id": "display", "heading": "見たままの色。", "body": "10.1 インチの有機ディスプレイは、10 億色を正確に再現します。", "emphasis": "strong", "theme": "dark", "image": { "ref": "display", "w": 1200, "h": 1400, "alt": "拡大したディスプレイ" } },
+    { "id": "battery", "heading": "止まらない一日。", "body": "最大 22 時間の連続再生。急速充電に対応し、5 分で 2 時間ぶん。", "emphasis": "normal", "theme": "light", "image": { "ref": "battery", "w": 1200, "h": 900, "alt": "バッテリー内部の図" } },
+    { "id": "material", "heading": "手になじむ、軽さ。", "body": "再生アルミニウムの一体成形。わずか 320g。", "emphasis": "normal", "theme": "dark", "image": { "ref": "material", "w": 1600, "h": 1000, "alt": "側面の質感" } }
+  ],
+  "spec": {
+    "heading": "仕様",
+    "rows": [
+      { "k": "ディスプレイ", "v": "10.1インチ 有機EL 2400×1600" },
+      { "k": "重量", "v": "320g" },
+      { "k": "バッテリー", "v": "最大22時間" },
+      { "k": "価格", "v": "¥89,800（税込）" }
+    ]
+  },
+  "footerCta": { "label": "Aurora を購入する", "href": "/buy", "semantic": "PRIMARY" }
+}

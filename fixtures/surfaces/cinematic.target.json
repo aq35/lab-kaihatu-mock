@@ -1,0 +1,9 @@
+{
+  "note": "fidelity 採点用の固定 visual target。参照実装のスクショではなく、幾何・型階層・配色の契約。",
+  "sectionOrder": ["hero", "scene:display", "scene:battery", "scene:material", "spec", "footerCta"],
+  "heroMinHeightVh": 80,
+  "typeScale": { "headlineMinPx": 40, "sceneHeadingMinPx": 28, "bodyMaxCh": 70 },
+  "sectionThemes": { "hero": "dark", "scene:display": "dark", "scene:battery": "light", "scene:material": "dark", "spec": "light", "footerCta": "dark" },
+  "requiredVisibleNoJs": ["hero.headline", "hero.primaryCta", "scene.body", "spec.rows", "footerCta"],
+  "ctaReachableWithoutMotion": true
+}
