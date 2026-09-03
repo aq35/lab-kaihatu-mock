@@ -80,3 +80,23 @@
 | CT6 | Compiler(E) の Recipe を自由形式に | Tailwind と同じ発散が起きるか |
 | CT7 | Compiler の検証を外す | required field を隠せるか |
 | CT8 | Compiler の決定論生成を外す | 同入力から異なる bytes が出るか |
+
+---
+
+## 結果サマリ（結果を見たあとに追記。上の仮説本文は書き換えていない）
+
+| 仮説 | 判定 | 分類 | receipt |
+|------|------|------|---------|
+| T1 | 支持だが KAS の問題にならない | `DISPROVED` | ui-tailwind-adversarial.md |
+| T2 | 支持（発散でなく非決定） | `KAS_MISMATCH` | ui-creative-convergence.md |
+| T3 | 未計測 | — | 次サイクル |
+| T4 | 支持（露出増。破壊は未実証） | `KAS_MISMATCH` | ui-tailwind-edit-surface.md |
+| T5 | 支持 | `STRUCTURAL_LIMIT` | ui-tailwind-adversarial.md |
+| T6 | 支持（弱） | `KAS_MISMATCH` | ui-creative-convergence.md / verdict |
+| T7 | 支持 | `KAS_MISMATCH` | ui-ai-context-cost.md |
+| T8 | 支持 | `IMPLEMENTATION_MISUSE` | ui-tailwind-adversarial.md |
+| T9 | 保留 | `SELF_TESTED` | ui-creative-convergence.md |
+| T10 | 条件依存（C 最軽・E は語彙拡張要） | — | ui-tailwind-edit-surface.md |
+
+「根本的欠陥」= STRUCTURAL_LIMIT + counter-proof 済み は **T5 のみ**、
+かつ KAS の要求に対してのみ成立。詳細は docs/decisions/0002-tailwind-verdict.md。

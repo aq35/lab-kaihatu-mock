@@ -1,0 +1,5 @@
+[
+  { "id": "padding", "classes": "p-2 p-8", "sourceLastIntent": "p-8", "prop": "padding-top" },
+  { "id": "bg", "classes": "bg-red-500 bg-blue-500", "sourceLastIntent": "bg-blue-500", "prop": "background-color" },
+  { "id": "text-size", "classes": "text-sm text-2xl", "sourceLastIntent": "text-2xl", "prop": "font-size" }
+]

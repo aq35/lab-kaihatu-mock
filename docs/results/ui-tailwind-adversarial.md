@@ -95,3 +95,27 @@ AI が競合に気づくには computed style を実測する必要があり、b
 - T5 は公式推奨の `@source` を使用。safelist も公式機能で救えることを併記した
 - T8 は merge tool で緩和できることを併記した
 - これらは「Tailwind に不利な条件を作らない」ための counter-proof（CT1-CT4）の一部
+
+---
+
+## T6 — arbitrary value が設計規律を迂回する
+
+曖昧な要求「もう少し緊急に、少しだけ目立つように」を独立 3 セッションへ渡した（T2 と同じ実行）。
+
+| 条件 | arbitrary value | 新規に使った色 |
+|---|---|---|
+| A-1 | none | red-50, red-200, red-900, red-950 |
+| A-2 | none | red-50, red-200, red-900, red-950 |
+| A-3 | none（代わりに `!important` 1） | red-50, red-200, red-900 |
+| E-1/2/3 | **使用不可**（`RecipeError`） | 0（palette 切替のみ） |
+
+### 判定: `KAS_MISMATCH`（弱）
+
+- 3 セッションとも arbitrary value（`p-[13px]` 等）は使わなかった。**T6 の強い主張は今回は出なかった**
+- ただし全 A セッションが **既存パレットに無い red のシェード**（red-50/200/900/950）を導入した。
+  Tailwind の red スケールは広いので「新規色」ではあるが「無秩序な新色」ではない
+- 条件E は enum 外の値を構造的に拒否するため、色は palette 5 種から選ぶしかない
+- 分類は弱い `KAS_MISMATCH`。arbitrary の暴走は再現しなかったが、
+  「閉じた語彙を保つ」には Tailwind では外部の lint が要る（E は構造で保証）
+
+counter-proof CT3（arbitrary 禁止 lint）を入れれば A でも閉じた語彙を保てる。

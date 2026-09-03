@@ -1,0 +1,6 @@
+[
+  { "id": "runtime-concat", "howBuilt": "`bg-${color}-600` を JS で連結", "completeStringInSource": false, "expectInCss": false },
+  { "id": "recipe-map", "howBuilt": "{danger:'bg-fuchsia-700'} の値", "completeStringInSource": true, "expectInCss": true },
+  { "id": "py-go-output", "howBuilt": "サーバが text-lime-700 を出力", "completeStringInSource": true, "expectInCss": true },
+  { "id": "db-role", "howBuilt": "DB の theme role から実行時に決まる", "completeStringInSource": false, "expectInCss": false }
+]
