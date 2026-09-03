@@ -126,29 +126,46 @@
 
 | ID | 外す防止策 | 再現したい事故 |
 |----|-----------|---------------|
-| CP1 | contract test（required field 可視性検査） | CSS だけで effect / scope を隠した承認カードが合格する |
+| CP1 | contract test（required field 可視性検査） | CSS だけで effect / scope を隠した承認カードが合格する — **再現。しかも検査側の欠陥を 2 つ暴いた** |
 | CP2 | card type ごとの action allowlist | `OUTCOME_UNKNOWN_REVIEW` に retry が primary action として出る |
-| CP3 | server 側 expiry 再検証 | 期限切れカードが client clock 操作で承認できてしまう |
-| CP4 | 二重submit防止 | ALLOW_ONCE が 2 回 dispatch される |
-| CP5 | `textContent` 強制 | fixture の `<script>` 文字列が HTML として解釈される |
+| CP3 | server 側 expiry 再検証 | 期限切れカードが client clock 操作で承認できてしまう — **再現** |
+| CP4 | 二重submit防止 | ALLOW_ONCE が 2 回 dispatch される — **再現（3 回）** |
+| CP5 | `textContent` 強制 | fixture の `<script>` 文字列が HTML として解釈される — **再現** |
 | CP6 | stale response ガード | 古いレスポンスが新しい画面を上書きする |
 
 ---
 
 ## 進行状況
 
-| PR | 内容 | 状態 |
-|----|------|------|
-| UI-0 | contract・fixture・measurement harness | 実施中 |
-| UI-1 | Tailwind / raw CSS / semantic CSS / web components 比較 | 実施中 |
-| UI-2 | HTML semantics・progressive enhancement | 未 |
-| UI-3 | design tokens・cascade layers | 未 |
-| UI-4 | responsive・container queries | 未 |
-| UI-5 | JavaScript state・network failure | 未 |
-| UI-6 | accessibility | 未 |
-| UI-7 | hostile content | 未 |
-| UI-8 | Owner Communication scenarios | 未 |
-| UI-9 | AI multi-session maintainability | 未 |
-| UI-10 | performance | 未 |
-| UI-11 | visual creativity | 未 |
-| UI-12 | review skills・最終ガイド | 未 |
+| PR | 内容 | 状態 | 結果 |
+|----|------|------|------|
+| UI-0 | contract・fixture・measurement harness | **完了** | `contracts/` `fixtures/` `tools/` `tests/` |
+| UI-1 | Tailwind / raw CSS / semantic CSS / web components 比較 | **完了** | [ui-1-comparison.md](results/ui-1-comparison.md) |
+| UI-2 | HTML semantics・progressive enhancement | 部分 | no-JS は 4 方式で計測済み。heading 階層と ARIA の人手確認は未 |
+| UI-3 | design tokens・cascade layers | **完了** | primitive/semantic 分離・8 layer・token コントラスト検査 |
+| UI-4 | responsive・container queries | 部分 | 320/1280 で計測済み。200% zoom と narrow container タスクは未 |
+| UI-5 | JavaScript state・network failure | 部分 | 3 種の失敗を分離。stale response (CP6) と leak 計測は未 |
+| UI-6 | accessibility | 部分 | axe 0 / keyboard / target size は計測済み。screen reader 構造と forced-colors の人手確認は未 |
+| UI-7 | hostile content | **完了** | [ui-1-comparison.md](results/ui-1-comparison.md) §4 |
+| UI-8 | Owner Communication scenarios | 部分 | `tests/owner-scenarios/` で構造は検査。3 surface 比較と Owner 実測は未 |
+| UI-9 | AI multi-session maintainability | 部分 | [ui-9-ai-maintainability.md](results/ui-9-ai-maintainability.md)（n=1・課題 1/12） |
+| UI-10 | performance | 部分 | 1,000 カード・INP 近似は計測済み。LCP は harness が不正確。memory/leak は未 |
+| UI-11 | visual creativity | 部分 | [ui-11-creativity.md](results/ui-11-creativity.md)（Owner 評価は未 → SELF_TESTED） |
+| UI-12 | review skills・最終ガイド | **完了** | [.claude/skills/html-css-js-ui-review/](../.claude/skills/html-css-js-ui-review/SKILL.md) |
+
+## 仮説の判定（結果を見たあとに追記）
+
+| 仮説 | 判定 |
+|------|------|
+| H1 無規律CSSは変更を重ねるほど劣化する | **支持** |
+| H2 意味DOMを触らず5テーマを作れるのは C | **支持** |
+| H3 Tailwind はファイル数が少なく HTML 差分が多い | **部分的に支持**（描画結果は不変だった） |
+| H4 発見率は C > A > D > B | **反証**（差が付かなかった） |
+| H5 Shadow DOM はテーマ適用コストを上げる | **支持。ただし形が違う**（表現できる範囲が狭まる） |
+| H6 no-JS で壊れるのは D だけ | **反証**（Declarative Shadow DOM で保持できた） |
+| H7 CSSで必須情報を消せる事故は全方式で起きる | **支持**（CP1 で再現） |
+| H8 敵対的contentで最初に壊れるのは B | **支持** |
+| H9 Container Queries が narrow container のコストを下げる | 未検証 |
+| H10 token 数は保守性に単調寄与しない | 未検証 |
+
+詳細と根拠は [`docs/results/ui-1-comparison.md`](results/ui-1-comparison.md) §8。

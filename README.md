@@ -35,7 +35,48 @@ node tools/serve.mjs               # http://127.0.0.1:8080/ で見る
 node --test tests/contract tests/css   # 契約と CSS 規律の検査
 node tools/measure.mjs             # 4 方式を同一条件で計測 → docs/results/raw/
 node tools/counter-proof.mjs       # 防止策を外して事故を再現する
+node tools/build-catalog.mjs       # 同一の意味DOM から作った 5 テーマのカタログ
 ```
+
+## 読む順番
+
+1. [`docs/handoff/INSTRUCTIONS.md`](docs/handoff/INSTRUCTIONS.md) — Owner から渡された指示書（原文）
+2. [`docs/experiments.md`](docs/experiments.md) — 仮説（結果より先に凍結）と進行状況
+3. [`docs/results/ui-1-comparison.md`](docs/results/ui-1-comparison.md) — 4 方式の比較（本体）
+4. [`docs/results/counter-proof.md`](docs/results/counter-proof.md) — 防止策を外すとどうなるか
+5. [`docs/results/ui-9-ai-maintainability.md`](docs/results/ui-9-ai-maintainability.md) — 別セッション AI の保守性
+6. [`docs/results/ui-11-creativity.md`](docs/results/ui-11-creativity.md) — 同一の意味DOM から 5 表現
+7. [`docs/decisions/0001-reference-implementation.md`](docs/decisions/0001-reference-implementation.md) — 何を採り、何を採らなかったか
+8. [`.claude/skills/html-css-js-ui-review/SKILL.md`](.claude/skills/html-css-js-ui-review/SKILL.md) — 実験に支持された規則だけのレビュー Skill
+
+## 現時点で分かったこと
+
+すべて実測。根拠は [`docs/results/`](docs/results/) にある。
+
+1. **契約は方式で守れない。テストでしか守れない。**
+   theme CSS へ 3 行足すだけで、承認カードから「何が起きるか」「影響範囲」「リスク」が消える。
+   レイアウトは崩れず、カード数も変わらないので目視レビューでは気づけない
+   （[counter-proof CP1](docs/results/counter-proof.md)）。
+
+2. **UI は authority ではない。**
+   client の二重送信防止を外すと request は 3 本飛ぶが、server の one-shot 再検証が effect を 1 回に抑える。
+   両方外すと 3 回実行される（[CP4](docs/results/counter-proof.md)）。
+
+3. **token を定義しただけでは WCAG AA を満たさない。**
+   token 1 個が原因で axe 違反 40 件。全 theme 総当たりの検査を入れたら、さらに 19 件見つかった
+   （[UI-1 §3](docs/results/ui-1-comparison.md)）。
+
+4. **別セッションの AI は 4 方式すべてで正しい拡張箇所に到達した。**
+   差が付いたのは発見率ではなく、**到達したあとの重複記述量**
+   （[UI-9](docs/results/ui-9-ai-maintainability.md)）。
+
+5. **「Web Components は JS 必須」は誤り。**
+   Declarative Shadow DOM なら no-JS でも必須情報が読める。当初の仮説 H6 は反証された。
+   ただし 1,000 カードで shadow root ごとに stylesheet が要り、60 秒で読み込めなかった。
+
+6. **Tailwind が劣っていたわけではない。**
+   変更成功率・発見率・最終的なアクセシビリティは 4 方式とも同等。
+   条件C を採る理由は [`docs/decisions/0001`](docs/decisions/0001-reference-implementation.md) の 4 点に絞られる。
 
 ## いちばん重要な考え方
 

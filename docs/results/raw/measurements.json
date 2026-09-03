@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-09-03T12:48:37.129Z",
+  "measuredAt": "2026-09-03T12:54:12.557Z",
   "env": {
     "node": "v22.22.2",
     "cpuThrottle": 4,
@@ -97,19 +97,19 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 868,
+          "lcp": 0,
           "cls": 0,
-          "domContentLoaded": 2744.7000000001863,
-          "load": 4125.4000000003725
+          "domContentLoaded": 0,
+          "load": 0
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 40822,
+          "loadMs": 38097,
           "idleOutcome": "networkidle",
           "requests": 2,
           "domNodes": 44429,
-          "traverseMs": 119.2,
-          "domContentLoaded": 6509.899999999907
+          "traverseMs": 110.2,
+          "domContentLoaded": 5469.5
         },
         "filter1000Ms": 134.8
       },
@@ -251,21 +251,21 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 0,
+          "lcp": 952,
           "cls": 0,
-          "domContentLoaded": 3424.399999999907,
-          "load": 3794.899999999907
+          "domContentLoaded": 2600.2000000001863,
+          "load": 3717.2000000001863
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 39735,
+          "loadMs": 36778,
           "idleOutcome": "networkidle",
           "requests": 2,
           "domNodes": 44229,
-          "traverseMs": 112.9,
-          "domContentLoaded": 5813.700000000186
+          "traverseMs": 108.2,
+          "domContentLoaded": 4665.200000000186
         },
-        "filter1000Ms": 119.2
+        "filter1000Ms": 107.6
       },
       "themes": {
         "calm-console": {
@@ -414,22 +414,22 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 712,
+          "lcp": 724,
           "cls": 0,
-          "domContentLoaded": 1352.6000000000931,
-          "load": 1416.6000000000931
+          "domContentLoaded": 1583,
+          "load": 1663
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 10340,
+          "loadMs": 11683,
           "idleOutcome": "networkidle",
           "requests": 21,
           "domNodes": 44257,
-          "traverseMs": 118.1,
-          "domContentLoaded": 3454.100000000093
+          "traverseMs": 103.5,
+          "domContentLoaded": 1792.3000000002794
         },
-        "filter1000Ms": 105.3,
-        "themeSwitchMs": 96.1
+        "filter1000Ms": 105.6,
+        "themeSwitchMs": 102.3
       },
       "themes": {
         "calm-console": {
@@ -578,22 +578,22 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 612,
+          "lcp": 504,
           "cls": 0,
-          "domContentLoaded": 1213.6999999997206,
-          "load": 1364.8999999999069
+          "domContentLoaded": 1195.8999999999069,
+          "load": 1374.1000000000931
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 11031,
+          "loadMs": 11192,
           "idleOutcome": "networkidle",
           "requests": 2,
           "domNodes": 44238,
-          "traverseMs": 103.9,
-          "domContentLoaded": 2409.1999999997206
+          "traverseMs": 110.1,
+          "domContentLoaded": 2181.899999999907
         },
-        "filter1000Ms": 92.6,
-        "themeSwitchMs": 82.9
+        "filter1000Ms": 94.4,
+        "themeSwitchMs": 89.9
       },
       "themes": {
         "calm-console": {
@@ -654,7 +654,7 @@
       "label": "D: Web Components",
       "bytes": {
         "html": 16456,
-        "css": 64833,
+        "css": 65008,
         "js": 0,
         "other": 0
       },
@@ -691,14 +691,8 @@
         "domNodes": 286
       },
       "axe": {
-        "violations": [
-          {
-            "id": "color-contrast",
-            "impact": "serious",
-            "nodes": 1
-          }
-        ],
-        "total": 1
+        "violations": [],
+        "total": 0
       },
       "keyboard": {
         "actions": 11,
@@ -754,22 +748,22 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 384,
+          "lcp": 204,
           "cls": 0,
-          "domContentLoaded": 4199.399999999907,
-          "load": 4230.600000000093
+          "domContentLoaded": 4679.100000000093,
+          "load": 4714.399999999907
         },
         "cards1000": {
           "loadOutcome": "timeout-60s",
-          "loadMs": 60001,
-          "idleOutcome": "networkidle",
-          "requests": 639,
-          "domNodes": 30413,
-          "traverseMs": 81.3,
+          "loadMs": 60002,
+          "idleOutcome": "never-idle-20s",
+          "requests": 804,
+          "domNodes": 38366,
+          "traverseMs": 102.8,
           "domContentLoaded": 0
         },
-        "filter1000Ms": 138.9,
-        "themeSwitchMs": 162.2
+        "filter1000Ms": 149.5,
+        "themeSwitchMs": 234.4
       },
       "themes": {
         "calm-console": {
@@ -790,7 +784,7 @@
           "fontSize": "18px",
           "pageBackground": "oklch(0.97 0.015 85)",
           "borderStyle": "solid",
-          "borderColor": "oklch(0.48 0.13 245)"
+          "borderColor": "oklch(0.4 0.12 25)"
         },
         "command-center": {
           "cardBackground": "oklch(0.24 0.018 260)",
@@ -800,7 +794,7 @@
           "fontSize": "14px",
           "pageBackground": "oklch(0.19 0.015 260)",
           "borderStyle": "solid",
-          "borderColor": "oklch(0.48 0.13 245)"
+          "borderColor": "oklch(0.72 0.14 200)"
         },
         "conversational": {
           "cardBackground": "oklch(1 0 0)",
@@ -810,7 +804,7 @@
           "fontSize": "17px",
           "pageBackground": "oklch(0.98 0.012 320)",
           "borderStyle": "solid",
-          "borderColor": "oklch(0.48 0.13 245)"
+          "borderColor": "oklch(0.52 0.15 320)"
         },
         "timeline": {
           "cardBackground": "oklch(1 0 0)",
@@ -820,7 +814,7 @@
           "fontSize": "17px",
           "pageBackground": "oklch(0.985 0.004 250)",
           "borderStyle": "solid",
-          "borderColor": "oklch(0.48 0.13 245)"
+          "borderColor": "oklch(0.46 0.14 265)"
         }
       },
       "staticBytes": 16456
