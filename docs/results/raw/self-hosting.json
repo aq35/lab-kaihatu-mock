@@ -1,0 +1,35 @@
+{
+  "ranAt": "2026-09-03T22:43:23.690Z",
+  "results": {
+    "e-compiler": {
+      "runtimeNeedsNodeModules": false,
+      "requiredFieldsWithJs": 36,
+      "requiredFieldsNoJs": 36,
+      "servesWithoutBuildDeps": true
+    },
+    "f-recipe-tailwind": {
+      "runtimeNeedsNodeModules": false,
+      "requiredFieldsWithJs": 36,
+      "requiredFieldsNoJs": 36,
+      "servesWithoutBuildDeps": true
+    },
+    "g-minimal-owned": {
+      "runtimeNeedsNodeModules": false,
+      "requiredFieldsWithJs": 36,
+      "requiredFieldsNoJs": 36,
+      "servesWithoutBuildDeps": true
+    },
+    "a-tailwind": {
+      "runtimeNeedsNodeModules": false,
+      "requiredFieldsWithJs": 36,
+      "requiredFieldsNoJs": 36,
+      "servesWithoutBuildDeps": true
+    },
+    "c-semantic-css": {
+      "runtimeNeedsNodeModules": false,
+      "requiredFieldsWithJs": 36,
+      "requiredFieldsNoJs": 36,
+      "servesWithoutBuildDeps": true
+    }
+  }
+}

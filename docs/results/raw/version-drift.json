@@ -1,0 +1,56 @@
+{
+  "ranAt": "2026-09-03T22:43:41.311Z",
+  "inputClassCount": 131,
+  "rows": [
+    {
+      "version": "4.3.3",
+      "installed": true,
+      "buildMs": 210,
+      "cssBytes": 10600,
+      "cssHash": "1ad7e8f5d38040f9",
+      "hasPreflight": true,
+      "classOrderHead": [
+        "order-first",
+        "mt-2",
+        "block",
+        "flex",
+        "grid",
+        "inline-flex",
+        "size-5",
+        "min-h-11",
+        "max-w-[68ch]",
+        "min-w-0",
+        "min-w-11",
+        "cursor-pointer"
+      ]
+    },
+    {
+      "version": "4.1.4",
+      "installed": true,
+      "buildMs": 270,
+      "cssBytes": 10351,
+      "cssHash": "0230e372ba3bd289",
+      "hasPreflight": true,
+      "classOrderHead": [
+        "order-first",
+        "mt-2",
+        "block",
+        "flex",
+        "grid",
+        "inline-flex",
+        "size-5",
+        "min-h-11",
+        "max-w-[68ch]",
+        "min-w-0",
+        "min-w-11",
+        "cursor-pointer"
+      ]
+    }
+  ],
+  "drift": {
+    "bytesDiffer": true,
+    "hashDiffer": true,
+    "sortDiffer": false
+  },
+  "note": "F の入力(完全 class 文字列)は version 非依存。出力 CSS が version で変わるかを測る。E は外部 version が無く drift しない"
+}

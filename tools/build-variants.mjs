@@ -15,6 +15,7 @@ export const VARIANTS = [
   { id: 'd-web-components', label: 'D: Web Components' },
   { id: 'e-compiler', label: 'E: Semantic UI Compiler (Native CSS)' },
   { id: 'f-recipe-tailwind', label: 'F: Recipe → Tailwind Compiler' },
+  { id: 'g-minimal-owned', label: 'G: Minimal Owned Core' },
 ];
 
 const FIXTURES = readdirSync('fixtures').filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, ''));

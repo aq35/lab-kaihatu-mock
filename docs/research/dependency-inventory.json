@@ -1,0 +1,47 @@
+{
+  "note": "「Tailwind を使わない＝外部依存 0」は誤り。残る依存を分類する。production で必要なものと検証時だけのものを混同しない。",
+  "classes": {
+    "RUNTIME_REQUIRED": "production で画面を表示するのに必要（生成物を配信・実行する環境）",
+    "BUILD_REQUIRED": "新しい UI を build するのに必要（既存生成物の表示には不要）",
+    "TEST_ONLY": "検証時だけ必要",
+    "DEVELOPMENT_ONLY": "開発時だけ",
+    "OPTIONAL": "無くても動く",
+    "VENDORED_ARTIFACT": "生成済みで同梱される静的成果物",
+    "WEB_STANDARD": "browser/仕様そのもの。誰の実装でもなく置き換え不能"
+  },
+  "byCondition": {
+    "A_direct_tailwind": [
+      { "dep": "tailwindcss + @tailwindcss/cli", "class": "BUILD_REQUIRED", "note": "class をスキャンして CSS を生成。build 時のみだが新 UI には必須" },
+      { "dep": "生成済み tailwind.css", "class": "VENDORED_ARTIFACT", "note": "配信は静的。ただし新 class を足すと再 build 必要" },
+      { "dep": "browser / HTML・CSS 仕様", "class": "WEB_STANDARD" },
+      { "dep": "Playwright/Chromium", "class": "TEST_ONLY" },
+      { "dep": "axe-core", "class": "TEST_ONLY" },
+      { "dep": "Node runtime", "class": "BUILD_REQUIRED", "note": "build に必要。表示には不要" }
+    ],
+    "F_recipe_tailwind": [
+      { "dep": "tailwindcss + @tailwindcss/cli", "class": "BUILD_REQUIRED", "note": "Compiler が完全 class を生成 → Tailwind build" },
+      { "dep": "KAS Compiler (tw-map + compiler)", "class": "BUILD_REQUIRED", "note": "自作。小さいが build 側" },
+      { "dep": "生成済み tailwind.css", "class": "VENDORED_ARTIFACT" },
+      { "dep": "browser / 仕様", "class": "WEB_STANDARD" },
+      { "dep": "Playwright/axe", "class": "TEST_ONLY" }
+    ],
+    "E_recipe_native": [
+      { "dep": "KAS Compiler (semantic-dom + compiler, 315 行)", "class": "BUILD_REQUIRED", "note": "自作。CSS 生成に外部 framework 不要" },
+      { "dep": "生成済み native CSS", "class": "VENDORED_ARTIFACT" },
+      { "dep": "Node runtime", "class": "BUILD_REQUIRED", "note": "Compiler を走らせるため。表示には不要" },
+      { "dep": "browser / 仕様", "class": "WEB_STANDARD" },
+      { "dep": "Playwright/axe", "class": "TEST_ONLY" },
+      { "dep": "ajv (JSON Schema validator)", "class": "TEST_ONLY", "note": "契約検査。production 生成物には不要" }
+    ],
+    "G_minimal_owned": [
+      { "dep": "KAS Compiler (315 行)", "class": "BUILD_REQUIRED", "note": "同上。runtime には出ない" },
+      { "dep": "生成済み static HTML/CSS", "class": "VENDORED_ARTIFACT", "note": "production はこれだけで動く" },
+      { "dep": "progressive-enhancement JS (api/forms/boot, 素の ES module)", "class": "RUNTIME_REQUIRED", "note": "無くても必須情報は読める(no-JS 5/5)。あくまで enhancement" },
+      { "dep": "standard minifier", "class": "OPTIONAL", "note": "無くても動く。あれば bytes 削減" },
+      { "dep": "browser / HTML・CSS 仕様", "class": "WEB_STANDARD" },
+      { "dep": "Node (Compiler 実行時のみ)", "class": "BUILD_REQUIRED" },
+      { "dep": "Playwright/Chromium/axe/ajv", "class": "TEST_ONLY" }
+    ]
+  },
+  "keyDifference": "A/F は BUILD_REQUIRED に外部 CSS framework(tailwindcss) を含む。E/G は BUILD_REQUIRED が自作 Compiler(315行)+Node のみで、外部 CSS framework は無い。RUNTIME_REQUIRED はどの条件も browser + 静的 asset(+任意で enhancement JS)だけ。"
+}
