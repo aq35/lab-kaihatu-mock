@@ -199,3 +199,29 @@ E は決定論・context・protected DOM 分離・fail closed で優位を実証
 - T9 の Owner blind comparison（E の 38,880 通りが「明確に異なる」か）
 - E の Owner 判断正答率（理解しやすさ）
 - CT1（Tailwind component 化で T7 差が縮むか）の定量
+
+---
+
+## UI-2 Cinematic surface（初回生成のみ・Sonnet）
+
+仮説凍結: `docs/research/_hypotheses-ui2-cinematic.md`（U1-U7）。結果: `docs/results/ui-2-cinematic.md`、決定: `docs/decisions/0005-ui2-cinematic.md`。
+
+4 条件 A(direct tailwind)/B(direct native)/C(recipe→native)/D(recipe→tailwind)。C/D は Recipe・意味DOM 共有。
+
+| 仮説 | 判定 |
+|------|------|
+| U1 recipe 選択の収束 | 支持（8軸中7軸一致。3/3 完全一致ではない） |
+| U2 Tailwind の arbitrary+escape が高い | 支持（direct Tailwind: arbitrary 30-61 + 全員 raw keyframes escape） |
+| U3/RC-4 C と D は同じ意味DOM・a11y | 支持（byte 一致、backend 差は CSS 3.5KB vs 28.8KB のみ） |
+| U4 fidelity は方式で頭打ちにならない | 概ね支持（geometry probe に測定欠陥あり） |
+| U5/RC-1 閉じた語彙の天井 | 支持（3/3 が sectionTheme per-section 不可を報告） |
+| U6 no-JS で hero+CTA 可読 | 支持（全8生成物） |
+| U7 fail-closed | 支持 |
+
+決定: INSUFFICIENT_EVIDENCE（初回のみ）。Cinematic は Recipe→Native(C) が最有力だが、語彙拡張・長期変更・Owner 評価が未了。
+
+### 未了
+- 長期 12 変更列（T3）を Cinematic の A/B/C/D へ（本命）
+- fidelity 採点を条件非依存に差し替え
+- 他 2 surface（Activity Stream / Campaign）
+- Owner blind comparison
