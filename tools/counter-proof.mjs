@@ -27,23 +27,21 @@ const LAUNCH_ARGS = [
 const browser = await chromium.launch({ executablePath: CHROME, args: LAUNCH_ARGS });
 
 // ============================================================================
-// CP1: 契約検査を外すと、CSS だけで required field を隠せてしまう
+// CP1: 契約検査が無いと、CSS ファイルの編集だけで required field を隠せてしまう
+//
+// 脅威モデル: 攻撃者ではなく「デザインを整えるよう頼まれた AI / 人」。
+// theme ファイルは AI が自由に編集してよい場所なので、そこに 1 行入るのが現実的な事故の形。
+// （inline <style> の注入は CSP style-src 'self' が止めるため、事故の形として正しくない）
 // ============================================================================
 {
-  const dir = 'dist/c-semantic-css';
-  const html = readFileSync(`${dir}/cards.happy.html`, 'utf8');
-  // 攻撃側の変更: 「デザイン都合」で effect と scope を畳んだ、という体の 1 行
-  const sabotaged = html.replace('</head>',
-    '<style>@layer overrides{[data-field="effect"],[data-field="resourceScope"]{display:none}}</style></head>');
-  writeFileSync(`${dir}/cp1-sabotaged.html`, sabotaged);
-
+  const themePath = 'experiments/c-semantic-css/styles/themes/calm-console.css';
+  const original = readFileSync(themePath, 'utf8');
   const cards = JSON.parse(readFileSync('fixtures/cards.happy.json', 'utf8'));
-  const { server, port } = await startMockServer({ root: 'dist', cards });
-  const page = await browser.newPage();
 
-  const check = async (file) => {
-    await page.goto(`http://127.0.0.1:${port}/c-semantic-css/${file}`, { waitUntil: 'networkidle' });
-    return page.evaluate((contract) => {
+  const inspect = async (port) => {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/c-semantic-css/cards.happy.html`, { waitUntil: 'networkidle' });
+    const out = await page.evaluate((contract) => {
       const hidden = [];
       for (const card of document.querySelectorAll('[data-card-type]')) {
         const required = contract.requiredVisibleFields[card.dataset.cardType] ?? [];
@@ -51,27 +49,58 @@ const browser = await chromium.launch({ executablePath: CHROME, args: LAUNCH_ARG
           if (!required.includes(f.dataset.field)) continue;
           const b = f.getBoundingClientRect();
           const cs = getComputedStyle(f);
-          if ((b.width === 0 && b.height === 0) || cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0)
+          if ((b.width === 0 && b.height === 0) || cs.display === 'none' ||
+              cs.visibility === 'hidden' || Number(cs.opacity) === 0)
             hidden.push(`${card.dataset.cardId}.${f.dataset.field}`);
         }
       }
-      // 「見た目は壊れていない」ことも確認する（人間のレビューでは気づきにくい）
-      const looksBroken = document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
-      return { hidden, looksBroken };
+      const doc = document.documentElement;
+      return { hidden, horizontalOverflow: doc.scrollWidth > doc.clientWidth + 1,
+        cardCount: document.querySelectorAll('[data-card-type]').length };
     }, DOM_CONTRACT);
+    await page.close();
+    return out;
   };
 
-  const clean = await check('cards.happy.html');
-  const broken = await check('cp1-sabotaged.html');
-  await page.close(); server.close();
-  rmSync(`${dir}/cp1-sabotaged.html`, { force: true });
+  // (1) 防止策あり
+  await build({ quiet: true });
+  let s1 = await startMockServer({ root: 'dist', cards });
+  const clean = await inspect(s1.port);
+  s1.server.close();
 
-  record('CP1', 'CSS だけで required field（effect / resourceScope）を隠す',
-    'contract test（[data-field] の実測可視性検査）',
-    `隠された required field: ${clean.hidden.length} 件`,
-    `隠された required field: ${broken.hidden.length} 件 / 画面は崩れない: ${!broken.looksBroken}`,
-    broken.hidden.length > 0
-      ? '再現。CSS 1 行で承認カードから effect と影響範囲が消え、レイアウトは正常に見える。可視性を実測する契約テスト以外では検出できない。'
+  // (2) 「承認カードが長すぎるので畳んでほしい」と言われた体で theme に 1 行入れる
+  writeFileSync(themePath, original +
+    '\n/* 承認カードが縦に長いので、詳細は畳んでおく */\n' +
+    '@layer themes {\n' +
+    '  [data-theme="calm-console"] .action-approval [data-field="effect"],\n' +
+    '  [data-theme="calm-console"] .action-approval [data-field="resourceScope"],\n' +
+    '  [data-theme="calm-console"] .action-approval [data-field="risk"] { display: none; }\n' +
+    '}\n');
+  await build({ quiet: true });
+  let s2 = await startMockServer({ root: 'dist', cards });
+  const broken = await inspect(s2.port);
+  s2.server.close();
+
+  // (3) 検査が事故を捕まえるか
+  const detectedByContractTest = broken.hidden.length > 0;
+  let detectedByThemeLintTest = false;
+  try {
+    const { execSync } = await import('node:child_process');
+    execSync('node --test tests/css/theme-discipline.test.mjs', { stdio: 'pipe' });
+  } catch { detectedByThemeLintTest = true; }
+
+  writeFileSync(themePath, original);   // 必ず戻す
+  await build({ quiet: true });
+
+  record('CP1', 'theme CSS の 3 行で承認カードから effect / 影響範囲 / リスクを消す',
+    'contract test（[data-field] の実測可視性検査）+ theme lint',
+    `隠された required field: ${clean.hidden.length} 件 / 画面の横溢れ: ${clean.horizontalOverflow}`,
+    `隠された required field: ${broken.hidden.length} 件 (${broken.hidden.join(', ')}) / ` +
+    `画面の横溢れ: ${broken.horizontalOverflow} / カード数は ${broken.cardCount} 件のまま変わらない`,
+    detectedByContractTest
+      ? `再現。theme ファイルへ 3 行足すだけで、承認カードから「何が起きるか」「どの resource に影響するか」「リスク」が消える。` +
+        `レイアウトは崩れず、カード数も変わらないので、スクリーンショット比較や目視レビューでは気づけない。` +
+        `実測可視性の contract test は検出した (${detectedByContractTest})。theme lint も検出した (${detectedByThemeLintTest})。`
       : '再現せず');
 }
 

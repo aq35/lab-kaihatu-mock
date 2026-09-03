@@ -1,0 +1,95 @@
+@layer components {
+  /* 承認カードは Owner が「今すぐ実行してよいか」を判断する場面で読まれる。
+     そのため他の役割より情報密度を上げる:
+       - 余白を詰めて 1 画面に収まりやすくする
+       - 行を罫線で仕切り、ラベルと値の境界を強くする
+     表示する情報は 1 つも減らさない。折り畳み・非表示は行わない
+     （contracts/dom-contract.json の requiredVisibleFields をすべて可視のまま保つ）。 */
+  .action-approval {
+    --card-padding: var(--space-md);
+    --card-gap: var(--space-sm);
+    /* この役割の中だけで使う密度と罫線。theme が token を差し替えれば追従する */
+    --approval-rule: var(--border-hairline) solid var(--border-default);
+    --approval-row-pad: var(--space-2xs);
+  }
+
+  .action-approval .card-header { gap: var(--space-3xs); }
+
+  /* 何が実行されるか。カード内で最初に読ませる 1 行 */
+  .action-approval .action-summary {
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--text-primary);
+    max-inline-size: var(--measure);
+  }
+
+  /* 縦積み（狭い container）: 行間の余白ではなく罫線で区切る。
+     余白を詰めても「どこまでが 1 つの fact か」が分かる */
+  .action-approval .card-facts { gap: 0; }
+  .action-approval .fact {
+    gap: var(--space-3xs);
+    padding-block: var(--approval-row-pad);
+    border-block-start: var(--approval-rule);
+  }
+  .action-approval .fact:first-of-type {
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+
+  /* ラベルは「見出し」、値は「本文」。濃さと太さの差を広げて視線が値に落ちるようにする */
+  .action-approval .fact-label {
+    color: var(--text-secondary);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .action-approval .fact-value { color: var(--text-primary); }
+
+  /* effect / 影響範囲 / リスク は最優先で拾わせる。周囲より地を変えて塊として見せる */
+  .action-approval .effect-summary .fact-value,
+  .action-approval .risk-summary .fact-value {
+    font-weight: 600;
+  }
+
+  /* 密度を上げた分、内側のリストも行間を詰める（項目は 1 つも省かない） */
+  .action-approval .risk-flags { gap: var(--space-3xs); }
+  .action-approval .risk-flag { align-items: start; line-height: 1.4; }
+  .action-approval .scope-list { gap: 0; line-height: 1.4; }
+
+  .action-approval .decision-actions { padding-block-start: var(--space-sm); }
+
+  /* 2 列表示（container >= 34rem）では card.css が .fact を display: contents にするため、
+     罫線と余白は .fact ではなくラベル・値それぞれに載せる必要がある */
+  @container card (min-width: 34rem) {
+    .action-approval .card-facts {
+      grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
+      column-gap: 0;
+    }
+    .action-approval .fact {
+      padding-block: 0;
+      border-block-start: 0;
+    }
+    .action-approval .fact-label,
+    .action-approval .fact-value {
+      padding-block: var(--approval-row-pad);
+      border-block-start: var(--approval-rule);
+    }
+    .action-approval .fact-label { padding-inline-end: var(--space-sm); }
+    /* ラベル列と値列の間の縦罫。左右どちらの書字方向でも内側に入る */
+    .action-approval .fact-value {
+      padding-inline-start: var(--space-sm);
+      border-inline-start: var(--approval-rule);
+    }
+    .action-approval .fact:first-of-type .fact-label,
+    .action-approval .fact:first-of-type .fact-value {
+      padding-block-start: 0;
+      border-block-start: 0;
+    }
+
+    /* 幅に余裕がある container では、リスク 5 項目を段組みにして縦を稼ぐ。
+       auto-fit なので入らない幅では 1 列のまま。項目は常に 5 件すべて出す */
+    .action-approval .risk-flags {
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      column-gap: var(--space-md);
+    }
+  }
+}

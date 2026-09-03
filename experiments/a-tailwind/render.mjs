@@ -31,20 +31,31 @@ const ACCENT={
 };
 const LABEL_CLS='text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400';
 const VALUE_CLS='text-sm text-slate-700 dark:text-slate-300 max-w-[68ch] [overflow-wrap:anywhere]';
+const ROW_CLS='grid gap-0.5 sm:grid-cols-[minmax(9rem,auto)_minmax(0,1fr)] sm:items-start sm:gap-x-4';
 
-const row=(label,field,body,valueExtra='')=>
-  `<div class="grid gap-0.5 sm:grid-cols-[minmax(9rem,auto)_minmax(0,1fr)] sm:items-start sm:gap-x-4">`+
-  `<dt class="${LABEL_CLS}">${esc(label)}</dt>`+
-  `<dd class="${VALUE_CLS} ${valueExtra}" data-field="${esc(field)}">${body}</dd></div>`;
+// ---- ACTION_APPROVAL（承認）専用の高密度版 -----------------------------------
+// Owner が急いで判断する場面用。余白を詰め、ラベル列と値列の間に縦罫、行間に横罫を
+// 入れて effect / 影響範囲 / リスク を上から拾えるようにする。
+// 表示する情報は他カード型と完全に同じ（折り畳み・非表示は一切しない）。
+const DENSE_ROW_CLS='grid gap-x-3 gap-y-0.5 py-1.5 sm:grid-cols-[minmax(7rem,auto)_minmax(0,1fr)]';
+const DENSE_LABEL_CLS='text-xs font-bold tracking-wide text-slate-500 border-slate-300 dark:text-slate-400 dark:border-slate-600 sm:border-e sm:pe-3 sm:text-end';
+const DENSE_VALUE_CLS='text-sm leading-snug text-slate-700 dark:text-slate-300 max-w-[68ch] [overflow-wrap:anywhere]';
+const DENSE_DL_CLS='grid divide-y divide-slate-200 rounded-md border border-slate-200 bg-slate-50 px-3 dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900/40';
+
+const row=(label,field,body,valueExtra='',dense=false)=>
+  `<div class="${dense?DENSE_ROW_CLS:ROW_CLS}">`+
+  `<dt class="${dense?DENSE_LABEL_CLS:LABEL_CLS}">${esc(label)}</dt>`+
+  `<dd class="${dense?DENSE_VALUE_CLS:VALUE_CLS} ${valueExtra}" data-field="${esc(field)}">${body}</dd></div>`;
 const ul=(cls,items)=>`<ul class="${cls}">${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`;
-const goalRows=(c)=>row('Goal','goal',`${esc(c.goal.id)} — ${esc(c.goal.title)}`)+
-  (c.run?row('Run','run',`${esc(c.run.id)}${c.run.step?` / ${esc(c.run.step)}`:''}`):'');
+const goalRows=(c,dense=false)=>row('Goal','goal',`${esc(c.goal.id)} — ${esc(c.goal.title)}`,'',dense)+
+  (c.run?row('Run','run',`${esc(c.run.id)}${c.run.step?` / ${esc(c.run.step)}`:''}`,'',dense):'');
 
 const riskFlags=(r)=>{
   const rows=[['外部送信',r.externalSend],['公開',r.publication],['削除',r.deletion],['credential 利用',r.credentialUse],
     ['費用',r.cost.incurs,r.cost.incurs?`${r.cost.amount} ${r.cost.currency}`:null]];
-  return `<ul class="grid gap-1">${rows.map(([l,on,ex])=>
-    `<li class="grid grid-cols-[1.25em_minmax(6rem,auto)_minmax(0,1fr)] items-baseline gap-2 text-sm ${on?'font-semibold text-red-700 dark:text-red-300':'text-slate-500 dark:text-slate-400'}" data-risk="${on?'yes':'no'}">`+
+  // 承認カードでしか使わないヘルパ。密度優先で 2 列に畳み、行間を詰める（項目は減らさない）
+  return `<ul class="grid gap-x-4 gap-y-0.5 sm:grid-cols-2">${rows.map(([l,on,ex])=>
+    `<li class="grid grid-cols-[1.25em_minmax(5.5rem,auto)_minmax(0,1fr)] items-baseline gap-x-2 text-sm leading-snug ${on?'font-semibold text-red-700 dark:text-red-300':'text-slate-500 dark:text-slate-400'}" data-risk="${on?'yes':'no'}">`+
     `<span class="font-mono" aria-hidden="true">${on?'●':'○'}</span><span>${esc(l)}</span>`+
     `<span>${on?'あり':'なし'}${ex?`（${esc(ex)}）`:''}</span></li>`).join('')}</ul>`;
 };
@@ -56,7 +67,8 @@ const BTN_DESTRUCTIVE=`${BTN} border-red-700 bg-red-700 font-semibold text-white
 
 const form=(c)=>{
   const a=c.actions??[]; if(!a.length) return '';
-  return `<form class="flex flex-wrap gap-2 border-t border-slate-200 pt-4 dark:border-slate-700" method="post" action="/api/cards/${esc(c.id)}/decision" data-decision-form>`+
+  const dense=c.type==='ACTION_APPROVAL';   // 承認カードだけ上余白を詰める
+  return `<form class="flex flex-wrap gap-2 border-t border-slate-200 ${dense?'pt-2':'pt-4'} dark:border-slate-700" method="post" action="/api/cards/${esc(c.id)}/decision" data-decision-form>`+
     `<input type="hidden" name="cardId" value="${esc(c.id)}"><input type="hidden" name="cardVersion" value="${esc(c.createdAt)}">`+
     a.map(x=>{const cls=x.destructive&&x.primary?BTN_DESTRUCTIVE:x.primary?BTN_PRIMARY:BTN_SECONDARY;
       return `<button type="submit" name="decision" value="${esc(x.semantic)}" class="${cls}" data-action-semantic="${esc(x.semantic)}"${x.primary?' data-primary="true"':''}>${esc(x.label)}</button>`;}).join('')+
@@ -85,14 +97,15 @@ const bodies={
       `</fieldset>`;
   },
   ACTION_APPROVAL(c){
-    return `<p class="max-w-[68ch] text-lg text-slate-900 [overflow-wrap:anywhere] dark:text-slate-100" data-field="action">${esc(c.action)}</p>`+
-      `<dl class="grid gap-4">`+
-      row('起きること','effect',esc(c.effect),'text-slate-900 dark:text-slate-100')+
-      row('影響範囲','resourceScope',ul('grid gap-0.5 font-mono text-xs [&>li]:before:text-slate-400 [&>li]:before:content-["·_"]',c.resourceScope))+
-      goalRows(c)+row('リスク','risk',riskFlags(c.risk))+
-      row('承認期限','expiresAt',time(c.expiresAt))+
-      row('適用回数','oneShot','この承認は 1 回限りです。次回は改めて確認します。','font-semibold text-slate-900 dark:text-slate-100')+
-      row('承認しない場合','blockedIfRefused',esc(c.blockedIfRefused))+`</dl>`;
+    // 高密度版。行・フィールドの並びと文言は変更していない（dense フラグを渡すだけ）。
+    return `<p class="max-w-[68ch] text-base font-semibold text-slate-900 [overflow-wrap:anywhere] dark:text-slate-100" data-field="action">${esc(c.action)}</p>`+
+      `<dl class="${DENSE_DL_CLS}">`+
+      row('起きること','effect',esc(c.effect),'font-semibold text-slate-900 dark:text-slate-100',true)+
+      row('影響範囲','resourceScope',ul('grid font-mono text-xs leading-snug [&>li]:before:text-slate-400 [&>li]:before:content-["·_"]',c.resourceScope),'',true)+
+      goalRows(c,true)+row('リスク','risk',riskFlags(c.risk),'',true)+
+      row('承認期限','expiresAt',time(c.expiresAt),'',true)+
+      row('適用回数','oneShot','この承認は 1 回限りです。次回は改めて確認します。','font-semibold text-slate-900 dark:text-slate-100',true)+
+      row('承認しない場合','blockedIfRefused',esc(c.blockedIfRefused),'',true)+`</dl>`;
   },
   OUTCOME_UNKNOWN_REVIEW(c){
     return `<dl class="grid gap-4">`+
@@ -132,21 +145,22 @@ export function renderCard(c){
   const k=KIND[c.type];
   const title={OWNER_QUESTION:c.question,ACTION_APPROVAL:c.action,OUTCOME_UNKNOWN_REVIEW:c.unknown,RESULT_REVIEW:c.completed,INFORMATION:c.headline}[c.type];
   const info=c.type==='INFORMATION';
+  const dense=c.type==='ACTION_APPROVAL';   // 承認カードだけ密度を上げる（他型は据え置き）
   const stale=c.state!=='LIVE'&&c.state!=='DECIDED'&&c.state!=='ANSWERED';
   const cardCls=[
-    'grid gap-4 rounded-xl border border-s-4 border-slate-200 dark:border-slate-700',
-    info?'bg-transparent p-4 shadow-none':'bg-white p-6 shadow-sm dark:bg-slate-800',
+    `grid ${dense?'gap-2':'gap-4'} rounded-xl border border-s-4 border-slate-200 dark:border-slate-700`,
+    info?'bg-transparent p-4 shadow-none':`bg-white ${dense?'p-4':'p-6'} shadow-sm dark:bg-slate-800`,
     ACCENT[c.type].split(' ').filter(x=>x.startsWith('border-l-')).join(' '),
     stale?'border-dashed shadow-none':'',
   ].join(' ');
   const kindCls='flex items-center gap-2 text-xs font-semibold tracking-wide '+ACCENT[c.type].split(' ').filter(x=>x.startsWith('text-')||x.startsWith('dark:text-')).join(' ');
   return `<article class="${cardCls}" data-card-type="${esc(c.type)}" data-card-id="${esc(c.id)}" data-card-state="${esc(c.state)}" aria-labelledby="${esc(c.id)}_h">`+
-    `<header class="grid gap-1"><p class="${kindCls}">`+
+    `<header class="grid ${dense?'gap-0.5':'gap-1'}"><p class="${kindCls}">`+
     `<span class="grid size-[1.35em] place-items-center rounded-sm border border-current font-mono" aria-hidden="true">${k.glyph}</span>`+
     `<span>${esc(k.label)}</span></p>`+
     (c.state!=='LIVE'?`<p class="justify-self-start rounded-sm border border-current px-2 py-0.5 text-xs font-bold text-red-700 dark:text-red-300" data-field="state">${esc(STATE_LABEL[c.state])}</p>`:'')+
     `<h3 class="${info?'text-sm font-semibold text-slate-600 dark:text-slate-400':'text-base text-slate-900 dark:text-slate-100'} [overflow-wrap:anywhere]" id="${esc(c.id)}_h">${esc(String(title).slice(0,120))}</h3>`+
-    `</header><div class="grid gap-4">${bodies[c.type](c)}</div>${form(c)}</article>`;
+    `</header><div class="grid ${dense?'gap-2':'gap-4'}">${bodies[c.type](c)}</div>${form(c)}</article>`;
 }
 export function renderInbox(cards){
   if(!cards.length) return `<p class="p-12 text-center text-slate-500">対応が必要な項目はありません。</p>`;

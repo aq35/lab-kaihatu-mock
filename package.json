@@ -6,10 +6,13 @@
   "description": "AIが創造しやすいHTML/CSS/JS UI設計を実験で見つけるリポジトリ。production dependency は持たない。",
   "scripts": {
     "serve": "node tools/serve.mjs",
-    "test": "node --test tests/contract tests/css tests/javascript",
-    "test:e2e": "playwright test",
+    "test": "node --test 'tests/**/*.test.mjs'",
     "measure": "node tools/measure.mjs",
-    "build:variants": "node tools/build-variants.mjs"
+    "build:variants": "node tools/build-variants.mjs",
+    "test:unit": "node --test 'tests/contract/*.test.mjs' 'tests/css/*.test.mjs'",
+    "test:scenarios": "node --test 'tests/owner-scenarios/*.test.mjs'",
+    "catalog": "node tools/build-catalog.mjs",
+    "counter-proof": "node tools/counter-proof.mjs"
   },
   "dependencies": {},
   "devDependencies": {

@@ -85,3 +85,109 @@ form { display: flex; flex-wrap: wrap; gap: .5rem; padding-block-start: 1rem; bo
 .decision-status { flex-basis: 100%; font-size: .875rem; margin: 0; }
 .decision-status[data-kind="unknown"], .decision-status[data-kind="refused"] { color: var(--danger, oklch(55% .19 25)); font-weight: 600; }
 :focus-visible { outline: 3px solid var(--accent, oklch(48% .13 245)); outline-offset: 2px; }
+
+/* ── ACTION_APPROVAL だけ密度を上げる ──────────────────────────────────
+   Owner が急いで判断するカード。情報は 1 つも減らさない（折り畳み・非表示なし）。
+   やっていること:
+     1. padding / gap を詰めて 1 画面に収まりやすくする
+     2. facts を「ラベル列 | 値列」の表にし、縦罫と行罫で区切りを強める
+        → effect / 影響範囲 / リスク を縦にスキャンできる
+     3. リスクの 5 項目を多列に流し、影響範囲を折り返し並べにして縦を縮める
+   スコープは :host([data-card-type="ACTION_APPROVAL"]) に閉じているので
+   他の card type の見た目は変わらない。 */
+:host([data-card-type="ACTION_APPROVAL"]) {
+  --card-padding: var(--space-sm, .75rem) var(--space-md, 1rem);
+  --card-gap: var(--space-xs, .5rem);
+  --approval-rule: var(--border-default, #d5d9e0);
+  --approval-label-col: 8rem;
+  --approval-row-pad: .3rem;
+}
+:host([data-card-type="ACTION_APPROVAL"]) header { gap: var(--space-3xs, .125rem); }
+:host([data-card-type="ACTION_APPROVAL"]) h3 { line-height: 1.3; }
+:host([data-card-type="ACTION_APPROVAL"]) .lead {
+  font-size: var(--text-md, 1rem);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* facts を表にする。dt の縦罫がラベルと値の境界、行罫が項目の境界。 */
+:host([data-card-type="ACTION_APPROVAL"]) .facts { gap: 0; }
+:host([data-card-type="ACTION_APPROVAL"]) .fact {
+  grid-template-columns: var(--approval-label-col) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  border-block-start: 1px solid var(--approval-rule);
+}
+:host([data-card-type="ACTION_APPROVAL"]) .fact:first-child { border-block-start: 0; }
+:host([data-card-type="ACTION_APPROVAL"]) .fact dt {
+  padding-block: calc(var(--approval-row-pad) + .02rem) var(--approval-row-pad);
+  padding-inline-end: .625rem;
+  border-inline-end: 2px solid var(--approval-rule);
+  line-height: 1.55;
+  font-weight: 700;
+}
+:host([data-card-type="ACTION_APPROVAL"]) .fact dd {
+  padding-block: var(--approval-row-pad);
+  padding-inline-start: .625rem;
+  font-size: .8125rem;
+  line-height: 1.45;
+}
+/* 判断を左右する行（起きること / 適用回数）は縦罫を種別色にして拾いやすくする */
+:host([data-card-type="ACTION_APPROVAL"]) .fact.strong dt { border-inline-end-color: var(--kind); }
+
+/* 影響範囲: 1 行 1 件をやめて折り返し並べにする（件数は減らさない） */
+:host([data-card-type="ACTION_APPROVAL"]) .fact dd > ul.mono {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: .625rem;
+  row-gap: .1rem;
+}
+:host([data-card-type="ACTION_APPROVAL"]) .fact dd > ul.mono > li {
+  min-inline-size: 0;
+  line-height: 1.5;
+}
+
+/* リスク 5 項目: 縦 5 行 → 折り返し多列。1 項目の 3 列構造はそのまま。 */
+:host([data-card-type="ACTION_APPROVAL"]) .risk-flags {
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  column-gap: 1rem;
+  row-gap: .1rem;
+}
+:host([data-card-type="ACTION_APPROVAL"]) .risk-flags li {
+  grid-template-columns: 1.1em minmax(5.5rem, auto) minmax(0, 1fr);
+  gap: .4rem;
+  font-size: .8125rem;
+  line-height: 1.45;
+}
+
+/* 決定ボタン列。タッチ目標 (2.75rem) は縮めない。 */
+:host([data-card-type="ACTION_APPROVAL"]) form { padding-block-start: var(--space-sm, .75rem); }
+
+/* 狭いカードでは表組みをやめて元の積み上げに戻す（横幅が足りず読めなくなるため） */
+@container card (max-width: 30rem) {
+  :host([data-card-type="ACTION_APPROVAL"]) .facts { gap: .375rem; }
+  :host([data-card-type="ACTION_APPROVAL"]) .fact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .125rem;
+    padding-block-start: .375rem;
+    border-block-start: 1px solid var(--approval-rule);
+  }
+  :host([data-card-type="ACTION_APPROVAL"]) .fact dt {
+    padding-block: 0;
+    padding-inline-end: 0;
+    border-inline-end: 0;
+    line-height: 1.4;
+  }
+  :host([data-card-type="ACTION_APPROVAL"]) .fact.strong dt { color: var(--kind); }
+  :host([data-card-type="ACTION_APPROVAL"]) .fact dd {
+    padding-block: 0;
+    padding-inline-start: 0;
+  }
+  :host([data-card-type="ACTION_APPROVAL"]) .risk-flags { grid-template-columns: minmax(0, 1fr); }
+}
+@container card (max-width: 22rem) {
+  :host([data-card-type="ACTION_APPROVAL"]) .card {
+    --card-padding: var(--space-sm, .75rem);
+    --card-gap: var(--space-xs, .5rem);
+  }
+}

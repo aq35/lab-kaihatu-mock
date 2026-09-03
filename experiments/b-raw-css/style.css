@@ -90,6 +90,37 @@ h1,h2,h3,p,dl,dd { margin: 0; }
 .list .list-item .box[data-card-state="EXPIRED"] .bottom-buttons:before,
 .list .list-item .box[data-card-state="REVOKED"] .bottom-buttons:before { content: "この項目は期限切れ・取り消し済みのため操作できません。"; font-size: 12px; color: #d03a2f; }
 
+/* ------------------------------------------------------------------
+   承認カード（ACTION_APPROVAL）だけ密度を上げる。
+   Owner が急いで判断する場面なので、余白を詰めて 1 画面に収まりやすくする。
+   表示している情報は 1 つも減らさない（折り畳み・非表示にしない）。
+   class 名が見た目ベースなので「承認カード」という役割からは引けない。
+   赤枠 = 承認カード という対応（render.mjs の boxClass）を頼りに .red-box を
+   前置きして、共通規則を 1 つずつ打ち消している。
+   → 承認カードの枠色クラスを変えると、この密度指定はまとめて外れる。B の既知のコスト。 */
+.red-box { padding: 16px 18px; }
+.red-box .box-top { margin-bottom: 8px; }
+.red-box .kind-line { font-size: 11px; }
+.red-box .box-title { font-size: 15px; margin-top: 2px; line-height: 1.35; }
+.red-box .box-inner { margin-top: 8px; }
+.red-box .big-text { font-size: 15px; font-weight: 600; line-height: 1.45; max-width: 72ch; }
+.red-box .gray-rows { margin-top: 8px; border-top: 1px solid #e2e5ea; }
+
+/* ラベルと値を 2 カラムに割り、縦罫で区切る。
+   ラベル列を右揃えで固定幅にすると、effect / 影響範囲 / リスク の位置が
+   毎回同じ場所に来るので、値だけを縦に目で追える。 */
+.red-box .gray-row { display: grid; grid-template-columns: 8.5em minmax(0,1fr); gap: 0 12px; align-items: baseline; margin-bottom: 0; padding: 5px 0; border-bottom: 1px solid #e2e5ea; }
+.red-box .gray-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.red-box .small-gray-label { margin-bottom: 0; padding-right: 10px; text-align: right; border-right: 2px solid #d5d9e0; }
+.red-box .row-text { font-size: 13px; line-height: 1.55; max-width: 72ch; }
+
+/* 行の中のリストも詰める。リスクは 5 項目を横に並べて折り返す（項目は全部出す） */
+.red-box .red-list { display: flex; flex-wrap: wrap; gap: 2px 16px; }
+.red-box .red-list li { margin-bottom: 0; font-size: 13px; gap: 4px; }
+.red-box .mono-list { font-size: 11px; line-height: 1.5; }
+.red-box .mono-list li { margin-bottom: 0; }
+.red-box .bottom-buttons { margin-top: 10px; padding-top: 10px; }
+
 /* mobile。viewport ベースなので、狭いコンテナに置いても効かない */
 @media (max-width: 640px) {
   .page { padding: 16px 12px; }
@@ -97,6 +128,10 @@ h1,h2,h3,p,dl,dd { margin: 0; }
   .bottom-buttons { flex-direction: column; }
   .big-text { font-size: 16px; }
   .box-title { font-size: 15px; }
+  /* 承認カードの 2 カラムは狭い画面では窮屈なので 1 カラムに戻す（行の区切り線は残す） */
+  .red-box { padding: 14px; }
+  .red-box .gray-row { grid-template-columns: minmax(0,1fr); gap: 0; padding: 6px 0; }
+  .red-box .small-gray-label { text-align: left; padding-right: 0; border-right: 0; }
 }
 
 /* dark mode。token が無いので色をもう一度全部書き直している */
@@ -111,6 +146,9 @@ h1,h2,h3,p,dl,dd { margin: 0; }
   .gray-button { background: #262c36; border-color: #4a5462; color: #f0f2f5; }
   .textarea-wrap textarea { background: #1e232b; border-color: #4a5462; color: #f0f2f5; }
   .bottom-buttons { border-top-color: #333c48; }
+  .red-box .gray-rows { border-top-color: #333c48; }
+  .red-box .gray-row { border-bottom-color: #333c48; }
+  .red-box .small-gray-label { border-right-color: #4a5462; }
   .list .list-item .box[data-card-state="EXPIRED"],
   .list .list-item .box[data-card-state="REVOKED"],
   .list .list-item .box[data-card-state="STALE"] { background: repeating-linear-gradient(135deg,#262c36 0 8px,#1e232b 8px 16px); }

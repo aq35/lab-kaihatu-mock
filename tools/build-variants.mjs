@@ -10,7 +10,8 @@ import { join } from 'node:path';
 export const VARIANTS = [
   { id: 'a-tailwind', label: 'A: Tailwind' },
   { id: 'b-raw-css', label: 'B: 無規律な素のCSS' },
-  { id: 'c-semantic-css', label: 'C: Semantic CSS' },
+  { id: 'c-semantic-css', label: 'C: Semantic CSS（分割のまま）' },
+  { id: 'c-bundled', label: 'C+: Semantic CSS（バンドル済み）', bundleOf: 'c-semantic-css' },
   { id: 'd-web-components', label: 'D: Web Components' },
 ];
 
@@ -21,6 +22,7 @@ export async function build({ outDir = 'dist', quiet = false } = {}) {
   const built = [];
 
   for (const v of VARIANTS) {
+    if (v.bundleOf) continue;   // 元 variant のビルド後に生成する
     const src = join('experiments', v.id);
     const out = join(outDir, v.id);
     mkdirSync(out, { recursive: true });
@@ -54,6 +56,32 @@ export async function build({ outDir = 'dist', quiet = false } = {}) {
     writeFileSync(join(out, 'index.html'),
       `<!doctype html><meta charset="utf-8"><title>${v.label}</title><h1>${v.label}</h1><ul>` +
       FIXTURES.map((f) => `<li><a href="./${f}.html">${f}</a></li>`).join('') + '</ul>');
+  }
+
+  // --- バンドル版の生成 ------------------------------------------------------
+  // 条件C の request 数 20 は「開発中にファイルを分けたまま」であることの副作用で、
+  // 方式そのもののコストではない。公平に比較するため、同じ CSS を 1 本に連結した
+  // 条件も同時に測れるようにする。連結順は shell.html の <link> 順そのまま。
+  for (const v of VARIANTS.filter((x) => x.bundleOf)) {
+    const from = join(outDir, v.bundleOf);
+    const out = join(outDir, v.id);
+    cpSync(from, out, { recursive: true });
+    for (const fx of [...FIXTURES, 'index']) {
+      const file = join(out, `${fx}.html`);
+      if (!existsSync(file)) continue;
+      const html = readFileSync(file, 'utf8');
+      const links = [...html.matchAll(/<link rel="stylesheet" href="\.\/(styles\/[^"]+)">/g)].map((m) => m[1]);
+      if (!links.length) continue;
+      const bundle = links.map((rel) => `/* ${rel} */\n` + readFileSync(join(out, rel), 'utf8')).join('\n');
+      writeFileSync(join(out, 'styles', 'bundle.css'), bundle);
+      let first = true;
+      const replaced = html.replace(/<link rel="stylesheet" href="\.\/styles\/[^"]+">\n?/g, () => {
+        if (first) { first = false; return '<link rel="stylesheet" href="./styles/bundle.css">\n'; }
+        return '';
+      });
+      writeFileSync(file, replaced);
+      built.push({ variant: v.id, fixture: fx, bytes: Buffer.byteLength(replaced) });
+    }
   }
 
   writeFileSync(join(outDir, 'index.html'),
