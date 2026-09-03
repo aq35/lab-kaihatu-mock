@@ -1,0 +1,75 @@
+{
+  "ranAt": "2026-09-03T14:59:13.387Z",
+  "A": {
+    "runs": 3,
+    "htmlHashes": [
+      "4fba5794cd99",
+      "791a481a624c",
+      "57af6272990a"
+    ],
+    "distinctHtml": 3,
+    "classJaccardPairwise": [
+      {
+        "pair": "1-2",
+        "jaccard": 0.99
+      },
+      {
+        "pair": "1-3",
+        "jaccard": 0.962
+      },
+      {
+        "pair": "2-3",
+        "jaccard": 0.971
+      }
+    ],
+    "meanJaccard": 0.974
+  },
+  "E": {
+    "runs": 3,
+    "recipes": [
+      {
+        "readingMode": "decision-first",
+        "density": "comfortable",
+        "effectEmphasis": "strong",
+        "scopePresentation": "bounded-list",
+        "evidencePresentation": "claim-vs-verified",
+        "uncertaintyPresentation": "interruptive",
+        "actionLayout": "single-primary",
+        "palette": "high-contrast",
+        "cardShape": "left-rule",
+        "typography": "system"
+      },
+      {
+        "readingMode": "decision-first",
+        "density": "comfortable",
+        "effectEmphasis": "strong",
+        "scopePresentation": "bounded-list",
+        "evidencePresentation": "claim-vs-verified",
+        "uncertaintyPresentation": "interruptive",
+        "actionLayout": "single-primary",
+        "palette": "high-contrast",
+        "cardShape": "left-rule",
+        "typography": "system"
+      },
+      {
+        "readingMode": "decision-first",
+        "density": "comfortable",
+        "effectEmphasis": "strong",
+        "scopePresentation": "bounded-list",
+        "evidencePresentation": "claim-vs-verified",
+        "uncertaintyPresentation": "interruptive",
+        "actionLayout": "single-primary",
+        "palette": "high-contrast",
+        "cardShape": "left-rule",
+        "typography": "system"
+      }
+    ],
+    "cssHashes": [
+      "a046fbf0915d",
+      "a046fbf0915d",
+      "a046fbf0915d"
+    ],
+    "distinctRecipes": 1,
+    "distinctCss": 1
+  }
+}
