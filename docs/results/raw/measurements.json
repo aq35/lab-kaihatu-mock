@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-09-03T12:43:05.328Z",
+  "measuredAt": "2026-09-03T12:48:37.129Z",
   "env": {
     "node": "v22.22.2",
     "cpuThrottle": 4,
@@ -11,24 +11,24 @@
       "variant": "a-tailwind",
       "label": "A: Tailwind",
       "bytes": {
-        "html": 30114,
-        "css": 18340,
+        "html": 30968,
+        "css": 20027,
         "js": 0,
         "other": 0
       },
       "requests": 2,
       "css": {
-        "ruleCount": 189,
-        "declarationCount": 545,
-        "duplicateDeclarations": 170,
+        "ruleCount": 209,
+        "declarationCount": 588,
+        "duplicateDeclarations": 193,
         "importantCount": 1,
         "maxSpecificity": 400,
         "maxSelectorDepth": 3,
-        "uniqueSelectors": 183,
+        "uniqueSelectors": 202,
         "unusedRules": 51,
-        "checkedRules": 186,
-        "customPropertyDefs": 95,
-        "customPropertyUses": 99,
+        "checkedRules": 206,
+        "customPropertyDefs": 98,
+        "customPropertyUses": 113,
         "layers": [
           "properties",
           "theme",
@@ -39,10 +39,10 @@
         "containerQueries": 0,
         "mediaQueries": 4,
         "shadowRootCount": 0,
-        "distinctColorLiterals": 34,
-        "pxLengths": 96,
-        "logicalProps": 41,
-        "physicalProps": 163,
+        "distinctColorLiterals": 35,
+        "pxLengths": 101,
+        "logicalProps": 48,
+        "physicalProps": 185,
         "domNodes": 251
       },
       "axe": {
@@ -97,21 +97,21 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 824,
+          "lcp": 868,
           "cls": 0,
-          "domContentLoaded": 0,
-          "load": 0
+          "domContentLoaded": 2744.7000000001863,
+          "load": 4125.4000000003725
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 34167,
+          "loadMs": 40822,
           "idleOutcome": "networkidle",
           "requests": 2,
           "domNodes": 44429,
-          "traverseMs": 173.6,
-          "domContentLoaded": 5168
+          "traverseMs": 119.2,
+          "domContentLoaded": 6509.899999999907
         },
-        "filter1000Ms": 90.5
+        "filter1000Ms": 134.8
       },
       "themes": {
         "calm-console": {
@@ -165,38 +165,38 @@
           "borderColor": "oklch(0.546 0.245 262.881)"
         }
       },
-      "staticBytes": 30114
+      "staticBytes": 30968
     },
     {
       "variant": "b-raw-css",
       "label": "B: 無規律な素のCSS",
       "bytes": {
         "html": 15234,
-        "css": 7652,
+        "css": 10444,
         "js": 0,
         "other": 0
       },
       "requests": 2,
       "css": {
-        "ruleCount": 94,
-        "declarationCount": 684,
-        "duplicateDeclarations": 473,
+        "ruleCount": 116,
+        "declarationCount": 760,
+        "duplicateDeclarations": 508,
         "importantCount": 13,
         "maxSpecificity": 501,
         "maxSelectorDepth": 5,
-        "uniqueSelectors": 81,
+        "uniqueSelectors": 95,
         "unusedRules": 11,
-        "checkedRules": 94,
+        "checkedRules": 116,
         "customPropertyDefs": 0,
         "customPropertyUses": 0,
         "layers": [],
         "containerQueries": 0,
         "mediaQueries": 2,
         "shadowRootCount": 0,
-        "distinctColorLiterals": 24,
-        "pxLengths": 240,
+        "distinctColorLiterals": 25,
+        "pxLengths": 290,
         "logicalProps": 0,
-        "physicalProps": 276,
+        "physicalProps": 325,
         "domNodes": 250
       },
       "axe": {
@@ -232,13 +232,13 @@
       "hostile": {
         "mobile320": {
           "pageScrollsHorizontally": true,
-          "horizontalOverflowPx": 1663,
+          "horizontalOverflowPx": 1505,
           "overflowingElementCount": 0,
           "samples": []
         },
         "desktop1280": {
           "pageScrollsHorizontally": true,
-          "horizontalOverflowPx": 739,
+          "horizontalOverflowPx": 710,
           "overflowingElementCount": 0,
           "samples": []
         }
@@ -251,21 +251,21 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 908,
+          "lcp": 0,
           "cls": 0,
-          "domContentLoaded": 0,
-          "load": 0
+          "domContentLoaded": 3424.399999999907,
+          "load": 3794.899999999907
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 35111,
+          "loadMs": 39735,
           "idleOutcome": "networkidle",
           "requests": 2,
           "domNodes": 44229,
-          "traverseMs": 107.1,
-          "domContentLoaded": 6000.5
+          "traverseMs": 112.9,
+          "domContentLoaded": 5813.700000000186
         },
-        "filter1000Ms": 122.7
+        "filter1000Ms": 119.2
       },
       "themes": {
         "calm-console": {
@@ -323,26 +323,26 @@
     },
     {
       "variant": "c-semantic-css",
-      "label": "C: Semantic CSS",
+      "label": "C: Semantic CSS（分割のまま）",
       "bytes": {
-        "html": 17713,
-        "css": 23362,
+        "html": 17784,
+        "css": 27386,
         "js": 0,
         "other": 0
       },
-      "requests": 20,
+      "requests": 21,
       "css": {
-        "ruleCount": 134,
-        "declarationCount": 943,
-        "duplicateDeclarations": 533,
+        "ruleCount": 154,
+        "declarationCount": 1002,
+        "duplicateDeclarations": 578,
         "importantCount": 0,
-        "maxSpecificity": 301,
-        "maxSelectorDepth": 2,
-        "uniqueSelectors": 123,
+        "maxSpecificity": 400,
+        "maxSelectorDepth": 3,
+        "uniqueSelectors": 137,
         "unusedRules": 36,
-        "checkedRules": 134,
-        "customPropertyDefs": 62,
-        "customPropertyUses": 139,
+        "checkedRules": 154,
+        "customPropertyDefs": 64,
+        "customPropertyUses": 152,
         "layers": [
           "reset",
           "tokens",
@@ -353,14 +353,14 @@
           "themes",
           "overrides"
         ],
-        "containerQueries": 3,
+        "containerQueries": 4,
         "mediaQueries": 4,
         "shadowRootCount": 0,
         "distinctColorLiterals": 54,
-        "pxLengths": 105,
-        "logicalProps": 60,
+        "pxLengths": 118,
+        "logicalProps": 89,
         "physicalProps": 205,
-        "domNodes": 277
+        "domNodes": 278
       },
       "axe": {
         "violations": [],
@@ -414,22 +414,22 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 1660,
+          "lcp": 712,
           "cls": 0,
-          "domContentLoaded": 140,
-          "load": 907
+          "domContentLoaded": 1352.6000000000931,
+          "load": 1416.6000000000931
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 13527,
+          "loadMs": 10340,
           "idleOutcome": "networkidle",
-          "requests": 20,
-          "domNodes": 44256,
-          "traverseMs": 132.7,
-          "domContentLoaded": 2150.4000000003725
+          "requests": 21,
+          "domNodes": 44257,
+          "traverseMs": 118.1,
+          "domContentLoaded": 3454.100000000093
         },
-        "filter1000Ms": 101.6,
-        "themeSwitchMs": 47.2
+        "filter1000Ms": 105.3,
+        "themeSwitchMs": 96.1
       },
       "themes": {
         "calm-console": {
@@ -483,30 +483,194 @@
           "borderColor": "oklch(0.46 0.14 265)"
         }
       },
-      "staticBytes": 17713
+      "staticBytes": 17784
+    },
+    {
+      "variant": "c-bundled",
+      "label": "C+: Semantic CSS（バンドル済み）",
+      "bytes": {
+        "html": 16619,
+        "css": 28081,
+        "js": 0,
+        "other": 0
+      },
+      "requests": 2,
+      "css": {
+        "ruleCount": 154,
+        "declarationCount": 1002,
+        "duplicateDeclarations": 578,
+        "importantCount": 0,
+        "maxSpecificity": 400,
+        "maxSelectorDepth": 3,
+        "uniqueSelectors": 137,
+        "unusedRules": 36,
+        "checkedRules": 154,
+        "customPropertyDefs": 64,
+        "customPropertyUses": 152,
+        "layers": [
+          "reset",
+          "tokens",
+          "base",
+          "layout",
+          "components",
+          "states",
+          "themes",
+          "overrides"
+        ],
+        "containerQueries": 4,
+        "mediaQueries": 4,
+        "shadowRootCount": 0,
+        "distinctColorLiterals": 54,
+        "pxLengths": 118,
+        "logicalProps": 89,
+        "physicalProps": 205,
+        "domNodes": 259
+      },
+      "axe": {
+        "violations": [],
+        "total": 0
+      },
+      "keyboard": {
+        "actions": 11,
+        "keyboardReachable": 11,
+        "clickableDivs": 0
+      },
+      "targetSize": {
+        "checked": 27,
+        "tooSmall": 0
+      },
+      "focusVisible": {
+        "ok": true,
+        "outlineWidth": "3px",
+        "outlineStyle": "solid"
+      },
+      "contract": {
+        "cards": 5,
+        "missing": [],
+        "hidden": []
+      },
+      "noJs": {
+        "cards": 5,
+        "readable": 5,
+        "unreadable": 0,
+        "missingText": [],
+        "formsSubmittable": 5
+      },
+      "hostile": {
+        "mobile320": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        },
+        "desktop1280": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        }
+      },
+      "security": {
+        "scriptExecuted": false,
+        "injectedElements": 0,
+        "inlineScriptTags": 0
+      },
+      "perf": {
+        "cpuThrottle": 4,
+        "cards100": {
+          "lcp": 612,
+          "cls": 0,
+          "domContentLoaded": 1213.6999999997206,
+          "load": 1364.8999999999069
+        },
+        "cards1000": {
+          "loadOutcome": "load",
+          "loadMs": 11031,
+          "idleOutcome": "networkidle",
+          "requests": 2,
+          "domNodes": 44238,
+          "traverseMs": 103.9,
+          "domContentLoaded": 2409.1999999997206
+        },
+        "filter1000Ms": 92.6,
+        "themeSwitchMs": 82.9
+      },
+      "themes": {
+        "calm-console": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.975 0.006 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.48 0.13 245)"
+        },
+        "editorial": {
+          "cardBackground": "oklch(0.99 0.008 85)",
+          "cardPadding": "32px",
+          "cardRadius": "0px",
+          "fontFamily": "Georgia",
+          "fontSize": "18px",
+          "pageBackground": "oklch(0.97 0.015 85)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.4 0.12 25)"
+        },
+        "command-center": {
+          "cardBackground": "oklch(0.24 0.018 260)",
+          "cardPadding": "12px",
+          "cardRadius": "3px",
+          "fontFamily": "ui-monospace",
+          "fontSize": "14px",
+          "pageBackground": "oklch(0.19 0.015 260)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.72 0.14 200)"
+        },
+        "conversational": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "4px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.98 0.012 320)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.52 0.15 320)"
+        },
+        "timeline": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "16px",
+          "cardRadius": "10px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.985 0.004 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.46 0.14 265)"
+        }
+      },
+      "staticBytes": 16619
     },
     {
       "variant": "d-web-components",
       "label": "D: Web Components",
       "bytes": {
         "html": 16456,
-        "css": 42383,
+        "css": 64833,
         "js": 0,
         "other": 0
       },
       "requests": 14,
       "css": {
-        "ruleCount": 343,
-        "declarationCount": 2512,
-        "duplicateDeclarations": 2122,
+        "ruleCount": 453,
+        "declarationCount": 2887,
+        "duplicateDeclarations": 2454,
         "importantCount": 0,
-        "maxSpecificity": 300,
-        "maxSelectorDepth": 2,
-        "uniqueSelectors": 94,
+        "maxSpecificity": 403,
+        "maxSelectorDepth": 5,
+        "uniqueSelectors": 109,
         "unusedRules": 55,
-        "checkedRules": 303,
-        "customPropertyDefs": 62,
-        "customPropertyUses": 216,
+        "checkedRules": 408,
+        "customPropertyDefs": 65,
+        "customPropertyUses": 266,
         "layers": [
           "tokens",
           "themes",
@@ -517,12 +681,12 @@
           "states",
           "overrides"
         ],
-        "containerQueries": 5,
+        "containerQueries": 15,
         "mediaQueries": 2,
         "shadowRootCount": 5,
-        "distinctColorLiterals": 65,
-        "pxLengths": 375,
-        "logicalProps": 132,
+        "distinctColorLiterals": 66,
+        "pxLengths": 455,
+        "logicalProps": 282,
         "physicalProps": 665,
         "domNodes": 286
       },
@@ -590,22 +754,22 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 260,
+          "lcp": 384,
           "cls": 0,
-          "domContentLoaded": 4096.700000000186,
-          "load": 4126.700000000186
+          "domContentLoaded": 4199.399999999907,
+          "load": 4230.600000000093
         },
         "cards1000": {
           "loadOutcome": "timeout-60s",
-          "loadMs": 60002,
-          "idleOutcome": "never-idle-20s",
-          "requests": 863,
-          "domNodes": 41234,
-          "traverseMs": 104.2,
+          "loadMs": 60001,
+          "idleOutcome": "networkidle",
+          "requests": 639,
+          "domNodes": 30413,
+          "traverseMs": 81.3,
           "domContentLoaded": 0
         },
-        "filter1000Ms": 192.6,
-        "themeSwitchMs": 212.4
+        "filter1000Ms": 138.9,
+        "themeSwitchMs": 162.2
       },
       "themes": {
         "calm-console": {

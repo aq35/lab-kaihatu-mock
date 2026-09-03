@@ -1,0 +1,37 @@
+{
+  "ranAt": "2026-09-03T12:50:52.961Z",
+  "results": [
+    {
+      "id": "CP1",
+      "title": "theme CSS の 3 行で承認カードから effect / 影響範囲 / リスクを消す",
+      "protection": "contract test（[data-field] の実測可視性検査）+ theme lint",
+      "withProtection": "隠された required field: 0 件 / 画面の横溢れ: false",
+      "withoutProtection": "隠された required field: 3 件 (card_a1.effect, card_a1.resourceScope, card_a1.risk) / 画面の横溢れ: false / カード数は 5 件のまま変わらない",
+      "verdict": "再現。theme ファイルへ 3 行足すだけで、承認カードから「何が起きるか」「どの resource に影響するか」「リスク」が消える。レイアウトは崩れず、カード数も変わらないので、スクリーンショット比較や目視レビューでは気づけない。実測可視性の contract test は検出した (true)。theme lint も検出した (true)。"
+    },
+    {
+      "id": "CP4",
+      "title": "ALLOW_ONCE の連打で二重に effect が発生する",
+      "protection": "client の二重送信防止 + server の one-shot 再検証",
+      "withProtection": "dispatch 1 回 / request 1 件",
+      "withoutProtection": "client 防止のみ外す: dispatch 1 回 (request 3) / client と server の両方を外す: dispatch 3 回 (request 3)",
+      "verdict": "再現。client の防止だけを外しても server が 1 回に抑えるが、server 側の再検証まで外すと 3 回 dispatch される。UI の防止は「体験」であって authority ではない。"
+    },
+    {
+      "id": "CP5",
+      "title": "外部文字列を raw HTML として描画する",
+      "protection": "render 側の esc() による HTML エスケープ（textContent 相当）",
+      "withProtection": "script 実行: false / 偽カード注入: 0 件",
+      "withoutProtection": "script 実行: true / 偽カード注入: 1 件",
+      "verdict": "再現。エスケープを外すと、カード本文の文字列が「承認済み」という偽の UI 要素として描画され、onerror 経由で任意コードも走る。CSP はこれを止められる場合があるが、CSP 単独に依存しない。"
+    },
+    {
+      "id": "CP3",
+      "title": "期限切れの承認を client から submit する",
+      "protection": "server 側での expiry / state 再検証（client の時計を信用しない）",
+      "withProtection": "HTTP 409 not-live / dispatch 0 回",
+      "withoutProtection": "HTTP 200 / dispatch 1 回",
+      "verdict": "再現。UI 側で期限切れ表示を出していても、server が再検証しなければ期限切れの承認がそのまま実行される。期限表示は UI の役割、拒否は server の役割。"
+    }
+  ]
+}

@@ -72,9 +72,9 @@ const browser = await chromium.launch({ executablePath: CHROME, args: LAUNCH_ARG
   writeFileSync(themePath, original +
     '\n/* 承認カードが縦に長いので、詳細は畳んでおく */\n' +
     '@layer themes {\n' +
-    '  [data-theme="calm-console"] .action-approval [data-field="effect"],\n' +
-    '  [data-theme="calm-console"] .action-approval [data-field="resourceScope"],\n' +
-    '  [data-theme="calm-console"] .action-approval [data-field="risk"] { display: none; }\n' +
+    '  .action-approval [data-field="effect"],\n' +
+    '  .action-approval [data-field="resourceScope"],\n' +
+    '  .action-approval [data-field="risk"] { display: none; }\n' +
     '}\n');
   await build({ quiet: true });
   let s2 = await startMockServer({ root: 'dist', cards });

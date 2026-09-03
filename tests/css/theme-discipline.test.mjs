@@ -20,13 +20,37 @@ const HIDE_PATTERNS = [
   /(max-)?(height|block-size)\s*:\s*0(?:px)?\s*[;}]/i,
 ];
 
+// 属性セレクタは [data-field="effect"] のように値つきで書かれる。
+// 値なしの [data-field] だけを見ていると取り逃す（counter-proof CP1 で発覚）。
+const FIELD_SELECTOR = /\[data-field(?:[~^$*|]?=\s*["'][^"']*["'])?\s*\]/;
+
 test('theme は required field を隠していない', () => {
   for (const f of themeFiles) {
     const css = readFileSync(join(THEME_DIR, f), 'utf8');
-    // [data-field] を含むセレクタのブロックだけ抜き出して検査する
-    for (const m of css.matchAll(/([^{}]*\[data-field\][^{}]*)\{([^}]*)\}/g)) {
+    for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!FIELD_SELECTOR.test(m[1])) continue;
       for (const p of HIDE_PATTERNS) {
-        assert.ok(!p.test(m[2]), `${f}: [data-field] を隠している → ${m[1].trim()} { ${m[2].trim()} }`);
+        assert.ok(!p.test(m[2]), `${f}: required field を隠している → ${m[1].trim()} { ${m[2].trim()} }`);
+      }
+    }
+  }
+});
+
+// theme が component の役割クラス経由で隠すこともできる。
+// 静的 lint はここまでしか見えない。最終的な保証は実測可視性の contract test にある。
+const ROLE_CLASSES = [
+  'effect-summary', 'scope-summary', 'risk-summary', 'one-shot-notice',
+  'owner-only-reason', 'verification-steps-summary', 'duplicate-risk-summary',
+  'evidence-summary', 'evidence-receipt', 'evidence-observation', 'goal-context',
+  'card-facts', 'fact', 'fact-value', 'answer-options',
+];
+test('theme は役割クラス経由でも required field を隠していない', () => {
+  for (const f of themeFiles) {
+    const css = readFileSync(join(THEME_DIR, f), 'utf8');
+    for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!ROLE_CLASSES.some((c) => m[1].includes('.' + c))) continue;
+      for (const p of HIDE_PATTERNS) {
+        assert.ok(!p.test(m[2]), `${f}: 役割クラスごと隠している → ${m[1].trim()} { ${m[2].trim()} }`);
       }
     }
   }
