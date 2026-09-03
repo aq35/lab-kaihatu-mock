@@ -1,0 +1,16 @@
+{
+  "note": "UI-2 Cinematic: 独立 3 セッションが同じ brief から PresentationRecipe を authoring した結果(U1 収束, U5/RC-1 語彙gap)",
+  "runs": [
+    { "run": 1, "recipe": { "mood":"premium","heroLayout":"full-bleed","typeScale":"grand","sceneRhythm":"spacious","sectionTheme":"dark-first","motion":"cinematic","ctaStyle":"solid","palette":"graphite" }, "vocabularyGap": ["per-section theme override 不可(dark,dark,light,dark,light,dark を厳密表現できない)", "hero 画像のオーバーレイ/暗さ指定なし", "CTA 角丸/サイズの微調整なし"], "difficulty": 2 },
+    { "run": 2, "recipe": { "mood":"premium","heroLayout":"full-bleed","typeScale":"editorial","sceneRhythm":"spacious","sectionTheme":"dark-first","motion":"cinematic","ctaStyle":"solid","palette":"graphite" }, "vocabularyGap": ["per-section theme の非対称パターンを dark-first で近似(厳密再現不可)"], "difficulty": 3 },
+    { "run": 3, "recipe": { "mood":"premium","heroLayout":"full-bleed","typeScale":"editorial","sceneRhythm":"spacious","sectionTheme":"dark-first","motion":"cinematic","ctaStyle":"solid","palette":"graphite" }, "vocabularyGap": ["per-section theme を一語で表現できず dark-first で近似"], "difficulty": 3 }
+  ],
+  "convergence": {
+    "fieldsIdenticalAcross3": 7,
+    "fieldsTotal": 8,
+    "onlyDivergentField": "typeScale (grand / editorial / editorial)",
+    "identicalRecipes": "2/3 (run2 == run3)",
+    "note": "選択の非決定は typeScale の 1 軸のみ。7/8 は全員一致。U1(recipe 収束)を支持。ただし 3/3 完全一致ではない"
+  },
+  "vocabularyGapConsensus": "3/3 が sectionTheme の per-section 非対称パターンを閉じた enum で表現できないと報告。U5/RC-1 を支持"
+}
