@@ -49,9 +49,9 @@ KAS の要求（AI・動的・安全）がずれている」ことを示す。
 | §6 の条件 | E の状態 |
 |---|---|
 | Tailwind 以上の変更成功率 | 同等（Owner scenario 8/8 pass）。優位は未実証 |
-| Tailwind 以上の accessibility | 同等（token contrast 検査を継承） |
-| Tailwind 以上の hostile 耐性 | 未計測（次サイクルで measure に E を追加） |
-| Tailwind 以上の性能 | 未計測 |
+| Tailwind 以上の accessibility | 同等（axe 0 / clickable div 0 / target size 違反 0、実測） |
+| Tailwind 以上の hostile 耐性 | **満たす**（320/1280 とも横溢れ 0px、実測。B は 1505/710） |
+| Tailwind 以上の性能 | **満たす**（CSS 7.2KB・2 req が最小。1,000 カード 14.4s は c-bundled と同等、A/B より速く D はタイムアウト） |
 | protected DOM 接触が有意に少ない | **満たす**（E は semantic-dom.mjs 不変。A は render.mjs に同居） |
 | 契約破壊が有意に少ない | 同等（両方 0。ただし E は構造的に不可能） |
 | 同じ意図の編集箇所が少ない | **語彙内なら満たす**（recipe 1 field）。語彙外は拡張要（C の方が軽い場合あり） |
@@ -67,6 +67,14 @@ KAS の要求（AI・動的・安全）がずれている」ことを示す。
 2. **context コスト**（1 変更で読む token が桁違いに少ない）
 3. **protected DOM の分離**（意味 DOM 生成ファイルに触れずに表現を変える）
 4. **fail closed**（未知の値を compile で拒否）
+
+## E の実測（この監査で追加）
+
+- axe 違反 0 / clickable div 0 / target size 違反 0 / no-JS 5/5 / XSS 実行なし /
+  contract の hidden 0・missing 0（C と全項目同点）
+- HTML 15.5KB・生成 CSS 7.2KB・2 request は 6 条件中**最小**
+- 1,000 カード 14.4s（c-bundled 15.3s と同等、A 45s・B 38s より速い。D は 60s タイムアウト）
+- 注: 現状の E shell は絞り込み UI を省いた最小構成のため filter 応答は未計測
 
 ## E の弱点（隠さず記録する）
 

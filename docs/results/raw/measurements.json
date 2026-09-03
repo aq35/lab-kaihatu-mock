@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-09-03T12:54:12.557Z",
+  "measuredAt": "2026-09-03T15:03:39.048Z",
   "env": {
     "node": "v22.22.2",
     "cpuThrottle": 4,
@@ -104,14 +104,14 @@
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 38097,
+          "loadMs": 45279,
           "idleOutcome": "networkidle",
           "requests": 2,
           "domNodes": 44429,
-          "traverseMs": 110.2,
-          "domContentLoaded": 5469.5
+          "traverseMs": 259.8,
+          "domContentLoaded": 24342.300000000047
         },
-        "filter1000Ms": 134.8
+        "filter1000Ms": 116.8
       },
       "themes": {
         "calm-console": {
@@ -251,21 +251,21 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 952,
+          "lcp": 744,
           "cls": 0,
-          "domContentLoaded": 2600.2000000001863,
-          "load": 3717.2000000001863
+          "domContentLoaded": 3336.2999999998137,
+          "load": 3809.5
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 36778,
+          "loadMs": 38283,
           "idleOutcome": "networkidle",
           "requests": 2,
           "domNodes": 44229,
-          "traverseMs": 108.2,
-          "domContentLoaded": 4665.200000000186
+          "traverseMs": 150.5,
+          "domContentLoaded": 6509.199999999953
         },
-        "filter1000Ms": 107.6
+        "filter1000Ms": 118.5
       },
       "themes": {
         "calm-console": {
@@ -414,22 +414,22 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 724,
+          "lcp": 732,
           "cls": 0,
-          "domContentLoaded": 1583,
-          "load": 1663
+          "domContentLoaded": 1365.3000000000466,
+          "load": 1487.6000000000931
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 11683,
+          "loadMs": 11694,
           "idleOutcome": "networkidle",
           "requests": 21,
           "domNodes": 44257,
-          "traverseMs": 103.5,
-          "domContentLoaded": 1792.3000000002794
+          "traverseMs": 155.5,
+          "domContentLoaded": 1860.6000000000931
         },
-        "filter1000Ms": 105.6,
-        "themeSwitchMs": 102.3
+        "filter1000Ms": 110.9,
+        "themeSwitchMs": 94.1
       },
       "themes": {
         "calm-console": {
@@ -578,22 +578,22 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 504,
+          "lcp": 644,
           "cls": 0,
-          "domContentLoaded": 1195.8999999999069,
-          "load": 1374.1000000000931
+          "domContentLoaded": 1416.0999999998603,
+          "load": 1605
         },
         "cards1000": {
           "loadOutcome": "load",
-          "loadMs": 11192,
+          "loadMs": 15266,
           "idleOutcome": "networkidle",
           "requests": 2,
           "domNodes": 44238,
-          "traverseMs": 110.1,
-          "domContentLoaded": 2181.899999999907
+          "traverseMs": 364.9,
+          "domContentLoaded": 1771.3999999999069
         },
-        "filter1000Ms": 94.4,
-        "themeSwitchMs": 89.9
+        "filter1000Ms": 124,
+        "themeSwitchMs": 101.1
       },
       "themes": {
         "calm-console": {
@@ -748,22 +748,22 @@
       "perf": {
         "cpuThrottle": 4,
         "cards100": {
-          "lcp": 204,
+          "lcp": 408,
           "cls": 0,
-          "domContentLoaded": 4679.100000000093,
-          "load": 4714.399999999907
+          "domContentLoaded": 4090.600000000093,
+          "load": 4115.699999999953
         },
         "cards1000": {
           "loadOutcome": "timeout-60s",
-          "loadMs": 60002,
-          "idleOutcome": "never-idle-20s",
-          "requests": 804,
-          "domNodes": 38366,
-          "traverseMs": 102.8,
+          "loadMs": 60003,
+          "idleOutcome": "networkidle",
+          "requests": 649,
+          "domNodes": 30871,
+          "traverseMs": 124.1,
           "domContentLoaded": 0
         },
-        "filter1000Ms": 149.5,
-        "themeSwitchMs": 234.4
+        "filter1000Ms": 155.8,
+        "themeSwitchMs": 182.6
       },
       "themes": {
         "calm-console": {
@@ -818,6 +818,159 @@
         }
       },
       "staticBytes": 16456
+    },
+    {
+      "variant": "e-compiler",
+      "label": "E: Semantic UI Compiler",
+      "bytes": {
+        "html": 15488,
+        "css": 7230,
+        "js": 0,
+        "other": 0
+      },
+      "requests": 2,
+      "css": {
+        "ruleCount": 77,
+        "declarationCount": 566,
+        "duplicateDeclarations": 303,
+        "importantCount": 5,
+        "maxSpecificity": 300,
+        "maxSelectorDepth": 2,
+        "uniqueSelectors": 72,
+        "unusedRules": 10,
+        "checkedRules": 77,
+        "customPropertyDefs": 20,
+        "customPropertyUses": 36,
+        "layers": [],
+        "containerQueries": 1,
+        "mediaQueries": 1,
+        "shadowRootCount": 0,
+        "distinctColorLiterals": 12,
+        "pxLengths": 73,
+        "logicalProps": 29,
+        "physicalProps": 157,
+        "domNodes": 240
+      },
+      "axe": {
+        "violations": [],
+        "total": 0
+      },
+      "keyboard": {
+        "actions": 11,
+        "keyboardReachable": 11,
+        "clickableDivs": 0
+      },
+      "targetSize": {
+        "checked": 25,
+        "tooSmall": 0
+      },
+      "focusVisible": {
+        "ok": true,
+        "outlineWidth": "3px",
+        "outlineStyle": "solid"
+      },
+      "contract": {
+        "cards": 5,
+        "missing": [],
+        "hidden": []
+      },
+      "noJs": {
+        "cards": 5,
+        "readable": 5,
+        "unreadable": 0,
+        "missingText": [],
+        "formsSubmittable": 5
+      },
+      "hostile": {
+        "mobile320": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        },
+        "desktop1280": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        }
+      },
+      "security": {
+        "scriptExecuted": false,
+        "injectedElements": 0,
+        "inlineScriptTags": 0
+      },
+      "perf": {
+        "cpuThrottle": 4,
+        "cards100": {
+          "lcp": 560,
+          "cls": 0,
+          "domContentLoaded": 1233.1999999999534,
+          "load": 1349
+        },
+        "cards1000": {
+          "loadOutcome": "load",
+          "loadMs": 14416,
+          "idleOutcome": "networkidle",
+          "requests": 2,
+          "domNodes": 44219,
+          "traverseMs": 171.8,
+          "domContentLoaded": 2183.6999999999534
+        }
+      },
+      "themes": {
+        "calm-console": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "6px",
+          "fontFamily": "system-ui",
+          "fontSize": "16px",
+          "pageBackground": "oklch(0.975 0.006 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.46 0.16 250)"
+        },
+        "editorial": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "6px",
+          "fontFamily": "system-ui",
+          "fontSize": "16px",
+          "pageBackground": "oklch(0.975 0.006 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.46 0.16 250)"
+        },
+        "command-center": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "6px",
+          "fontFamily": "system-ui",
+          "fontSize": "16px",
+          "pageBackground": "oklch(0.975 0.006 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.46 0.16 250)"
+        },
+        "conversational": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "6px",
+          "fontFamily": "system-ui",
+          "fontSize": "16px",
+          "pageBackground": "oklch(0.975 0.006 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.46 0.16 250)"
+        },
+        "timeline": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "6px",
+          "fontFamily": "system-ui",
+          "fontSize": "16px",
+          "pageBackground": "oklch(0.975 0.006 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.46 0.16 250)"
+        }
+      },
+      "staticBytes": 15488
     }
   ]
 }

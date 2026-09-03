@@ -21,6 +21,7 @@ KAS の Owner Control Center 向けに、**別セッションの AI が安全か
 | `experiments/b-raw-css/` | 条件B: 無規律な素の CSS（対照群） |
 | `experiments/c-semantic-css/` | 条件C: Semantic CSS（Cascade Layers + tokens + Container Queries） |
 | `experiments/d-web-components/` | 条件D: Native Web Components（Declarative Shadow DOM） |
+| `experiments/e-compiler/` | 条件E: Semantic UI Compiler（AI は PresentationRecipe だけを宣言、Compiler が決定論的に HTML/CSS を生成） |
 | `tools/` | ビルド・計測・counter-proof・色計算 |
 | `tests/` | 契約 / CSS 規律 / token コントラスト |
 | `docs/results/` | 実測結果（測定環境とセットで保存） |
@@ -88,3 +89,45 @@ node tools/build-catalog.mjs       # 同一の意味DOM から作った 5 テー
 
 この境界は「気をつける」では守れない。`contracts/dom-contract.json` と `tests/` が機械的に守る。
 外した場合に何が起きるかは `node tools/counter-proof.mjs` で再現できる。
+
+---
+
+## Tailwind の前提を疑う構造監査（2 回目の指示）
+
+「Tailwind を使わない」を結論に置かず、Tailwind の最善構成（条件A）と比較して、
+設計思想と KAS の要求のズレを実験で測った。詳細は
+[`docs/decisions/0002-tailwind-verdict.md`](docs/decisions/0002-tailwind-verdict.md)。
+
+分かったこと（すべて実測。receipt は `docs/results/ui-tailwind-*.md`）:
+
+- **T5（構造的制約）**: runtime で組んだ class（`bg-${color}-600`）は build 後 CSS から**黙って消える**。
+  Tailwind はソースをテキスト走査するため（公式仕様）。safelist で回避できるが、
+  未知の表現に **fail open**（スタイルが当たらないまま描画）。KAS の動的生成とはここが構造的に合わない。
+- **T7（context コスト）**: 「色を少し変える」1 変更で AI が最低限読む source は
+  A=4,346 / C=1,136 / **E=94** token。人間は class 列を読み飛ばせるが、AI は全部トークン化する。
+- **T8（競合）**: `text-sm text-2xl` の実際の表示は 14px。同詳細度の utility はソース順で解決されず、
+  AI が末尾に足した修正が黙って無効化される。build は green。独立セッションが実地でこれを踏み、`!important` で回避した。
+- **T2（非決定）**: 同じ曖昧要求に、条件E の 3 セッションは **byte 一致の recipe** を生成（3/3）。
+  条件A は方向性は一致（class 集合 Jaccard 0.97）でも **byte 一致は 0/3**。監査・回帰比較の対象が複数化する。
+
+**結論**: Tailwind に一般的な欠陥は無い。あるのは KAS 固有の不適合。
+Tailwind は「人間が要素ごとに外観を指定する速度」を最適化した言語で、
+KAS が要る「AI が意味を保ったまま表現意図を宣言し、同じ入力から同じ成果物を出す」こととは
+最適化の対象が違う。
+
+## 探しているのは省略記法ではなく、AI 時代の UI 開発モデル
+
+条件E が具体化する候補:
+
+```
+Meaning Contract           contracts/cards.schema.json（意味は契約が守る。CSS 方式に依存しない）
+  → ViewModel              KAS が Owner に返す 5 カード型
+  → PresentationRecipe     contracts/presentation-recipe.schema.json（AI が生成する唯一のもの。閉じた enum）
+  → Deterministic Compiler experiments/e-compiler/compiler.mjs（同 recipe → 同 bytes。required field を消せない）
+  → Proof Engine           tests/ と tools/counter-proof.mjs（契約破壊・非決定・fail open を機械検証）
+  → Owner Evaluation       dist/catalog/（← 未実施。ここが残る最大の未検証）
+```
+
+E はまだ「Tailwind を克服した」とは宣言しない（性能・hostile・Owner 評価が未了）。
+実証できた優位は 4 点: **決定論 / context コスト / protected DOM の分離 / fail closed**。
+弱点も記録した: 語彙に無い意図はアドホックには重く（C の `:has()` の方が軽い）、per-card 微調整ができない。
