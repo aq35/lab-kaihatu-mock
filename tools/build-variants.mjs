@@ -13,6 +13,7 @@ export const VARIANTS = [
   { id: 'c-semantic-css', label: 'C: Semantic CSS（分割のまま）' },
   { id: 'c-bundled', label: 'C+: Semantic CSS（バンドル済み）', bundleOf: 'c-semantic-css' },
   { id: 'd-web-components', label: 'D: Web Components' },
+  { id: 'e-compiler', label: 'E: Semantic UI Compiler' },
 ];
 
 const FIXTURES = readdirSync('fixtures').filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, ''));
@@ -39,7 +40,10 @@ export async function build({ outDir = 'dist', quiet = false } = {}) {
       cpSync(join('experiments', 'c-semantic-css', 'styles'), join(out, 'shared', 'styles'), { recursive: true });
     }
 
-    const { renderInbox } = await import(new URL(`../${src}/render.mjs`, import.meta.url).href);
+    const mod = await import(new URL(`../${src}/render.mjs`, import.meta.url).href);
+    const { renderInbox } = mod;
+    // 条件E など、生成物を build 時に書き出す variant のフック
+    if (typeof mod.buildAssets === 'function') mod.buildAssets({ outDir: out, writeFileSync, mkdirSync });
     const shell = readFileSync(join(src, 'shell.html'), 'utf8');
 
     for (const fx of FIXTURES) {

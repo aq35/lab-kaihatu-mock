@@ -1,0 +1,30 @@
+{
+  "ranAt": "2026-09-03T14:53:07.000Z",
+  "note": "Tailwind は同詳細度。勝者は生成CSS順であってソース順ではない",
+  "results": [
+    {
+      "id": "padding",
+      "sourceLast": "p-8",
+      "sourceOrder": "p-2 then p-8",
+      "cssOrder": "p-2 before p-8 (p-8 wins)",
+      "computed": "32px",
+      "intent": "p-8 (2rem)"
+    },
+    {
+      "id": "bg",
+      "sourceLast": "bg-blue-500",
+      "sourceOrder": "bg-red-500 then bg-blue-500",
+      "cssOrder": "bg-blue-500 before bg-red-500 (bg-red-500 wins)",
+      "computed": "oklch(0.637 0.237 25.331)",
+      "intent": "bg-blue-500 (後)"
+    },
+    {
+      "id": "text-size",
+      "sourceLast": "text-2xl",
+      "sourceOrder": "text-sm then text-2xl",
+      "cssOrder": "text-2xl before text-sm (text-sm wins)",
+      "computed": "14px",
+      "intent": "text-2xl (後)"
+    }
+  ]
+}

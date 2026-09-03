@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kas.local/contracts/presentation-recipe.schema.json",
+  "title": "PresentationRecipe",
+  "description": "AI が生成してよいのはこの Recipe だけ。class 名も CSS も生成しない。すべて閉じた enum。additionalProperties:false により未知のキーは不正。Compiler がこれを決定論的に HTML/CSS へ変換する。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["readingMode", "density", "effectEmphasis", "scopePresentation", "evidencePresentation", "uncertaintyPresentation", "actionLayout", "palette"],
+  "properties": {
+    "readingMode": {
+      "description": "情報の読ませ方",
+      "enum": ["decision-first", "chronological", "reference"]
+    },
+    "density": {
+      "description": "情報密度",
+      "enum": ["comfortable", "compact", "dense"]
+    },
+    "effectEmphasis": {
+      "description": "action effect の強調度",
+      "enum": ["normal", "strong"]
+    },
+    "scopePresentation": {
+      "description": "resource scope の見せ方",
+      "enum": ["inline", "bounded-list", "grid"]
+    },
+    "evidencePresentation": {
+      "description": "証拠の見せ方",
+      "enum": ["level-badge", "claim-vs-verified"]
+    },
+    "uncertaintyPresentation": {
+      "description": "結果不明の見せ方。interruptive は最も目立たせる",
+      "enum": ["inline", "interruptive"]
+    },
+    "actionLayout": {
+      "description": "action の並べ方",
+      "enum": ["single-primary", "equal-weight", "stacked"]
+    },
+    "palette": {
+      "description": "色。閉じた名前だけ。arbitrary color は存在しない",
+      "enum": ["calm", "editorial", "command-center", "conversational", "high-contrast"]
+    },
+    "cardShape": {
+      "description": "カードの形。省略時は rounded",
+      "enum": ["rounded", "square", "left-rule", "top-rule"]
+    },
+    "typography": {
+      "description": "書体。省略時は system",
+      "enum": ["system", "serif", "mono"]
+    }
+  }
+}

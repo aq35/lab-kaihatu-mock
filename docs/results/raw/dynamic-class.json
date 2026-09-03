@@ -1,0 +1,59 @@
+{
+  "ranAt": "2026-09-03T14:51:27.743Z",
+  "tailwind": [
+    {
+      "id": "static-baseline",
+      "desc": "完全な文字列で書く（正常系）",
+      "note": "",
+      "allFound": true,
+      "found": [
+        {
+          "class": "bg-teal-500",
+          "inCss": true
+        },
+        {
+          "class": "p-7",
+          "inCss": true
+        }
+      ]
+    },
+    {
+      "id": "runtime-concat",
+      "desc": "runtime で連結（`bg-${c}-500`）",
+      "note": "JS が bg- と rose-600 を連結。ソースに完全文字列が無い",
+      "allFound": false,
+      "found": [
+        {
+          "class": "bg-rose-600",
+          "inCss": false
+        }
+      ]
+    },
+    {
+      "id": "recipe-map",
+      "desc": "JSON Recipe から map",
+      "note": "plugin/DB の role→class マップ。値はデータ側にある",
+      "allFound": true,
+      "found": [
+        {
+          "class": "bg-fuchsia-700",
+          "inCss": true
+        }
+      ]
+    },
+    {
+      "id": "py-go-output",
+      "desc": "Python/Go が出力する class",
+      "note": "テンプレートエンジン外で生成",
+      "allFound": true,
+      "found": [
+        {
+          "class": "text-lime-700",
+          "inCss": true
+        }
+      ]
+    }
+  ],
+  "safelistRescued": true,
+  "eUnknownValue": "Compiler が拒否/例外: Cannot read properties of undefined (reading 'page')"
+}

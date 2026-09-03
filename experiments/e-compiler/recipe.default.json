@@ -1,0 +1,12 @@
+{
+  "readingMode": "decision-first",
+  "density": "comfortable",
+  "effectEmphasis": "strong",
+  "scopePresentation": "bounded-list",
+  "evidencePresentation": "claim-vs-verified",
+  "uncertaintyPresentation": "interruptive",
+  "actionLayout": "single-primary",
+  "palette": "calm",
+  "cardShape": "left-rule",
+  "typography": "system"
+}

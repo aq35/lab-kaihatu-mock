@@ -1,0 +1,170 @@
+{
+  "ranAt": "2026-09-03T14:50:32.569Z",
+  "results": [
+    {
+      "variant": "a-tailwind",
+      "viaClassList": "0/5",
+      "viaContractAttr": "5/5",
+      "baseClassesIdenticalAcrossTypes": false,
+      "detail": {
+        "OWNER_QUESTION": {
+          "classes": "grid gap-4 rounded-xl border border-s-4 border-slate-200 dar",
+          "recovered": null,
+          "ok": false
+        },
+        "ACTION_APPROVAL": {
+          "classes": "grid gap-2 rounded-xl border border-s-4 border-slate-200 dar",
+          "recovered": null,
+          "ok": false
+        },
+        "OUTCOME_UNKNOWN_REVIEW": {
+          "classes": "grid gap-4 rounded-xl border border-s-4 border-slate-200 dar",
+          "recovered": null,
+          "ok": false
+        },
+        "RESULT_REVIEW": {
+          "classes": "grid gap-4 rounded-xl border border-s-4 border-slate-200 dar",
+          "recovered": null,
+          "ok": false
+        },
+        "INFORMATION": {
+          "classes": "grid gap-4 rounded-xl border border-s-4 border-slate-200 dar",
+          "recovered": null,
+          "ok": false
+        }
+      }
+    },
+    {
+      "variant": "b-raw-css",
+      "viaClassList": "0/5",
+      "viaContractAttr": "5/5",
+      "baseClassesIdenticalAcrossTypes": true,
+      "detail": {
+        "OWNER_QUESTION": {
+          "classes": "box blue-box",
+          "recovered": null,
+          "ok": false
+        },
+        "ACTION_APPROVAL": {
+          "classes": "box red-box",
+          "recovered": null,
+          "ok": false
+        },
+        "OUTCOME_UNKNOWN_REVIEW": {
+          "classes": "box purple-box",
+          "recovered": null,
+          "ok": false
+        },
+        "RESULT_REVIEW": {
+          "classes": "box green-box",
+          "recovered": null,
+          "ok": false
+        },
+        "INFORMATION": {
+          "classes": "box plain-box",
+          "recovered": null,
+          "ok": false
+        }
+      }
+    },
+    {
+      "variant": "c-semantic-css",
+      "viaClassList": "5/5",
+      "viaContractAttr": "5/5",
+      "baseClassesIdenticalAcrossTypes": true,
+      "detail": {
+        "OWNER_QUESTION": {
+          "classes": "card owner-question",
+          "recovered": "OWNER_QUESTION",
+          "ok": true
+        },
+        "ACTION_APPROVAL": {
+          "classes": "card action-approval",
+          "recovered": "ACTION_APPROVAL",
+          "ok": true
+        },
+        "OUTCOME_UNKNOWN_REVIEW": {
+          "classes": "card outcome-unknown",
+          "recovered": "OUTCOME_UNKNOWN_REVIEW",
+          "ok": true
+        },
+        "RESULT_REVIEW": {
+          "classes": "card result-review",
+          "recovered": "RESULT_REVIEW",
+          "ok": true
+        },
+        "INFORMATION": {
+          "classes": "card information",
+          "recovered": "INFORMATION",
+          "ok": true
+        }
+      }
+    },
+    {
+      "variant": "d-web-components",
+      "viaClassList": "0/5",
+      "viaContractAttr": "5/5",
+      "baseClassesIdenticalAcrossTypes": true,
+      "detail": {
+        "OWNER_QUESTION": {
+          "classes": "card",
+          "recovered": null,
+          "ok": false
+        },
+        "ACTION_APPROVAL": {
+          "classes": "card",
+          "recovered": null,
+          "ok": false
+        },
+        "OUTCOME_UNKNOWN_REVIEW": {
+          "classes": "card",
+          "recovered": null,
+          "ok": false
+        },
+        "RESULT_REVIEW": {
+          "classes": "card",
+          "recovered": null,
+          "ok": false
+        },
+        "INFORMATION": {
+          "classes": "card",
+          "recovered": null,
+          "ok": false
+        }
+      }
+    },
+    {
+      "variant": "e-compiler",
+      "viaClassList": "5/5",
+      "viaContractAttr": "5/5",
+      "baseClassesIdenticalAcrossTypes": true,
+      "detail": {
+        "OWNER_QUESTION": {
+          "classes": "kcard kcard--owner-question",
+          "recovered": "OWNER_QUESTION",
+          "ok": true
+        },
+        "ACTION_APPROVAL": {
+          "classes": "kcard kcard--action-approval",
+          "recovered": "ACTION_APPROVAL",
+          "ok": true
+        },
+        "OUTCOME_UNKNOWN_REVIEW": {
+          "classes": "kcard kcard--outcome-unknown",
+          "recovered": "OUTCOME_UNKNOWN_REVIEW",
+          "ok": true
+        },
+        "RESULT_REVIEW": {
+          "classes": "kcard kcard--result-review",
+          "recovered": "RESULT_REVIEW",
+          "ok": true
+        },
+        "INFORMATION": {
+          "classes": "kcard kcard--information",
+          "recovered": "INFORMATION",
+          "ok": true
+        }
+      }
+    }
+  ]
+}

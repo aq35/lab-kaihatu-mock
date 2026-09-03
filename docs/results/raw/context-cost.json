@@ -1,0 +1,29 @@
+{
+  "ranAt": "2026-09-03T14:49:31.478Z",
+  "tokenizer": "gpt-tokenizer (GPT; Claude の代理指標)",
+  "perCardSource": [
+    {
+      "variant": "A: Tailwind",
+      "unit": "render.mjs の ACTION_APPROVAL body",
+      "sourceTokens": 301,
+      "classTokensInFile": 712
+    },
+    {
+      "variant": "C: Semantic CSS",
+      "unit": "render.mjs の ACTION_APPROVAL body + card/risk CSS",
+      "sourceTokens": 200,
+      "cssTokens": 1026
+    },
+    {
+      "variant": "E: Compiler",
+      "unit": "recipe.default.json（AI 生成物の全て）",
+      "sourceTokens": 94,
+      "classTokensInFile": 0
+    }
+  ],
+  "changeContextTokens": {
+    "A: Tailwind": 4346,
+    "C: Semantic CSS": 1136,
+    "E: Compiler": 94
+  }
+}
