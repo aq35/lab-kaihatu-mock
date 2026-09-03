@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} — Owner Control Center</title>
+<!-- cascade 順を最初に固定する。以降の読み込み順に結果が依存しない -->
+<link rel="stylesheet" href="{{BASE}}styles/layers.css">
+<link rel="stylesheet" href="{{BASE}}styles/reset.css">
+<link rel="stylesheet" href="{{BASE}}styles/tokens.css">
+<link rel="stylesheet" href="{{BASE}}styles/base.css">
+<link rel="stylesheet" href="{{BASE}}styles/layout.css">
+<link rel="stylesheet" href="{{BASE}}styles/components/card.css">
+<link rel="stylesheet" href="{{BASE}}styles/components/decision-actions.css">
+<link rel="stylesheet" href="{{BASE}}styles/components/risk.css">
+<link rel="stylesheet" href="{{BASE}}styles/components/owner-question.css">
+<link rel="stylesheet" href="{{BASE}}styles/components/outcome-unknown.css">
+<link rel="stylesheet" href="{{BASE}}styles/components/result-review.css">
+<link rel="stylesheet" href="{{BASE}}styles/components/information.css">
+<link rel="stylesheet" href="{{BASE}}styles/states.css">
+<link rel="stylesheet" href="{{BASE}}styles/themes/calm-console.css">
+<link rel="stylesheet" href="{{BASE}}styles/themes/editorial.css">
+<link rel="stylesheet" href="{{BASE}}styles/themes/command-center.css">
+<link rel="stylesheet" href="{{BASE}}styles/themes/conversational.css">
+<link rel="stylesheet" href="{{BASE}}styles/themes/timeline.css">
+<link rel="stylesheet" href="{{BASE}}styles/themes/dark.css">
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<div class="page">
+  <header class="page-header">
+    <h1>Owner Control Center</h1>
+    <p>KAS があなたの判断を必要としている項目です。対応が必要:
+      <strong data-attention-count>—</strong> 件</p>
+    <form class="view-controls" method="get" action="">
+      <p class="control">
+        <label for="type-filter">種別で絞り込む</label>
+        <select id="type-filter" name="type" data-type-filter>
+          <option value="ALL">すべて</option>
+          <option value="OWNER_QUESTION">質問</option>
+          <option value="ACTION_APPROVAL">承認</option>
+          <option value="OUTCOME_UNKNOWN_REVIEW">結果不明</option>
+          <option value="RESULT_REVIEW">結果</option>
+          <option value="INFORMATION">お知らせ</option>
+        </select>
+      </p>
+      <p class="control">
+        <label for="theme-select">見た目</label>
+        <select id="theme-select" name="theme" data-theme-select>
+          <option value="auto">OS に合わせる</option>
+          <option value="calm-console" selected>calm operations console</option>
+          <option value="editorial">editorial notebook</option>
+          <option value="command-center">high-density command center</option>
+          <option value="conversational">humane conversational</option>
+          <option value="timeline">visual timeline</option>
+        </select>
+      </p>
+      <noscript><button type="submit">適用</button></noscript>
+    </form>
+    <p class="visually-hidden" role="status" aria-live="polite" data-filter-status></p>
+  </header>
+  <main id="main">
+    <h2 class="visually-hidden">対応が必要な項目</h2>
+    {{CARDS}}
+  </main>
+</div>
+<script type="module">
+  import { initNavigation } from '{{BASE}}scripts/navigation.js';
+  import { enhanceDecisionForms } from '{{BASE}}scripts/forms.js';
+  const main = document.querySelector('#main');
+  const disposeNav = initNavigation(main);
+  const disposeForms = enhanceDecisionForms(main);
+  window.addEventListener('pagehide', () => { disposeNav(); disposeForms(); }, { once: true });
+</script>
+</body>
+</html>

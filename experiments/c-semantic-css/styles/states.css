@@ -1,0 +1,32 @@
+@layer states {
+  /* 期限切れ・取消・古い情報。live と見分けがつかない表示を禁止する。
+     server が state を決める。client の時計では判定しない。 */
+  .card[data-card-state="EXPIRED"],
+  .card[data-card-state="REVOKED"],
+  .card[data-card-state="STALE"] {
+    --card-shadow: none;
+    background: repeating-linear-gradient(
+      135deg, var(--surface-sunken) 0 8px, var(--surface-card) 8px 16px);
+    border-style: dashed;
+  }
+  .card-state {
+    justify-self: start;
+    padding: var(--space-3xs) var(--space-xs);
+    font-size: var(--text-xs); font-weight: 700;
+    border: 1px solid currentColor; border-radius: var(--radius-sm);
+  }
+  .card[data-card-state="EXPIRED"] .card-state,
+  .card[data-card-state="REVOKED"] .card-state { color: var(--danger); }
+  .card[data-card-state="STALE"] .card-state { color: var(--caution); }
+
+  /* 決定不能な状態では操作を出さない。ただし disabled を「承認済み」と読ませない */
+  .card[data-card-state="EXPIRED"] .decision-actions::before,
+  .card[data-card-state="REVOKED"] .decision-actions::before {
+    content: "この項目は期限切れ・取り消し済みのため操作できません。";
+    font-size: var(--text-xs); color: var(--danger);
+  }
+  .card[data-card-state="EXPIRED"] .decision,
+  .card[data-card-state="REVOKED"] .decision { display: none; }
+
+  .empty-state { color: var(--text-quiet); padding: var(--space-2xl); text-align: center; }
+}

@@ -1,0 +1,25 @@
+/* humane conversational workspace — 会話の吹き出しに近い。角が丸く、行間が広い */
+@layer themes {
+  [data-theme="conversational"] {
+    --surface-page: oklch(98% 0.012 320);
+    --surface-card: oklch(100% 0 0);
+    --surface-sunken: oklch(96% 0.018 320);
+    --accent: oklch(52% 0.15 320);
+    --radius-lg: 20px;
+    --radius-md: 999px;
+    --card-padding: var(--space-lg);
+    --feed-gap: var(--space-md);
+    --card-shadow: 0 2px 4px oklch(0% 0 0 / 0.04), 0 12px 32px oklch(0% 0 0 / 0.06);
+    --measure: 58ch;
+  }
+  [data-theme="conversational"] .card {
+    border-inline-start-width: var(--border-hairline);
+    border-start-start-radius: var(--space-2xs);
+  }
+  /* 種別は左罫ではなく、見出し脇のドットで示す（意味DOMは変えていない） */
+  [data-theme="conversational"] .card-kind-glyph {
+    border-radius: 999px; background: var(--card-kind-accent);
+    color: var(--surface-card); border-color: transparent;
+  }
+  [data-theme="conversational"] .decision { border-radius: 999px; }
+}

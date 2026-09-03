@@ -1,0 +1,27 @@
+/* visual timeline — 時系列。左に軸を引き、カードを節点として並べる */
+@layer themes {
+  [data-theme="timeline"] {
+    --surface-page: oklch(98.5% 0.004 250);
+    --surface-card: oklch(100% 0 0);
+    --accent: oklch(46% 0.14 265);
+    --feed-gap: 0;
+    --card-padding: var(--space-md) var(--space-lg);
+    --card-shadow: none;
+    --radius-lg: 10px;
+  }
+  [data-theme="timeline"] .card-feed { position: relative; padding-inline-start: var(--space-xl); }
+  [data-theme="timeline"] .card-feed::before {
+    content: ""; position: absolute; inset-block: 0;
+    inset-inline-start: calc(var(--space-md) - 1px);
+    inline-size: 2px; background: var(--border-default);
+  }
+  [data-theme="timeline"] .card-slot { position: relative; padding-block: var(--space-sm); }
+  [data-theme="timeline"] .card-slot::before {
+    content: ""; position: absolute; inset-block-start: calc(var(--space-sm) + var(--space-md));
+    inset-inline-start: calc(-1 * var(--space-md) - 4px);
+    inline-size: 10px; block-size: 10px; border-radius: 999px;
+    background: var(--card-kind-accent, var(--border-strong));
+    box-shadow: 0 0 0 3px var(--surface-page);
+  }
+  [data-theme="timeline"] .card { border-inline-start-width: var(--border-hairline); }
+}

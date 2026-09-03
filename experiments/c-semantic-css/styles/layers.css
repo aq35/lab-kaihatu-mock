@@ -1,0 +1,2 @@
+/* cascade 順を最初に固定する。以降どのファイルを後から読み込んでも順序は変わらない。 */
+@layer reset, tokens, base, layout, components, states, themes, overrides;

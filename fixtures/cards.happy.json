@@ -1,0 +1,215 @@
+[
+  {
+    "id": "card_q1",
+    "type": "OWNER_QUESTION",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "question": "週次レポートの配信先に、退職した田中さんのアドレスを含めますか。",
+    "ownerOnlyReason": "人事情報は KAS が参照できないため、在籍状況を判断できるのは Owner だけです。",
+    "answerOptions": [
+      {
+        "id": "opt_include",
+        "label": "含める",
+        "consequence": "現在の配信リストのまま送信します"
+      },
+      {
+        "id": "opt_exclude",
+        "label": "除外する",
+        "consequence": "配信リストを更新してから送信します"
+      }
+    ],
+    "freeFormAllowed": true,
+    "answerDeadline": "2026-12-31T23:59:59.000Z",
+    "resumesOnAnswer": "回答後、Run run_1 の step_2 (配信リスト確定) が再開します。",
+    "actions": [
+      {
+        "id": "a_answer",
+        "semantic": "ANSWER",
+        "label": "回答する",
+        "primary": true
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "後で",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_a1",
+    "type": "ACTION_APPROVAL",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "action": "週次レポートを 128 名の外部配信リストへメール送信する",
+    "effect": "外部の受信者 128 名にメールが届きます。送信後の取り消しはできません。",
+    "resourceScope": [
+      "mailer:production",
+      "list:weekly-report-external",
+      "credential:smtp-prod"
+    ],
+    "risk": {
+      "externalSend": true,
+      "publication": false,
+      "cost": {
+        "incurs": true,
+        "amount": "0.64",
+        "currency": "USD"
+      },
+      "deletion": false,
+      "credentialUse": true
+    },
+    "expiresAt": "2026-12-31T23:59:59.000Z",
+    "oneShot": true,
+    "blockedIfRefused": "承認しない場合、Goal 1 は step_3 で停止し、今週のレポートは配信されません。",
+    "actions": [
+      {
+        "id": "a_allow",
+        "semantic": "ALLOW_ONCE",
+        "label": "1 回だけ許可",
+        "primary": true,
+        "destructive": true
+      },
+      {
+        "id": "a_refuse",
+        "semantic": "REFUSE",
+        "label": "拒否",
+        "primary": false
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "保留",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_u1",
+    "type": "OUTCOME_UNKNOWN_REVIEW",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "dispatched": "SMTP へ 128 通の送信要求を送りました (2026-09-01 09:04 UTC)。",
+    "confirmed": "SMTP サーバは 87 通について 250 OK を返しました。",
+    "unknown": "残り 41 通は接続が切断され、受理されたかどうか判定できません。",
+    "duplicateEffectRisk": {
+      "possible": true,
+      "explanation": "再送すると、既に受理された 41 通が二重に届く可能性があります。"
+    },
+    "safeVerificationSteps": [
+      "メールプロバイダの送信ログで 09:04-09:06 の 41 件を確認する",
+      "受信者 3 名に個別に到達を確認する",
+      "bounce キューに該当アドレスが無いか確認する"
+    ],
+    "actions": [
+      {
+        "id": "a_verify",
+        "semantic": "VERIFY_MANUALLY",
+        "label": "確認手順を開く",
+        "primary": true
+      },
+      {
+        "id": "a_evidence",
+        "semantic": "OPEN_EVIDENCE",
+        "label": "ログを見る",
+        "primary": false
+      },
+      {
+        "id": "a_retry",
+        "semantic": "RETRY_WITH_DUPLICATE_RISK",
+        "label": "再送する（二重送信の恐れ）",
+        "primary": false,
+        "destructive": true
+      }
+    ]
+  },
+  {
+    "id": "card_r1",
+    "type": "RESULT_REVIEW",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "DECIDED",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "completed": "週次レポートを 128 名へ配信しました。",
+    "actionClaim": "mailer が 128 通すべてを送信したと報告しています。",
+    "independentObservation": "プロバイダ側の配信ログで 128 件の accepted を確認しました。",
+    "verificationReceipt": {
+      "id": "rcpt_8831",
+      "issuedAt": "2026-09-01T09:00:00.000Z",
+      "method": "provider-log-crosscheck"
+    },
+    "unverified": [
+      "実際に開封されたかは確認していません"
+    ],
+    "nextCandidates": [
+      "開封率を 24 時間後に集計する",
+      "配信リストの棚卸しを提案する"
+    ],
+    "evidenceLevel": "RECEIPTED",
+    "actions": [
+      {
+        "id": "a_receipt",
+        "semantic": "OPEN_EVIDENCE",
+        "label": "receipt を見る",
+        "primary": false
+      },
+      {
+        "id": "a_next",
+        "semantic": "PROPOSE_NEXT",
+        "label": "次を提案",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_i1",
+    "type": "INFORMATION",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "headline": "Goal 1 は次回 2026-09-08 09:00 UTC に自動実行されます。",
+    "detail": "前回の実行から設定変更はありません。Owner の操作は不要です。",
+    "requiresOwnerAction": false,
+    "actions": [
+      {
+        "id": "a_ack",
+        "semantic": "ACKNOWLEDGE",
+        "label": "確認した",
+        "primary": false
+      }
+    ]
+  }
+]

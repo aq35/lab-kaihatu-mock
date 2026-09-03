@@ -1,0 +1,23 @@
+@layer components {
+  .risk-flags { display: grid; gap: var(--space-2xs); }
+  .risk-flag {
+    display: grid;
+    grid-template-columns: 1.25em minmax(6rem, auto) minmax(0, 1fr);
+    gap: var(--space-xs); align-items: baseline;
+    font-size: var(--text-sm);
+  }
+  /* あり / なし は色だけでなく記号とテキストの両方で伝える */
+  .risk-flag[data-risk="yes"] { color: var(--danger); font-weight: 600; }
+  .risk-flag[data-risk="no"] { color: var(--text-quiet); }
+  .risk-mark { font-family: var(--font-mono); }
+
+  .scope-list, .unverified-list, .next-candidates {
+    display: grid; gap: var(--space-3xs);
+    font-family: var(--font-mono); font-size: var(--text-xs);
+  }
+  .scope-list li::before { content: "· "; color: var(--text-quiet); }
+  .unverified-list, .next-candidates { font-family: var(--font-body); font-size: var(--text-sm); }
+  .unverified-list li::before, .next-candidates li::before { content: "— "; color: var(--text-quiet); }
+
+  .one-shot-notice .fact-value { color: var(--text-primary); font-weight: 600; }
+}

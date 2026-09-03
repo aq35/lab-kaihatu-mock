@@ -1,0 +1,36 @@
+@layer components {
+  .decision-actions {
+    display: flex; flex-wrap: wrap; gap: var(--space-xs);
+    margin-block-start: var(--space-2xs);
+    padding-block-start: var(--card-gap);
+    border-block-start: 1px solid var(--border-default);
+  }
+  .decision {
+    /* WCAG 2.2 target size: 24x24 CSS px 以上を下限として確保する */
+    min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
+    padding-inline: var(--space-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface-sunken);
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--motion-duration) ease;
+  }
+  .decision:hover { background: var(--border-default); }
+  .decision-primary {
+    background: var(--accent); color: var(--accent-contrast); border-color: var(--accent);
+    font-weight: 600;
+  }
+  .decision-primary:hover { filter: brightness(1.08); }
+  .decision-destructive { --accent: var(--danger); }
+
+  /* 送信中。承認済み・送信済みとは別の見た目・別の文言にする */
+  .decision[aria-busy="true"] { cursor: progress; opacity: 0.85; }
+  .decision:disabled { cursor: not-allowed; opacity: 0.55; }
+
+  @container card (max-width: 22rem) {
+    .decision-actions { flex-direction: column; align-items: stretch; }
+  }
+}

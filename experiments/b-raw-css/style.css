@@ -1,0 +1,127 @@
+/* Owner Control Center - styles
+   ※ 対照群。実プロジェクトで規約なしに育った CSS の典型を再現している。
+      token なし / layer なし / 命名は見た目 / 後から足した打ち消しが積み上がる。 */
+
+body { margin: 0; background: #f4f5f7; color: #1c1f26; font-family: -apple-system, "Hiragino Sans", sans-serif; font-size: 15px; line-height: 1.6; }
+.page { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
+.page-header { margin-bottom: 32px; }
+.page-header h1 { font-size: 28px; margin: 0 0 8px 0; }
+.page-header p { color: #55606f; margin: 0; }
+a { color: inherit; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+h1,h2,h3,p,dl,dd { margin: 0; }
+
+.list { display: block; }
+.list-item { margin-bottom: 24px; }
+
+.box { background: #ffffff; border: 1px solid #d5d9e0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.blue-box { border-left: 4px solid #2f6fd0; }
+.red-box { border-left: 4px solid #d03a2f; }
+.purple-box { border-left: 4px solid #7a4fd0; }
+.green-box { border-left: 4px solid #237a49; }
+.plain-box { border-left: 4px solid #9aa3b0; background: transparent; box-shadow: none; padding: 16px; }
+
+.box-top { margin-bottom: 12px; }
+.kind-line { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: .04em; color: #55606f; }
+.blue-box .kind-line { color: #2f6fd0; }
+.red-box .kind-line { color: #d03a2f; }
+.purple-box .kind-line { color: #7a4fd0; }
+.green-box .kind-line { color: #237a49; }
+.kind-square { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 2px; font-family: monospace; }
+.box-title { font-size: 16px; margin-top: 4px; }
+
+.box-inner { margin-top: 12px; }
+.gray-rows { margin-top: 12px; }
+.gray-row { margin-bottom: 12px; }
+.small-gray-label { font-size: 12px; font-weight: 600; color: #616a76; letter-spacing: .03em; margin-bottom: 2px; }
+.row-text { color: #38414d; font-size: 14px; max-width: 68ch; }
+.big-text { font-size: 18px; color: #1c1f26; max-width: 68ch; }
+.black-text { color: #1c1f26; }
+.gray-text { color: #55606f; }
+.tiny-gray { display: block; font-size: 12px; color: #616a76; }
+.italic-gray { color: #616a76; font-style: italic; }
+.red-text-bold { color: #d03a2f; font-weight: 600; }
+.gray-center { color: #616a76; padding: 48px; text-align: center; }
+
+/* 後から「ここだけ強調したい」と言われて足された分 */
+.important-row .row-text { color: #1c1f26; }
+.bold-row .row-text { color: #1c1f26; font-weight: 600; }
+
+.red-list { display: block; }
+.red-list li { display: flex; gap: 8px; font-size: 14px; margin-bottom: 4px; }
+.red-item { color: #d03a2f; font-weight: 600; }
+.gray-item { color: #616a76; }
+.mono-list { font-family: monospace; font-size: 12px; }
+.mono-list li:before { content: "· "; color: #616a76; }
+.dash-list li:before { content: "— "; color: #616a76; }
+.steps-box { background: #eef0f4; padding: 12px; border-radius: 6px; }
+.steps-box li { margin-bottom: 4px; }
+
+.gray-box { border: 1px solid #d5d9e0; border-radius: 6px; background: #eef0f4; padding: 16px; margin-top: 12px; }
+.gray-box legend { padding: 0 4px; }
+.radio-line { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+.radio-line input { width: 24px; height: 24px; margin-top: 5px; }
+.radio-line label { cursor: pointer; }
+.textarea-wrap { margin-top: 8px; }
+.textarea-wrap textarea { width: 100%; padding: 8px; border: 1px solid #9aa3b0; border-radius: 6px; }
+
+.bottom-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #d5d9e0; }
+.gray-button { min-height: 44px; padding: 0 16px; background: #eef0f4; border: 1px solid #9aa3b0; border-radius: 6px; cursor: pointer; }
+.blue-button { min-height: 44px; padding: 0 16px; background: #2f6fd0; color: #fff; border: 1px solid #2f6fd0; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.red-button { background: #d03a2f; border-color: #d03a2f; color: #fff; }
+/* 「赤ボタンが赤くない」と報告されて後から足された分 */
+.bottom-buttons .blue-button.red-button { background: #d03a2f !important; border-color: #d03a2f !important; }
+.gray-button:hover { background: #d5d9e0; }
+.blue-button:hover { background: #2b63ba; }
+
+.badge-receipted { color: #237a49; font-weight: 600; }
+.badge-observed { color: #a8770f; font-weight: 600; }
+.badge-claimed { color: #d03a2f; font-weight: 600; }
+.badge-none { color: #d03a2f; font-weight: 600; }
+
+.state-chip { display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 700; border: 1px solid currentColor; border-radius: 2px; color: #d03a2f; }
+
+/* 期限切れ表示。あとから足したので box より詳細度を上げる必要があった */
+.list .list-item .box[data-card-state="EXPIRED"],
+.list .list-item .box[data-card-state="REVOKED"],
+.list .list-item .box[data-card-state="STALE"] { box-shadow: none; border-style: dashed; background: repeating-linear-gradient(135deg,#eef0f4 0 8px,#fff 8px 16px); }
+.list .list-item .box[data-card-state="EXPIRED"] .bottom-buttons button,
+.list .list-item .box[data-card-state="REVOKED"] .bottom-buttons button { display: none; }
+.list .list-item .box[data-card-state="EXPIRED"] .bottom-buttons:before,
+.list .list-item .box[data-card-state="REVOKED"] .bottom-buttons:before { content: "この項目は期限切れ・取り消し済みのため操作できません。"; font-size: 12px; color: #d03a2f; }
+
+/* mobile。viewport ベースなので、狭いコンテナに置いても効かない */
+@media (max-width: 640px) {
+  .page { padding: 16px 12px; }
+  .box { padding: 16px; }
+  .bottom-buttons { flex-direction: column; }
+  .big-text { font-size: 16px; }
+  .box-title { font-size: 15px; }
+}
+
+/* dark mode。token が無いので色をもう一度全部書き直している */
+@media (prefers-color-scheme: dark) {
+  body { background: #14171c; color: #f0f2f5; }
+  .box { background: #1e232b; border-color: #333c48; }
+  .plain-box { background: transparent; }
+  .row-text { color: #cdd3db; }
+  .big-text, .black-text { color: #f0f2f5; }
+  .small-gray-label, .tiny-gray, .italic-gray, .gray-text { color: #98a2b0; }
+  .gray-box, .steps-box { background: #262c36; border-color: #333c48; }
+  .gray-button { background: #262c36; border-color: #4a5462; color: #f0f2f5; }
+  .textarea-wrap textarea { background: #1e232b; border-color: #4a5462; color: #f0f2f5; }
+  .bottom-buttons { border-top-color: #333c48; }
+  .list .list-item .box[data-card-state="EXPIRED"],
+  .list .list-item .box[data-card-state="REVOKED"],
+  .list .list-item .box[data-card-state="STALE"] { background: repeating-linear-gradient(135deg,#262c36 0 8px,#1e232b 8px 16px); }
+}
+
+.visually-hidden:not(:focus-within) { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.skip-link { position: absolute; top: 8px; left: 8px; padding: 8px 16px; background: #fff; border: 2px solid #2f6fd0; border-radius: 6px; transform: translateY(-200%); z-index: 10; }
+.skip-link:focus { transform: none; }
+.view-controls { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
+.control { display: block; }
+.control label { display: block; font-size: 12px; color: #616a76; font-weight: 600; margin-bottom: 2px; }
+.control select { min-height: 44px; padding: 0 8px; border: 1px solid #9aa3b0; border-radius: 6px; background: #fff; }
+.decision-status { font-size: 14px; flex-basis: 100%; margin-top: 4px; }
+.decision-status[data-kind="unknown"], .decision-status[data-kind="refused"] { color: #d03a2f; font-weight: 600; }

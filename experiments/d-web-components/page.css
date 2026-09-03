@@ -1,0 +1,26 @@
+/* D のページレベル CSS。shadow root の中には届かない。
+   shadow へ渡せるのは継承する custom property だけ。 */
+@layer reset, tokens, base, layout, components, states, themes, overrides;
+
+@layer base {
+  body { margin: 0; background: var(--surface-page); color: var(--text-primary); font-family: var(--font-body); font-size: var(--text-md); line-height: 1.6; }
+  h1 { font-size: var(--text-xl); margin: 0 0 .5rem; }
+  p { margin: 0; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  :focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .visually-hidden:not(:focus-within) { position: absolute; inline-size: 1px; block-size: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .skip-link { position: absolute; inset-block-start: .5rem; inset-inline-start: .5rem; padding: .5rem 1rem; background: var(--surface-card); border: 2px solid var(--accent); border-radius: 6px; transform: translateY(-200%); z-index: 10; }
+  .skip-link:focus { transform: none; }
+  .view-controls { display: flex; flex-wrap: wrap; gap: 1rem; margin-block-start: 1rem; }
+  .control { display: grid; gap: .125rem; }
+  .control label { font-size: .75rem; color: var(--text-quiet); font-weight: 600; }
+  .control select { min-block-size: 2.75rem; padding-inline: .5rem; background: var(--surface-card); color: var(--text-primary); border: 1px solid var(--border-strong); border-radius: 6px; }
+}
+@layer layout {
+  .page { max-inline-size: 78rem; margin-inline: auto; padding: 2rem 1rem; }
+  .page-header { margin-block-end: 2rem; }
+  .card-feed { display: grid; gap: var(--feed-gap); }
+  .card-slot { container-type: inline-size; container-name: card; }
+  .layout-narrow { max-inline-size: 22rem; }
+  .empty { color: var(--text-quiet); padding: 3rem; text-align: center; }
+}

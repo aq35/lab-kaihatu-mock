@@ -1,0 +1,58 @@
+@layer base {
+  body {
+    margin: 0;
+    background: var(--surface-page);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: var(--text-md);
+  }
+  h1 { font-family: var(--font-heading); font-size: var(--text-xl); line-height: 1.25; }
+  h2 { font-family: var(--font-heading); font-size: var(--text-lg); line-height: 1.3; }
+  h3 { font-family: var(--font-heading); font-size: var(--text-md); line-height: 1.35; }
+
+  /* 目に見える focus。どの theme でも消させない（themes layer より下だが !important 不要な理由は
+     themes 側が :focus-visible を上書きしない規律にあるので、css test で検査する） */
+  :focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* 長い日本語 / 長い URL / 長い英単語で崩れないための既定 */
+  p, dd, li, h1, h2, h3, td, th, legend, label, button {
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-break: strict;
+  }
+
+  time { font-variant-numeric: tabular-nums; }
+
+  @media (forced-colors: active) {
+    .card { border: 1px solid CanvasText; }
+    .decision { border: 1px solid ButtonText; }
+  }
+}
+
+@layer base {
+  .visually-hidden:not(:focus-within) {
+    position: absolute; inline-size: 1px; block-size: 1px;
+    margin: -1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .skip-link {
+    position: absolute; inset-block-start: var(--space-xs); inset-inline-start: var(--space-xs);
+    padding: var(--space-xs) var(--space-md); background: var(--surface-card);
+    border: 2px solid var(--accent); border-radius: var(--radius-md);
+    transform: translateY(-200%); transition: transform var(--motion-duration) ease; z-index: 10;
+  }
+  .skip-link:focus { transform: none; }
+  .view-controls { display: flex; flex-wrap: wrap; gap: var(--space-md); margin-block-start: var(--space-md); }
+  .control { display: grid; gap: var(--space-3xs); }
+  .control label { font-size: var(--text-xs); color: var(--text-quiet); font-weight: 600; }
+  .control select {
+    min-block-size: 2.75rem; padding-inline: var(--space-xs);
+    background: var(--surface-card); color: var(--text-primary);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  }
+  .decision-status { font-size: var(--text-sm); flex-basis: 100%; margin-block-start: var(--space-2xs); }
+  .decision-status[data-kind="unknown"], .decision-status[data-kind="refused"] { color: var(--danger); font-weight: 600; }
+}

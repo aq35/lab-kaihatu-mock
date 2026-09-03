@@ -1,0 +1,22 @@
+/* OS の dark 設定に追従する。theme を明示していないときだけ効かせる */
+@layer themes {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --surface-page: oklch(20% 0.012 260);
+      --surface-card: oklch(25% 0.014 260);
+      --surface-sunken: oklch(29% 0.016 260);
+      --text-primary: oklch(95% 0.005 260);
+      --text-secondary: oklch(83% 0.008 260);
+      --text-quiet: oklch(72% 0.010 260);
+      --border-default: oklch(37% 0.018 260);
+      --border-strong: oklch(60% 0.026 260);
+      --accent: oklch(70% 0.13 245);
+      --accent-contrast: oklch(18% 0.02 260);
+      --danger: oklch(70% 0.17 25);
+      --caution: oklch(80% 0.14 85);
+      --positive: oklch(76% 0.14 155);
+      --unknown: oklch(74% 0.13 300);
+      --card-shadow: 0 1px 2px oklch(0% 0 0 / 0.3);
+    }
+  }
+}

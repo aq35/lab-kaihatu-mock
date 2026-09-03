@@ -1,0 +1,14 @@
+{
+  "name": "variant-a-tailwind",
+  "private": true,
+  "type": "module",
+  "description": "比較条件A専用。この dependency は最終成果物 (root package.json) には存在しない。",
+  "scripts": {
+    "build": "tailwindcss -i src/input.css -o dist/tailwind.css --minify",
+    "build:dev": "tailwindcss -i src/input.css -o dist/tailwind.dev.css"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

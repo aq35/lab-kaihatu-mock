@@ -1,0 +1,33 @@
+{
+  "description": "意味契約を DOM 上で検査可能にするための最小の取り決め。全 variant (A/B/C/D) が同一に満たす。ここに列挙された属性とフィールド名は『意味DOM』であり、AI が外観のために変更してはならない。",
+  "attributes": {
+    "cardType": "data-card-type",
+    "cardId": "data-card-id",
+    "cardState": "data-card-state",
+    "field": "data-field",
+    "actionSemantic": "data-action-semantic",
+    "evidenceLevel": "data-evidence-level"
+  },
+  "rules": [
+    "data-field で示された要素は、required なら必ず可視（実測 bounding box > 0、visibility/opacity/clip で隠されていない）でなければならない",
+    "action は必ず <button> または <a> であり、clickable div であってはならない",
+    "primary action は 1 カードにつき最大 1 つ",
+    "OUTCOME_UNKNOWN_REVIEW の RETRY_WITH_DUPLICATE_RISK は primary であってはならない",
+    "card type を色だけで区別してはならない（テキストまたは形状で判別可能であること）",
+    "evidenceLevel が RECEIPTED でないカードを『検証済み』と表現する文字列を出してはならない"
+  ],
+  "requiredVisibleFields": {
+    "OWNER_QUESTION": ["question", "ownerOnlyReason", "goal", "answerOptions", "answerDeadline", "resumesOnAnswer"],
+    "ACTION_APPROVAL": ["action", "effect", "resourceScope", "goal", "run", "risk", "expiresAt", "oneShot", "blockedIfRefused"],
+    "OUTCOME_UNKNOWN_REVIEW": ["dispatched", "confirmed", "unknown", "duplicateEffectRisk", "safeVerificationSteps", "goal"],
+    "RESULT_REVIEW": ["completed", "actionClaim", "independentObservation", "verificationReceipt", "unverified", "evidenceLevel", "goal"],
+    "INFORMATION": ["headline", "detail", "goal"]
+  },
+  "allowedActionSemantics": {
+    "OWNER_QUESTION": ["ANSWER", "SNOOZE", "OPEN_EVIDENCE"],
+    "ACTION_APPROVAL": ["ALLOW_ONCE", "REFUSE", "SNOOZE"],
+    "OUTCOME_UNKNOWN_REVIEW": ["VERIFY_MANUALLY", "OPEN_EVIDENCE", "SNOOZE", "ACKNOWLEDGE", "RETRY_WITH_DUPLICATE_RISK"],
+    "RESULT_REVIEW": ["OPEN_EVIDENCE", "ACKNOWLEDGE", "PROPOSE_NEXT", "VERIFY_MANUALLY"],
+    "INFORMATION": ["OPEN_EVIDENCE", "ACKNOWLEDGE"]
+  }
+}

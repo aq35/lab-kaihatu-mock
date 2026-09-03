@@ -1,0 +1,661 @@
+{
+  "measuredAt": "2026-09-03T12:25:44.306Z",
+  "env": {
+    "node": "v22.22.2",
+    "cpuThrottle": 4,
+    "chromium": "141.0.7390.37",
+    "platform": "linux"
+  },
+  "variants": [
+    {
+      "variant": "a-tailwind",
+      "label": "A: Tailwind",
+      "bytes": {
+        "html": 30134,
+        "css": 18332,
+        "js": 0,
+        "other": 0
+      },
+      "requests": 2,
+      "css": {
+        "ruleCount": 189,
+        "declarationCount": 545,
+        "duplicateDeclarations": 170,
+        "importantCount": 1,
+        "maxSpecificity": 400,
+        "maxSelectorDepth": 3,
+        "uniqueSelectors": 183,
+        "unusedRules": 51,
+        "checkedRules": 186,
+        "customPropertyDefs": 95,
+        "customPropertyUses": 97,
+        "layers": [
+          "properties",
+          "theme",
+          "base",
+          "components",
+          "utilities"
+        ],
+        "containerQueries": 0,
+        "mediaQueries": 4,
+        "shadowRootCount": 0,
+        "distinctColorLiterals": 34,
+        "pxLengths": 96,
+        "logicalProps": 41,
+        "physicalProps": 163,
+        "domNodes": 251
+      },
+      "axe": {
+        "violations": [],
+        "total": 0
+      },
+      "keyboard": {
+        "actions": 11,
+        "keyboardReachable": 11,
+        "clickableDivs": 0
+      },
+      "targetSize": {
+        "checked": 26,
+        "tooSmall": 2
+      },
+      "focusVisible": {
+        "ok": true,
+        "outlineWidth": "3px",
+        "outlineStyle": "solid"
+      },
+      "contract": {
+        "cards": 5,
+        "missing": [],
+        "hidden": []
+      },
+      "noJs": {
+        "cards": 5,
+        "readable": 5,
+        "unreadable": 0,
+        "missingText": [],
+        "formsSubmittable": 5
+      },
+      "hostile": {
+        "mobile320": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        },
+        "desktop1280": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        }
+      },
+      "security": {
+        "scriptExecuted": false,
+        "injectedElements": 0,
+        "inlineScriptTags": 0
+      },
+      "perf": {
+        "cpuThrottle": 4,
+        "cards100": {
+          "lcp": 816,
+          "cls": 0,
+          "domContentLoaded": 0,
+          "load": 0
+        },
+        "cards1000": {
+          "domNodes": 4950,
+          "queryMs": 1,
+          "renderMs": 0
+        },
+        "filter1000Ms": 105
+      },
+      "themes": {
+        "calm-console": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "16px",
+          "pageBackground": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.546 0.245 262.881)"
+        },
+        "editorial": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "16px",
+          "pageBackground": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.546 0.245 262.881)"
+        },
+        "command-center": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "16px",
+          "pageBackground": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.546 0.245 262.881)"
+        },
+        "conversational": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "16px",
+          "pageBackground": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.546 0.245 262.881)"
+        },
+        "timeline": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "16px",
+          "pageBackground": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.546 0.245 262.881)"
+        }
+      },
+      "staticBytes": 30134
+    },
+    {
+      "variant": "b-raw-css",
+      "label": "B: 無規律な素のCSS",
+      "bytes": {
+        "html": 15234,
+        "css": 7652,
+        "js": 0,
+        "other": 0
+      },
+      "requests": 2,
+      "css": {
+        "ruleCount": 94,
+        "declarationCount": 684,
+        "duplicateDeclarations": 475,
+        "importantCount": 13,
+        "maxSpecificity": 501,
+        "maxSelectorDepth": 5,
+        "uniqueSelectors": 81,
+        "unusedRules": 11,
+        "checkedRules": 94,
+        "customPropertyDefs": 0,
+        "customPropertyUses": 0,
+        "layers": [],
+        "containerQueries": 0,
+        "mediaQueries": 2,
+        "shadowRootCount": 0,
+        "distinctColorLiterals": 24,
+        "pxLengths": 240,
+        "logicalProps": 0,
+        "physicalProps": 276,
+        "domNodes": 250
+      },
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 40
+          }
+        ],
+        "total": 40
+      },
+      "keyboard": {
+        "actions": 11,
+        "keyboardReachable": 11,
+        "clickableDivs": 0
+      },
+      "targetSize": {
+        "checked": 26,
+        "tooSmall": 2
+      },
+      "focusVisible": {
+        "ok": true,
+        "outlineWidth": "1px",
+        "outlineStyle": "auto"
+      },
+      "contract": {
+        "cards": 5,
+        "missing": [],
+        "hidden": []
+      },
+      "noJs": {
+        "cards": 5,
+        "readable": 5,
+        "unreadable": 0,
+        "missingText": [],
+        "formsSubmittable": 5
+      },
+      "hostile": {
+        "mobile320": {
+          "pageScrollsHorizontally": true,
+          "horizontalOverflowPx": 1663,
+          "overflowingElementCount": 0,
+          "samples": []
+        },
+        "desktop1280": {
+          "pageScrollsHorizontally": true,
+          "horizontalOverflowPx": 739,
+          "overflowingElementCount": 0,
+          "samples": []
+        }
+      },
+      "security": {
+        "scriptExecuted": false,
+        "injectedElements": 0,
+        "inlineScriptTags": 0
+      },
+      "perf": {
+        "cpuThrottle": 4,
+        "cards100": {
+          "lcp": 720,
+          "cls": 0,
+          "domContentLoaded": 3120.899999999907,
+          "load": 3541.899999999907
+        },
+        "cards1000": {
+          "domNodes": 3969,
+          "queryMs": 0.30000000004656613,
+          "renderMs": 0
+        },
+        "filter1000Ms": 116.6
+      },
+      "themes": {
+        "calm-console": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "15px",
+          "pageBackground": "rgb(244, 245, 247)",
+          "borderStyle": "solid",
+          "borderColor": "rgb(47, 111, 208)"
+        },
+        "editorial": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "15px",
+          "pageBackground": "rgb(244, 245, 247)",
+          "borderStyle": "solid",
+          "borderColor": "rgb(47, 111, 208)"
+        },
+        "command-center": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "15px",
+          "pageBackground": "rgb(244, 245, 247)",
+          "borderStyle": "solid",
+          "borderColor": "rgb(47, 111, 208)"
+        },
+        "conversational": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "15px",
+          "pageBackground": "rgb(244, 245, 247)",
+          "borderStyle": "solid",
+          "borderColor": "rgb(47, 111, 208)"
+        },
+        "timeline": {
+          "cardBackground": "rgb(255, 255, 255)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "-apple-system",
+          "fontSize": "15px",
+          "pageBackground": "rgb(244, 245, 247)",
+          "borderStyle": "solid",
+          "borderColor": "rgb(47, 111, 208)"
+        }
+      },
+      "staticBytes": 15234
+    },
+    {
+      "variant": "c-semantic-css",
+      "label": "C: Semantic CSS",
+      "bytes": {
+        "html": 17713,
+        "css": 23364,
+        "js": 0,
+        "other": 0
+      },
+      "requests": 20,
+      "css": {
+        "ruleCount": 134,
+        "declarationCount": 943,
+        "duplicateDeclarations": 532,
+        "importantCount": 0,
+        "maxSpecificity": 301,
+        "maxSelectorDepth": 2,
+        "uniqueSelectors": 123,
+        "unusedRules": 36,
+        "checkedRules": 134,
+        "customPropertyDefs": 62,
+        "customPropertyUses": 139,
+        "layers": [
+          "reset",
+          "tokens",
+          "base",
+          "layout",
+          "components",
+          "states",
+          "themes",
+          "overrides"
+        ],
+        "containerQueries": 3,
+        "mediaQueries": 4,
+        "shadowRootCount": 0,
+        "distinctColorLiterals": 55,
+        "pxLengths": 105,
+        "logicalProps": 60,
+        "physicalProps": 205,
+        "domNodes": 277
+      },
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 40
+          }
+        ],
+        "total": 40
+      },
+      "keyboard": {
+        "actions": 11,
+        "keyboardReachable": 11,
+        "clickableDivs": 0
+      },
+      "targetSize": {
+        "checked": 27,
+        "tooSmall": 2
+      },
+      "focusVisible": {
+        "ok": true,
+        "outlineWidth": "3px",
+        "outlineStyle": "solid"
+      },
+      "contract": {
+        "cards": 5,
+        "missing": [],
+        "hidden": []
+      },
+      "noJs": {
+        "cards": 5,
+        "readable": 5,
+        "unreadable": 0,
+        "missingText": [],
+        "formsSubmittable": 5
+      },
+      "hostile": {
+        "mobile320": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        },
+        "desktop1280": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        }
+      },
+      "security": {
+        "scriptExecuted": false,
+        "injectedElements": 0,
+        "inlineScriptTags": 0
+      },
+      "perf": {
+        "cpuThrottle": 4,
+        "cards100": {
+          "lcp": 192,
+          "cls": 0,
+          "domContentLoaded": 1262.5,
+          "load": 1416.1000000000931
+        },
+        "cards1000": {
+          "domNodes": 5593,
+          "queryMs": 1.1999999999534339,
+          "renderMs": 0
+        },
+        "filter1000Ms": 103.1,
+        "themeSwitchMs": 91.3
+      },
+      "themes": {
+        "calm-console": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.975 0.006 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.48 0.13 245)"
+        },
+        "editorial": {
+          "cardBackground": "oklch(0.99 0.008 85)",
+          "cardPadding": "32px",
+          "cardRadius": "0px",
+          "fontFamily": "Georgia",
+          "fontSize": "18px",
+          "pageBackground": "oklch(0.97 0.015 85)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.42 0.11 25)"
+        },
+        "command-center": {
+          "cardBackground": "oklch(0.24 0.018 260)",
+          "cardPadding": "12px",
+          "cardRadius": "3px",
+          "fontFamily": "ui-monospace",
+          "fontSize": "14px",
+          "pageBackground": "oklch(0.19 0.015 260)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.72 0.14 200)"
+        },
+        "conversational": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "4px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.98 0.012 320)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.52 0.15 320)"
+        },
+        "timeline": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "16px",
+          "cardRadius": "10px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.985 0.004 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.46 0.14 265)"
+        }
+      },
+      "staticBytes": 17713
+    },
+    {
+      "variant": "d-web-components",
+      "label": "D: Web Components",
+      "bytes": {
+        "html": 16456,
+        "css": 42393,
+        "js": 0,
+        "other": 0
+      },
+      "requests": 14,
+      "css": {
+        "ruleCount": 343,
+        "declarationCount": 2512,
+        "duplicateDeclarations": 2121,
+        "importantCount": 0,
+        "maxSpecificity": 300,
+        "maxSelectorDepth": 2,
+        "uniqueSelectors": 94,
+        "unusedRules": 55,
+        "checkedRules": 303,
+        "customPropertyDefs": 62,
+        "customPropertyUses": 216,
+        "layers": [
+          "tokens",
+          "themes",
+          "reset",
+          "base",
+          "layout",
+          "components",
+          "states",
+          "overrides"
+        ],
+        "containerQueries": 5,
+        "mediaQueries": 2,
+        "shadowRootCount": 5,
+        "distinctColorLiterals": 66,
+        "pxLengths": 375,
+        "logicalProps": 132,
+        "physicalProps": 665,
+        "domNodes": 286
+      },
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 41
+          }
+        ],
+        "total": 41
+      },
+      "keyboard": {
+        "actions": 11,
+        "keyboardReachable": 11,
+        "clickableDivs": 0
+      },
+      "targetSize": {
+        "checked": 27,
+        "tooSmall": 2
+      },
+      "focusVisible": {
+        "ok": true,
+        "outlineWidth": "3px",
+        "outlineStyle": "solid"
+      },
+      "contract": {
+        "cards": 5,
+        "missing": [],
+        "hidden": []
+      },
+      "noJs": {
+        "cards": 5,
+        "readable": 5,
+        "unreadable": 0,
+        "missingText": [],
+        "formsSubmittable": 5
+      },
+      "hostile": {
+        "mobile320": {
+          "pageScrollsHorizontally": true,
+          "horizontalOverflowPx": 59,
+          "overflowingElementCount": 14,
+          "samples": [
+            "HEADER",
+            "P.kind",
+            "H3",
+            "DIV.body",
+            "P.quiet"
+          ]
+        },
+        "desktop1280": {
+          "pageScrollsHorizontally": false,
+          "horizontalOverflowPx": 0,
+          "overflowingElementCount": 0,
+          "samples": []
+        }
+      },
+      "security": {
+        "scriptExecuted": false,
+        "injectedElements": 0,
+        "inlineScriptTags": 0
+      },
+      "perf": {
+        "cpuThrottle": 4,
+        "cards100": {
+          "lcp": 392,
+          "cls": 0,
+          "domContentLoaded": 3846.5,
+          "load": 3875.1999999999534
+        },
+        "cards1000": {
+          "domNodes": 872,
+          "queryMs": 0.9000000001396984,
+          "renderMs": 0
+        },
+        "filter1000Ms": 118.6,
+        "themeSwitchMs": 105.2
+      },
+      "themes": {
+        "calm-console": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "12px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.975 0.006 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.48 0.13 245)"
+        },
+        "editorial": {
+          "cardBackground": "oklch(0.99 0.008 85)",
+          "cardPadding": "32px",
+          "cardRadius": "0px",
+          "fontFamily": "Georgia",
+          "fontSize": "18px",
+          "pageBackground": "oklch(0.97 0.015 85)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.48 0.13 245)"
+        },
+        "command-center": {
+          "cardBackground": "oklch(0.24 0.018 260)",
+          "cardPadding": "12px",
+          "cardRadius": "3px",
+          "fontFamily": "ui-monospace",
+          "fontSize": "14px",
+          "pageBackground": "oklch(0.19 0.015 260)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.48 0.13 245)"
+        },
+        "conversational": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "24px",
+          "cardRadius": "20px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.98 0.012 320)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.48 0.13 245)"
+        },
+        "timeline": {
+          "cardBackground": "oklch(1 0 0)",
+          "cardPadding": "16px",
+          "cardRadius": "10px",
+          "fontFamily": "system-ui",
+          "fontSize": "17px",
+          "pageBackground": "oklch(0.985 0.004 250)",
+          "borderStyle": "solid",
+          "borderColor": "oklch(0.48 0.13 245)"
+        }
+      },
+      "staticBytes": 16456
+    }
+  ]
+}

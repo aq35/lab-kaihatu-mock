@@ -1,0 +1,58 @@
+[
+  {
+    "id": "card_a1",
+    "type": "ACTION_APPROVAL",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "action": "週次レポートを 128 名の外部配信リストへメール送信する",
+    "effect": "外部の受信者 128 名にメールが届きます。送信後の取り消しはできません。",
+    "resourceScope": [
+      "mailer:production",
+      "list:weekly-report-external",
+      "credential:smtp-prod"
+    ],
+    "risk": {
+      "externalSend": true,
+      "publication": false,
+      "cost": {
+        "incurs": true,
+        "amount": "0.64",
+        "currency": "USD"
+      },
+      "deletion": false,
+      "credentialUse": true
+    },
+    "expiresAt": "2026-12-31T23:59:59.000Z",
+    "oneShot": true,
+    "blockedIfRefused": "承認しない場合、Goal 1 は step_3 で停止し、今週のレポートは配信されません。",
+    "actions": [
+      {
+        "id": "a_allow",
+        "semantic": "ALLOW_ONCE",
+        "label": "1 回だけ許可",
+        "primary": true,
+        "destructive": true
+      },
+      {
+        "id": "a_refuse",
+        "semantic": "REFUSE",
+        "label": "拒否",
+        "primary": false
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "保留",
+        "primary": false
+      }
+    ]
+  }
+]

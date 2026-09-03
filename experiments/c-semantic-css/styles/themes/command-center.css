@@ -1,0 +1,29 @@
+/* high-density command center — 暗い。等幅。1 画面に多く入れる */
+@layer themes {
+  [data-theme="command-center"] {
+    --surface-page: oklch(19% 0.015 260);
+    --surface-card: oklch(24% 0.018 260);
+    --surface-sunken: oklch(28% 0.020 260);
+    --text-primary: oklch(95% 0.005 260);
+    --text-secondary: oklch(82% 0.008 260);
+    --text-quiet: oklch(72% 0.010 260);
+    --border-default: oklch(36% 0.020 260);
+    --border-strong: oklch(60% 0.030 260);
+    --accent: oklch(72% 0.14 200);
+    --accent-contrast: oklch(18% 0.02 260);
+    --danger: oklch(70% 0.17 25);
+    --caution: oklch(80% 0.14 85);
+    --positive: oklch(76% 0.14 155);
+    --unknown: oklch(74% 0.13 300);
+    --font-body: ui-monospace, "SFMono-Regular", "Noto Sans Mono", monospace;
+    --card-padding: var(--space-sm);
+    --card-gap: var(--space-xs);
+    --feed-gap: var(--space-xs);
+    --radius-lg: 3px; --radius-md: 2px;
+    --card-shadow: none;
+    --text-md: clamp(0.8125rem, 0.79rem + 0.12vw, 0.875rem);
+    --measure: 90ch;
+  }
+  [data-theme="command-center"] .card-title { font-weight: 600; }
+  [data-theme="command-center"] .fact-label { text-transform: uppercase; letter-spacing: 0.08em; }
+}

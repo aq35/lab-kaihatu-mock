@@ -1,0 +1,31 @@
+@layer layout {
+  .page {
+    max-inline-size: 78rem;
+    margin-inline: auto;
+    padding-inline: var(--space-md);
+    padding-block: var(--space-xl);
+  }
+  .page-header { margin-block-end: var(--space-xl); }
+  .page-header p { color: var(--text-secondary); max-inline-size: var(--measure); }
+
+  .card-feed {
+    display: grid;
+    gap: var(--feed-gap);
+  }
+  /* card 自身が container。viewport ではなく「置かれた場所の幅」に適応する */
+  .card-slot {
+    container-type: inline-size;
+    container-name: card;
+  }
+
+  /* 狭いコンテナ (sidebar, split view) に置いても同じカードが使える */
+  .layout-split {
+    display: grid;
+    gap: var(--space-lg);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 60rem) {
+    .layout-split { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  }
+  .layout-narrow { max-inline-size: 22rem; }
+}

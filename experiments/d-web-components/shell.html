@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} — Owner Control Center (D: Web Components)</title>
+<!-- token / theme は条件C と同じファイルを使う。shadow root へは継承する custom property だけが入る -->
+<link rel="stylesheet" href="{{SHARED}}styles/tokens.css">
+<link rel="stylesheet" href="{{SHARED}}styles/themes/calm-console.css">
+<link rel="stylesheet" href="{{SHARED}}styles/themes/editorial.css">
+<link rel="stylesheet" href="{{SHARED}}styles/themes/command-center.css">
+<link rel="stylesheet" href="{{SHARED}}styles/themes/conversational.css">
+<link rel="stylesheet" href="{{SHARED}}styles/themes/timeline.css">
+<link rel="stylesheet" href="{{SHARED}}styles/themes/dark.css">
+<link rel="stylesheet" href="{{BASE}}page.css">
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<div class="page">
+  <header class="page-header">
+    <h1>Owner Control Center</h1>
+    <p>KAS があなたの判断を必要としている項目です。対応が必要: <strong data-attention-count>—</strong> 件</p>
+    <form class="view-controls" method="get" action="">
+      <p class="control"><label for="type-filter">種別で絞り込む</label>
+        <select id="type-filter" name="type" data-type-filter>
+          <option value="ALL">すべて</option><option value="OWNER_QUESTION">質問</option>
+          <option value="ACTION_APPROVAL">承認</option><option value="OUTCOME_UNKNOWN_REVIEW">結果不明</option>
+          <option value="RESULT_REVIEW">結果</option><option value="INFORMATION">お知らせ</option>
+        </select></p>
+      <p class="control"><label for="theme-select">見た目</label>
+        <select id="theme-select" name="theme" data-theme-select>
+          <option value="auto">OS に合わせる</option>
+          <option value="calm-console" selected>calm operations console</option>
+          <option value="editorial">editorial notebook</option>
+          <option value="command-center">high-density command center</option>
+          <option value="conversational">humane conversational</option>
+          <option value="timeline">visual timeline</option>
+        </select></p>
+      <noscript><button type="submit">適用</button></noscript>
+    </form>
+    <p class="visually-hidden" role="status" aria-live="polite" data-filter-status></p>
+  </header>
+  <main id="main">
+    <h2 class="visually-hidden">対応が必要な項目</h2>
+    {{CARDS}}
+  </main>
+</div>
+<script type="module">
+  import '{{BASE}}components/kas-card.js';
+  import '{{BASE}}components/kas-decision-form.js';
+  const doc = document, main = doc.querySelector('#main');
+  const themeSelect = doc.querySelector('[data-theme-select]');
+  themeSelect?.addEventListener('change', () => {
+    const v = themeSelect.value;
+    if (v === 'auto') doc.documentElement.removeAttribute('data-theme');
+    else doc.documentElement.dataset.theme = v;
+  });
+  const filter = doc.querySelector('[data-type-filter]');
+  filter?.addEventListener('change', () => {
+    let n = 0;
+    for (const slot of main.querySelectorAll('.card-slot')) {
+      const card = slot.querySelector('[data-card-type]');
+      const ok = filter.value === 'ALL' || card?.dataset.cardType === filter.value;
+      slot.hidden = !ok; if (ok) n++;
+    }
+    doc.querySelector('[data-filter-status]').textContent = `${n} 件を表示しています。`;
+  });
+  const counter = doc.querySelector('[data-attention-count]');
+  if (counter) counter.textContent = String(main.querySelectorAll(
+    '[data-card-type="OWNER_QUESTION"][data-card-state="LIVE"],[data-card-type="ACTION_APPROVAL"][data-card-state="LIVE"],[data-card-type="OUTCOME_UNKNOWN_REVIEW"][data-card-state="LIVE"]').length);
+</script>
+</body>
+</html>

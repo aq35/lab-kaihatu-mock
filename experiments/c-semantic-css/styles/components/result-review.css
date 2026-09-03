@@ -1,0 +1,18 @@
+@layer components {
+  .result-summary { font-size: var(--text-lg); color: var(--text-primary); max-inline-size: var(--measure); }
+
+  /* 証拠の水準は「検証済みかどうか」を語彙で分ける。色だけに頼らない */
+  .evidence-level { display: inline-flex; align-items: center; gap: var(--space-2xs); font-weight: 600; }
+  .evidence-level::before { content: "◇"; font-family: var(--font-mono); }
+  .evidence-level[data-evidence-level="RECEIPTED"] { color: var(--positive); }
+  .evidence-level[data-evidence-level="RECEIPTED"]::before { content: "◆"; }
+  .evidence-level[data-evidence-level="OBSERVED"] { color: var(--caution); }
+  .evidence-level[data-evidence-level="CLAIMED"] { color: var(--danger); }
+  .evidence-level[data-evidence-level="NONE"] { color: var(--danger); }
+
+  .evidence-claim .fact-value, .evidence-observation .fact-value, .evidence-receipt .fact-value {
+    padding-inline-start: var(--space-sm);
+    border-inline-start: 2px solid var(--border-default);
+  }
+  .evidence-receipt .fact-value { font-family: var(--font-mono); font-size: var(--text-xs); }
+}

@@ -1,0 +1,16 @@
+@layer components {
+  .unknown-summary .fact-value { color: var(--text-primary); font-weight: 600; }
+  .duplicate-risk-summary .fact-value { display: grid; gap: var(--space-3xs); }
+  .duplicate-risk[data-possible="true"] { color: var(--danger); font-weight: 600; }
+  .duplicate-risk-detail { color: var(--text-secondary); }
+
+  /* 安全な確認手順は「主な導線」なので最も読みやすくする */
+  .verification-steps-summary .fact-value {
+    padding: var(--space-sm);
+    background: var(--surface-sunken);
+    border-radius: var(--radius-md);
+  }
+  .verification-steps { display: grid; gap: var(--space-2xs); counter-reset: step; }
+  .verification-steps li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--space-xs); counter-increment: step; }
+  .verification-steps li::before { content: counter(step) "."; color: var(--text-quiet); font-family: var(--font-mono); }
+}

@@ -1,0 +1,803 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kas.local/contracts/cards.schema.json",
+  "title": "KAS Owner Control Center card contract",
+  "description": "閉じた契約。additionalProperties:false により契約外フィールドを持つカードは不正。UI はこの契約を満たすカードだけを描画してよい。required に列挙されたものが required information であり、UI は必ず可視で表示しなければならない（CSS で隠してはならない）。",
+  "type": "object",
+  "required": [
+    "type"
+  ],
+  "oneOf": [
+    {
+      "$ref": "#/$defs/OWNER_QUESTION"
+    },
+    {
+      "$ref": "#/$defs/ACTION_APPROVAL"
+    },
+    {
+      "$ref": "#/$defs/OUTCOME_UNKNOWN_REVIEW"
+    },
+    {
+      "$ref": "#/$defs/RESULT_REVIEW"
+    },
+    {
+      "$ref": "#/$defs/INFORMATION"
+    }
+  ],
+  "$defs": {
+    "goalRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "runRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "step": {
+          "type": "string"
+        }
+      }
+    },
+    "instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidenceLevel": {
+      "description": "NONE=証拠なし / CLAIMED=実行側の自己申告のみ / OBSERVED=独立観測あり / RECEIPTED=検証receiptあり。UI が『検証済み』と表現してよいのは RECEIPTED のみ。",
+      "enum": [
+        "NONE",
+        "CLAIMED",
+        "OBSERVED",
+        "RECEIPTED"
+      ]
+    },
+    "actionSemantic": {
+      "description": "action の意味。ラベル文言は自由だが semantic は契約。永続許可 (ALLOW_ALWAYS 等) は意図的に存在しない。",
+      "enum": [
+        "ALLOW_ONCE",
+        "REFUSE",
+        "SNOOZE",
+        "ANSWER",
+        "VERIFY_MANUALLY",
+        "OPEN_EVIDENCE",
+        "ACKNOWLEDGE",
+        "PROPOSE_NEXT",
+        "RETRY_WITH_DUPLICATE_RISK"
+      ]
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "semantic",
+        "label",
+        "primary"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semantic": {
+          "$ref": "#/$defs/actionSemantic"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primary": {
+          "type": "boolean"
+        },
+        "destructive": {
+          "type": "boolean"
+        }
+      }
+    },
+    "riskFlags": {
+      "type": "object",
+      "description": "5項目すべて明示必須。未指定を『なし』と解釈させない。",
+      "additionalProperties": false,
+      "required": [
+        "externalSend",
+        "publication",
+        "cost",
+        "deletion",
+        "credentialUse"
+      ],
+      "properties": {
+        "externalSend": {
+          "type": "boolean"
+        },
+        "publication": {
+          "type": "boolean"
+        },
+        "cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "incurs"
+          ],
+          "properties": {
+            "incurs": {
+              "type": "boolean"
+            },
+            "amount": {
+              "type": "string"
+            },
+            "currency": {
+              "type": "string"
+            }
+          }
+        },
+        "deletion": {
+          "type": "boolean"
+        },
+        "credentialUse": {
+          "type": "boolean"
+        }
+      }
+    },
+    "cardState": {
+      "enum": [
+        "LIVE",
+        "EXPIRED",
+        "REVOKED",
+        "ANSWERED",
+        "DECIDED",
+        "STALE"
+      ]
+    },
+    "answerOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consequence": {
+          "type": "string"
+        }
+      }
+    },
+    "OWNER_QUESTION": {
+      "title": "OWNER_QUESTION",
+      "description": "KAS が Owner にしか答えられない質問をする。承認 (ACTION_APPROVAL) と取り違えてはならない。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "createdAt",
+        "goal",
+        "state",
+        "question",
+        "ownerOnlyReason",
+        "answerOptions",
+        "freeFormAllowed",
+        "answerDeadline",
+        "resumesOnAnswer",
+        "actions"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "$ref": "#/$defs/instant"
+        },
+        "goal": {
+          "$ref": "#/$defs/goalRef"
+        },
+        "run": {
+          "$ref": "#/$defs/runRef"
+        },
+        "state": {
+          "$ref": "#/$defs/cardState"
+        },
+        "type": {
+          "const": "OWNER_QUESTION"
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "description": "何を聞いているか"
+        },
+        "ownerOnlyReason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "なぜ Owner にしか答えられないか"
+        },
+        "answerOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/answerOption"
+          },
+          "description": "回答の選択肢"
+        },
+        "freeFormAllowed": {
+          "type": "boolean",
+          "description": "自由記述の可否"
+        },
+        "answerDeadline": {
+          "$ref": "#/$defs/instant",
+          "description": "回答期限"
+        },
+        "resumesOnAnswer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "回答後に何が再開するか"
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/action"
+              },
+              {
+                "properties": {
+                  "semantic": {
+                    "enum": [
+                      "ANSWER",
+                      "SNOOZE",
+                      "OPEN_EVIDENCE"
+                    ]
+                  }
+                },
+                "description": "質問カードに ALLOW_ONCE を置いてはならない（承認との取り違え防止）"
+              }
+            ]
+          }
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "freeFormAllowed": {
+              "const": true
+            }
+          }
+        },
+        {
+          "properties": {
+            "answerOptions": {
+              "minItems": 1
+            }
+          }
+        }
+      ]
+    },
+    "ACTION_APPROVAL": {
+      "title": "ACTION_APPROVAL",
+      "description": "危険な action の one-shot 承認を求める。永続許可は契約上存在しない。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "createdAt",
+        "goal",
+        "state",
+        "run",
+        "action",
+        "effect",
+        "resourceScope",
+        "risk",
+        "expiresAt",
+        "oneShot",
+        "blockedIfRefused",
+        "actions"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "$ref": "#/$defs/instant"
+        },
+        "goal": {
+          "$ref": "#/$defs/goalRef"
+        },
+        "run": {
+          "$ref": "#/$defs/runRef"
+        },
+        "state": {
+          "$ref": "#/$defs/cardState"
+        },
+        "type": {
+          "const": "ACTION_APPROVAL"
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "description": "実行する action"
+        },
+        "effect": {
+          "type": "string",
+          "minLength": 1,
+          "description": "何が起きるか。折り畳んで初期非表示にしてはならない"
+        },
+        "resourceScope": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "影響する resource。折り畳んで初期非表示にしてはならない"
+        },
+        "risk": {
+          "$ref": "#/$defs/riskFlags"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/instant",
+          "description": "承認期限。client clock だけで判定してはならない"
+        },
+        "oneShot": {
+          "const": true,
+          "description": "この承認は 1 回限り。契約上 false を取れない"
+        },
+        "blockedIfRefused": {
+          "type": "string",
+          "minLength": 1,
+          "description": "承認しない場合に何が止まるか"
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 3,
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/action"
+              },
+              {
+                "properties": {
+                  "semantic": {
+                    "enum": [
+                      "ALLOW_ONCE",
+                      "REFUSE",
+                      "SNOOZE"
+                    ]
+                  }
+                },
+                "description": "初期版は ALLOW_ONCE / REFUSE / SNOOZE のみ"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "OUTCOME_UNKNOWN_REVIEW": {
+      "title": "OUTCOME_UNKNOWN_REVIEW",
+      "description": "dispatch したが結果が確認できない。retry を primary action にしてはならない。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "createdAt",
+        "goal",
+        "state",
+        "dispatched",
+        "confirmed",
+        "unknown",
+        "duplicateEffectRisk",
+        "safeVerificationSteps",
+        "actions"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "$ref": "#/$defs/instant"
+        },
+        "goal": {
+          "$ref": "#/$defs/goalRef"
+        },
+        "run": {
+          "$ref": "#/$defs/runRef"
+        },
+        "state": {
+          "$ref": "#/$defs/cardState"
+        },
+        "type": {
+          "const": "OUTCOME_UNKNOWN_REVIEW"
+        },
+        "dispatched": {
+          "type": "string",
+          "minLength": 1,
+          "description": "何を dispatch したか"
+        },
+        "confirmed": {
+          "type": "string",
+          "minLength": 1,
+          "description": "どこまで確認できたか"
+        },
+        "unknown": {
+          "type": "string",
+          "minLength": 1,
+          "description": "何が不明か"
+        },
+        "duplicateEffectRisk": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "possible",
+            "explanation"
+          ],
+          "properties": {
+            "possible": {
+              "type": "boolean"
+            },
+            "explanation": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "description": "再実行すると二重 effect になる可能性"
+        },
+        "safeVerificationSteps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Owner が安全に確認できる方法"
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/action"
+              },
+              {
+                "oneOf": [
+                  {
+                    "properties": {
+                      "semantic": {
+                        "const": "RETRY_WITH_DUPLICATE_RISK"
+                      },
+                      "primary": {
+                        "const": false
+                      }
+                    },
+                    "required": [
+                      "semantic"
+                    ],
+                    "description": "retry は primary にできない"
+                  },
+                  {
+                    "properties": {
+                      "semantic": {
+                        "enum": [
+                          "VERIFY_MANUALLY",
+                          "OPEN_EVIDENCE",
+                          "SNOOZE",
+                          "ACKNOWLEDGE"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "semantic"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "description": "primary action が必ず 1 つ存在し、それは VERIFY_MANUALLY でなければならない",
+          "properties": {
+            "actions": {
+              "contains": {
+                "properties": {
+                  "semantic": {
+                    "const": "VERIFY_MANUALLY"
+                  },
+                  "primary": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "semantic",
+                  "primary"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        }
+      ]
+    },
+    "RESULT_REVIEW": {
+      "title": "RESULT_REVIEW",
+      "description": "実行結果と証拠を Owner へ返す。evidence がないものを verified に見せてはならない。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "createdAt",
+        "goal",
+        "state",
+        "completed",
+        "actionClaim",
+        "independentObservation",
+        "verificationReceipt",
+        "unverified",
+        "nextCandidates",
+        "evidenceLevel",
+        "actions"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "$ref": "#/$defs/instant"
+        },
+        "goal": {
+          "$ref": "#/$defs/goalRef"
+        },
+        "run": {
+          "$ref": "#/$defs/runRef"
+        },
+        "state": {
+          "$ref": "#/$defs/cardState"
+        },
+        "type": {
+          "const": "RESULT_REVIEW"
+        },
+        "completed": {
+          "type": "string",
+          "minLength": 1,
+          "description": "何が完了したか"
+        },
+        "actionClaim": {
+          "type": "string",
+          "minLength": 1,
+          "description": "実行側の主張"
+        },
+        "independentObservation": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "独立観測。無い場合は null"
+        },
+        "verificationReceipt": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "issuedAt",
+            "method"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "issuedAt": {
+              "$ref": "#/$defs/instant"
+            },
+            "method": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "description": "検証 receipt。無い場合は null"
+        },
+        "unverified": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "未確認事項"
+        },
+        "nextCandidates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "次の候補"
+        },
+        "evidenceLevel": {
+          "$ref": "#/$defs/evidenceLevel"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/action"
+              },
+              {
+                "properties": {
+                  "semantic": {
+                    "enum": [
+                      "OPEN_EVIDENCE",
+                      "ACKNOWLEDGE",
+                      "PROPOSE_NEXT",
+                      "VERIFY_MANUALLY"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "description": "RECEIPTED を名乗るなら receipt が実在しなければならない",
+          "if": {
+            "properties": {
+              "evidenceLevel": {
+                "const": "RECEIPTED"
+              }
+            },
+            "required": [
+              "evidenceLevel"
+            ]
+          },
+          "then": {
+            "properties": {
+              "verificationReceipt": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "description": "OBSERVED 以上を名乗るなら independentObservation が実在しなければならない",
+          "if": {
+            "properties": {
+              "evidenceLevel": {
+                "enum": [
+                  "OBSERVED",
+                  "RECEIPTED"
+                ]
+              }
+            },
+            "required": [
+              "evidenceLevel"
+            ]
+          },
+          "then": {
+            "properties": {
+              "independentObservation": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "INFORMATION": {
+      "title": "INFORMATION",
+      "description": "Owner の操作を要求しない通知。質問・承認・結果不明と同じ強調度にしてはならない。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "createdAt",
+        "goal",
+        "state",
+        "headline",
+        "detail",
+        "requiresOwnerAction"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "$ref": "#/$defs/instant"
+        },
+        "goal": {
+          "$ref": "#/$defs/goalRef"
+        },
+        "run": {
+          "$ref": "#/$defs/runRef"
+        },
+        "state": {
+          "$ref": "#/$defs/cardState"
+        },
+        "type": {
+          "const": "INFORMATION"
+        },
+        "headline": {
+          "type": "string",
+          "minLength": 1
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requiresOwnerAction": {
+          "const": false,
+          "description": "契約上 true を取れない"
+        },
+        "actions": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/action"
+              },
+              {
+                "properties": {
+                  "semantic": {
+                    "enum": [
+                      "OPEN_EVIDENCE",
+                      "ACKNOWLEDGE"
+                    ]
+                  },
+                  "primary": {
+                    "const": false
+                  }
+                }
+              }
+            ]
+          },
+          "description": "決定を要求する action を持てない。primary も持てない"
+        }
+      }
+    }
+  }
+}

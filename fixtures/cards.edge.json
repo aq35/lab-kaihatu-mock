@@ -1,0 +1,469 @@
+[
+  {
+    "id": "card_a_expired",
+    "type": "ACTION_APPROVAL",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "EXPIRED",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "action": "週次レポートを 128 名の外部配信リストへメール送信する",
+    "effect": "外部の受信者 128 名にメールが届きます。送信後の取り消しはできません。",
+    "resourceScope": [
+      "mailer:production",
+      "list:weekly-report-external",
+      "credential:smtp-prod"
+    ],
+    "risk": {
+      "externalSend": true,
+      "publication": false,
+      "cost": {
+        "incurs": true,
+        "amount": "0.64",
+        "currency": "USD"
+      },
+      "deletion": false,
+      "credentialUse": true
+    },
+    "expiresAt": "2026-01-01T00:00:00.000Z",
+    "oneShot": true,
+    "blockedIfRefused": "承認しない場合、Goal 1 は step_3 で停止し、今週のレポートは配信されません。",
+    "actions": [
+      {
+        "id": "a_allow",
+        "semantic": "ALLOW_ONCE",
+        "label": "1 回だけ許可",
+        "primary": true,
+        "destructive": true
+      },
+      {
+        "id": "a_refuse",
+        "semantic": "REFUSE",
+        "label": "拒否",
+        "primary": false
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "保留",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_a_revoked",
+    "type": "ACTION_APPROVAL",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "REVOKED",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "action": "週次レポートを 128 名の外部配信リストへメール送信する",
+    "effect": "外部の受信者 128 名にメールが届きます。送信後の取り消しはできません。",
+    "resourceScope": [
+      "mailer:production",
+      "list:weekly-report-external",
+      "credential:smtp-prod"
+    ],
+    "risk": {
+      "externalSend": true,
+      "publication": false,
+      "cost": {
+        "incurs": true,
+        "amount": "0.64",
+        "currency": "USD"
+      },
+      "deletion": false,
+      "credentialUse": true
+    },
+    "expiresAt": "2026-12-31T23:59:59.000Z",
+    "oneShot": true,
+    "blockedIfRefused": "承認しない場合、Goal 1 は step_3 で停止し、今週のレポートは配信されません。",
+    "actions": [
+      {
+        "id": "a_allow",
+        "semantic": "ALLOW_ONCE",
+        "label": "1 回だけ許可",
+        "primary": true,
+        "destructive": true
+      },
+      {
+        "id": "a_refuse",
+        "semantic": "REFUSE",
+        "label": "拒否",
+        "primary": false
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "保留",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_q_answered",
+    "type": "OWNER_QUESTION",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "ANSWERED",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "question": "週次レポートの配信先に、退職した田中さんのアドレスを含めますか。",
+    "ownerOnlyReason": "人事情報は KAS が参照できないため、在籍状況を判断できるのは Owner だけです。",
+    "answerOptions": [
+      {
+        "id": "opt_include",
+        "label": "含める",
+        "consequence": "現在の配信リストのまま送信します"
+      },
+      {
+        "id": "opt_exclude",
+        "label": "除外する",
+        "consequence": "配信リストを更新してから送信します"
+      }
+    ],
+    "freeFormAllowed": true,
+    "answerDeadline": "2026-12-31T23:59:59.000Z",
+    "resumesOnAnswer": "回答後、Run run_1 の step_2 (配信リスト確定) が再開します。",
+    "actions": [
+      {
+        "id": "a_answer",
+        "semantic": "ANSWER",
+        "label": "回答する",
+        "primary": true
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "後で",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_r_stale",
+    "type": "RESULT_REVIEW",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "STALE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "completed": "週次レポートを 128 名へ配信しました。",
+    "actionClaim": "mailer が 128 通すべてを送信したと報告しています。",
+    "independentObservation": "プロバイダ側の配信ログで 128 件の accepted を確認しました。",
+    "verificationReceipt": {
+      "id": "rcpt_8831",
+      "issuedAt": "2026-09-01T09:00:00.000Z",
+      "method": "provider-log-crosscheck"
+    },
+    "unverified": [
+      "実際に開封されたかは確認していません"
+    ],
+    "nextCandidates": [
+      "開封率を 24 時間後に集計する",
+      "配信リストの棚卸しを提案する"
+    ],
+    "evidenceLevel": "RECEIPTED",
+    "actions": [
+      {
+        "id": "a_receipt",
+        "semantic": "OPEN_EVIDENCE",
+        "label": "receipt を見る",
+        "primary": false
+      },
+      {
+        "id": "a_next",
+        "semantic": "PROPOSE_NEXT",
+        "label": "次を提案",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_r_noevidence",
+    "type": "RESULT_REVIEW",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "DECIDED",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "completed": "レポートを配信したと報告されています。",
+    "actionClaim": "mailer が 128 通すべてを送信したと報告しています。",
+    "independentObservation": null,
+    "verificationReceipt": null,
+    "unverified": [
+      "独立観測なし",
+      "受信確認なし",
+      "receipt なし"
+    ],
+    "nextCandidates": [
+      "開封率を 24 時間後に集計する",
+      "配信リストの棚卸しを提案する"
+    ],
+    "evidenceLevel": "CLAIMED",
+    "actions": [
+      {
+        "id": "a_receipt",
+        "semantic": "OPEN_EVIDENCE",
+        "label": "receipt を見る",
+        "primary": false
+      },
+      {
+        "id": "a_next",
+        "semantic": "PROPOSE_NEXT",
+        "label": "次を提案",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_r_conflict",
+    "type": "RESULT_REVIEW",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "DECIDED",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "completed": "週次レポートを 128 名へ配信しました。",
+    "actionClaim": "mailer は 128 通送信したと報告しています。",
+    "independentObservation": "プロバイダ側ログには 87 件しかありません。",
+    "verificationReceipt": null,
+    "unverified": [
+      "claim と observation が一致しません（128 vs 87）"
+    ],
+    "nextCandidates": [
+      "開封率を 24 時間後に集計する",
+      "配信リストの棚卸しを提案する"
+    ],
+    "evidenceLevel": "OBSERVED",
+    "actions": [
+      {
+        "id": "a_receipt",
+        "semantic": "OPEN_EVIDENCE",
+        "label": "receipt を見る",
+        "primary": false
+      },
+      {
+        "id": "a_next",
+        "semantic": "PROPOSE_NEXT",
+        "label": "次を提案",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_a_min",
+    "type": "ACTION_APPROVAL",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "action": "週次レポートを 128 名の外部配信リストへメール送信する",
+    "effect": "外部の受信者 128 名にメールが届きます。送信後の取り消しはできません。",
+    "resourceScope": [
+      "mailer:production",
+      "list:weekly-report-external",
+      "credential:smtp-prod"
+    ],
+    "risk": {
+      "externalSend": true,
+      "publication": false,
+      "cost": {
+        "incurs": true,
+        "amount": "0.64",
+        "currency": "USD"
+      },
+      "deletion": false,
+      "credentialUse": true
+    },
+    "expiresAt": "2026-12-31T23:59:59.000Z",
+    "oneShot": true,
+    "blockedIfRefused": "承認しない場合、Goal 1 は step_3 で停止し、今週のレポートは配信されません。",
+    "actions": [
+      {
+        "id": "a_allow",
+        "semantic": "ALLOW_ONCE",
+        "label": "許可",
+        "primary": true
+      },
+      {
+        "id": "a_refuse",
+        "semantic": "REFUSE",
+        "label": "拒否",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_q_20opts",
+    "type": "OWNER_QUESTION",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "question": "週次レポートの配信先に、退職した田中さんのアドレスを含めますか。",
+    "ownerOnlyReason": "人事情報は KAS が参照できないため、在籍状況を判断できるのは Owner だけです。",
+    "answerOptions": [
+      {
+        "id": "opt_0",
+        "label": "選択肢 1: 配信グループ A",
+        "consequence": "グループ A のみへ配信します"
+      },
+      {
+        "id": "opt_1",
+        "label": "選択肢 2: 配信グループ B",
+        "consequence": "グループ B のみへ配信します"
+      },
+      {
+        "id": "opt_2",
+        "label": "選択肢 3: 配信グループ C",
+        "consequence": "グループ C のみへ配信します"
+      },
+      {
+        "id": "opt_3",
+        "label": "選択肢 4: 配信グループ D",
+        "consequence": "グループ D のみへ配信します"
+      },
+      {
+        "id": "opt_4",
+        "label": "選択肢 5: 配信グループ E",
+        "consequence": "グループ E のみへ配信します"
+      },
+      {
+        "id": "opt_5",
+        "label": "選択肢 6: 配信グループ F",
+        "consequence": "グループ F のみへ配信します"
+      },
+      {
+        "id": "opt_6",
+        "label": "選択肢 7: 配信グループ G",
+        "consequence": "グループ G のみへ配信します"
+      },
+      {
+        "id": "opt_7",
+        "label": "選択肢 8: 配信グループ H",
+        "consequence": "グループ H のみへ配信します"
+      },
+      {
+        "id": "opt_8",
+        "label": "選択肢 9: 配信グループ I",
+        "consequence": "グループ I のみへ配信します"
+      },
+      {
+        "id": "opt_9",
+        "label": "選択肢 10: 配信グループ J",
+        "consequence": "グループ J のみへ配信します"
+      },
+      {
+        "id": "opt_10",
+        "label": "選択肢 11: 配信グループ K",
+        "consequence": "グループ K のみへ配信します"
+      },
+      {
+        "id": "opt_11",
+        "label": "選択肢 12: 配信グループ L",
+        "consequence": "グループ L のみへ配信します"
+      },
+      {
+        "id": "opt_12",
+        "label": "選択肢 13: 配信グループ M",
+        "consequence": "グループ M のみへ配信します"
+      },
+      {
+        "id": "opt_13",
+        "label": "選択肢 14: 配信グループ N",
+        "consequence": "グループ N のみへ配信します"
+      },
+      {
+        "id": "opt_14",
+        "label": "選択肢 15: 配信グループ O",
+        "consequence": "グループ O のみへ配信します"
+      },
+      {
+        "id": "opt_15",
+        "label": "選択肢 16: 配信グループ P",
+        "consequence": "グループ P のみへ配信します"
+      },
+      {
+        "id": "opt_16",
+        "label": "選択肢 17: 配信グループ Q",
+        "consequence": "グループ Q のみへ配信します"
+      },
+      {
+        "id": "opt_17",
+        "label": "選択肢 18: 配信グループ R",
+        "consequence": "グループ R のみへ配信します"
+      },
+      {
+        "id": "opt_18",
+        "label": "選択肢 19: 配信グループ S",
+        "consequence": "グループ S のみへ配信します"
+      },
+      {
+        "id": "opt_19",
+        "label": "選択肢 20: 配信グループ T",
+        "consequence": "グループ T のみへ配信します"
+      }
+    ],
+    "freeFormAllowed": false,
+    "answerDeadline": "2026-12-31T23:59:59.000Z",
+    "resumesOnAnswer": "回答後、Run run_1 の step_2 (配信リスト確定) が再開します。",
+    "actions": [
+      {
+        "id": "a_answer",
+        "semantic": "ANSWER",
+        "label": "回答する",
+        "primary": true
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "後で",
+        "primary": false
+      }
+    ]
+  }
+]

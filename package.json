@@ -1,0 +1,21 @@
+{
+  "name": "web-ui-manual",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "AIが創造しやすいHTML/CSS/JS UI設計を実験で見つけるリポジトリ。production dependency は持たない。",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "test": "node --test tests/contract tests/css tests/javascript",
+    "test:e2e": "playwright test",
+    "measure": "node tools/measure.mjs",
+    "build:variants": "node tools/build-variants.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "axe-core": "^4.10.2"
+  }
+}

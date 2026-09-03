@@ -1,0 +1,55 @@
+@layer components {
+  .card {
+    display: grid;
+    gap: var(--card-gap);
+    padding: var(--card-padding);
+    background: var(--surface-card);
+    border: var(--card-border-width) solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    /* 種別ごとの強調は「変数の付け替え」で行う。色は theme が決める */
+    border-inline-start: 4px solid var(--card-kind-accent, var(--border-default));
+  }
+  .owner-question  { --card-kind-accent: var(--kind-accent-owner-question); }
+  .action-approval { --card-kind-accent: var(--kind-accent-action-approval); }
+  .outcome-unknown { --card-kind-accent: var(--kind-accent-outcome-unknown); }
+  .result-review   { --card-kind-accent: var(--kind-accent-result-review); }
+  .information     { --card-kind-accent: var(--kind-accent-information); }
+
+  .card-header { display: grid; gap: var(--space-2xs); }
+
+  /* 種別は色だけで伝えない。必ず記号 + テキストを出す */
+  .card-kind {
+    display: flex; align-items: center; gap: var(--space-xs);
+    font-size: var(--text-xs); font-weight: 600;
+    letter-spacing: 0.04em; color: var(--card-kind-accent);
+  }
+  .card-kind-glyph {
+    display: grid; place-items: center;
+    inline-size: 1.35em; block-size: 1.35em;
+    border: 1px solid currentColor; border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+  }
+  .card-title { color: var(--text-primary); }
+
+  .card-facts { display: grid; gap: var(--card-gap); }
+  .fact { display: grid; gap: var(--space-3xs); }
+  .fact-label {
+    font-size: var(--text-xs); font-weight: 600;
+    color: var(--text-quiet); letter-spacing: 0.03em;
+  }
+  .fact-value { color: var(--text-secondary); font-size: var(--text-sm); max-inline-size: var(--measure); }
+
+  .absent { color: var(--text-quiet); font-style: italic; }
+
+  /* container query: カードが狭い場所に置かれたら 1 列・低密度に落とす。
+     viewport ではなく container を見るので、sidebar でも split view でも正しく効く */
+  @container card (min-width: 34rem) {
+    .card-facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); align-items: start; }
+    .fact { display: contents; }
+    .fact-label { padding-block-start: 0.15em; }
+  }
+  @container card (max-width: 22rem) {
+    .card { --card-padding: var(--space-md); --card-gap: var(--space-sm); }
+  }
+}

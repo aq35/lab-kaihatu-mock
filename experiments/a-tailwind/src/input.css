@@ -1,0 +1,4 @@
+@import "tailwindcss";
+/* markup 側の utility を検出させる（v4 の source 指定） */
+@source "../render.mjs";
+@source "../shell.html";

@@ -1,0 +1,75 @@
+@layer tokens {
+  :root {
+    /* --- primitive token: 生の値。component から直接参照しない ------------- */
+    --p-gray-0:   oklch(99% 0.002 250);
+    --p-gray-50:  oklch(96.5% 0.004 250);
+    --p-gray-100: oklch(93% 0.006 250);
+    --p-gray-300: oklch(80% 0.010 250);
+    --p-gray-500: oklch(50% 0.012 250);
+    --p-gray-700: oklch(42% 0.014 250);
+    --p-gray-900: oklch(22% 0.016 250);
+    --p-blue-500: oklch(55% 0.15 250);
+    --p-blue-600: oklch(46% 0.16 250);
+    --p-amber-500: oklch(72% 0.15 75);
+    --p-red-500:  oklch(48% 0.18 25);
+    --p-green-600: oklch(48% 0.13 150);
+    --p-violet-500: oklch(48% 0.17 300);
+
+    /* spacing scale: 4px 基準。任意の px を component に書かない */
+    --space-3xs: 0.125rem; --space-2xs: 0.25rem; --space-xs: 0.5rem;
+    --space-sm: 0.75rem;  --space-md: 1rem;    --space-lg: 1.5rem;
+    --space-xl: 2rem;     --space-2xl: 3rem;
+
+    /* fluid typography: clamp で上下限を必ず持つ */
+    --text-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);
+    --text-sm: clamp(0.8125rem, 0.78rem + 0.18vw, 0.9375rem);
+    --text-md: clamp(0.9375rem, 0.90rem + 0.22vw, 1.0625rem);
+    --text-lg: clamp(1.0625rem, 1.00rem + 0.35vw, 1.3125rem);
+    --text-xl: clamp(1.25rem, 1.10rem + 0.7vw, 1.75rem);
+
+    --radius-sm: 2px; --radius-md: 6px; --radius-lg: 12px;
+    --border-hairline: 1px;
+    --measure: 68ch;
+
+    /* --- semantic token: component が参照してよいのはこちらだけ ------------ */
+    --surface-page: var(--p-gray-50);
+    --surface-card: var(--p-gray-0);
+    --surface-sunken: var(--p-gray-100);
+    --text-primary: var(--p-gray-900);
+    --text-secondary: var(--p-gray-700);
+    --text-quiet: var(--p-gray-500);
+    --border-default: var(--p-gray-300);
+    --border-strong: var(--p-gray-500);
+
+    --accent: var(--p-blue-600);
+    --accent-contrast: var(--p-gray-0);
+    --danger: var(--p-red-500);
+    --caution: var(--p-amber-500);
+    --positive: var(--p-green-600);
+    --unknown: var(--p-violet-500);
+
+    /* カード種別ごとの「強調度」。色そのものではなく役割で持つ */
+    --kind-accent-owner-question: var(--accent);
+    --kind-accent-action-approval: var(--danger);
+    --kind-accent-outcome-unknown: var(--unknown);
+    --kind-accent-result-review: var(--positive);
+    --kind-accent-information: var(--text-quiet);
+
+    /* 情報の重みづけ。theme はこれを付け替えるだけで密度を変えられる */
+    --card-padding: var(--space-lg);
+    --card-gap: var(--space-md);
+    --feed-gap: var(--space-lg);
+    --card-shadow: 0 1px 2px oklch(0% 0 0 / 0.06), 0 4px 12px oklch(0% 0 0 / 0.04);
+    --card-border-width: var(--border-hairline);
+    --font-body: system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-heading: var(--font-body);
+    --font-mono: ui-monospace, "SFMono-Regular", monospace;
+    --focus-ring: 3px solid var(--accent);
+    --focus-offset: 2px;
+    --motion-duration: 160ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --motion-duration: 0ms; }
+  }
+}

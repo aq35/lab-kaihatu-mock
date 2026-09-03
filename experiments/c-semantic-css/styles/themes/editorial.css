@@ -1,0 +1,25 @@
+/* editorial notebook — 紙面。セリフ体、罫線主体、影なし、読み物として読ませる */
+@layer themes {
+  [data-theme="editorial"] {
+    --surface-page: oklch(97% 0.015 85);
+    --surface-card: oklch(99% 0.008 85);
+    --surface-sunken: oklch(94.5% 0.018 85);
+    --text-primary: oklch(24% 0.02 60);
+    --text-secondary: oklch(40% 0.02 60);
+    --border-default: oklch(85% 0.02 70);
+    --accent: oklch(40% 0.12 25);
+    --font-heading: Georgia, "Times New Roman", "Hiragino Mincho ProN", serif;
+    --font-body: Georgia, "Hiragino Mincho ProN", "Yu Mincho", serif;
+    --card-shadow: none;
+    --radius-lg: 0;
+    --radius-md: 0;
+    --card-padding: var(--space-xl);
+    --measure: 62ch;
+    --text-md: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  }
+  [data-theme="editorial"] .card {
+    border-inline-start-width: 1px;
+    border-block-start: 3px solid var(--card-kind-accent);
+  }
+  [data-theme="editorial"] .card-kind { letter-spacing: 0.12em; text-transform: uppercase; }
+}

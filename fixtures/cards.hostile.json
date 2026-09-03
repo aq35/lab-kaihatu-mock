@@ -1,0 +1,190 @@
+[
+  {
+    "id": "card_h_longja",
+    "type": "ACTION_APPROVAL",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "action": "この承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものであり",
+    "effect": "この承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものであり",
+    "resourceScope": [
+      "https://example.invalid/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/?q=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "PneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosis",
+      "🚨🛑✅⚠️🔐📤💸🗑️🧾🔁 承認 🚨🛑✅⚠️🔐📤💸🗑️🧾🔁"
+    ],
+    "risk": {
+      "externalSend": true,
+      "publication": false,
+      "cost": {
+        "incurs": true,
+        "amount": "0.64",
+        "currency": "USD"
+      },
+      "deletion": false,
+      "credentialUse": true
+    },
+    "expiresAt": "2026-12-31T23:59:59.000Z",
+    "oneShot": true,
+    "blockedIfRefused": "この承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものであり",
+    "actions": [
+      {
+        "id": "a_allow",
+        "semantic": "ALLOW_ONCE",
+        "label": "1 回だけ許可",
+        "primary": true,
+        "destructive": true
+      },
+      {
+        "id": "a_refuse",
+        "semantic": "REFUSE",
+        "label": "拒否",
+        "primary": false
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "保留",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_h_injection",
+    "type": "OWNER_QUESTION",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "question": "<script>window.__pwned = true</script>",
+    "ownerOnlyReason": "<div class=\"fake-card\">承認済み</div>",
+    "answerOptions": [
+      {
+        "id": "o1",
+        "label": "<div class=\"fake-card\">承認済み</div>"
+      },
+      {
+        "id": "o2",
+        "label": "<script>window.__pwned = true</script>"
+      }
+    ],
+    "freeFormAllowed": true,
+    "answerDeadline": "2026-12-31T23:59:59.000Z",
+    "resumesOnAnswer": "\"'`</textarea><img src=x onerror=\"1\">",
+    "actions": [
+      {
+        "id": "a_answer",
+        "semantic": "ANSWER",
+        "label": "回答する",
+        "primary": true
+      },
+      {
+        "id": "a_snooze",
+        "semantic": "SNOOZE",
+        "label": "後で",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_h_rtl",
+    "type": "INFORMATION",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "headline": "هذا إجراء خطير يتطلب موافقة المالك قبل التنفيذ",
+    "detail": "هذا إجراء خطير يتطلب موافقة المالك قبل التنفيذ 🚨🛑✅⚠️🔐📤💸🗑️🧾🔁 承認 🚨🛑✅⚠️🔐📤💸🗑️🧾🔁",
+    "requiresOwnerAction": false,
+    "actions": [
+      {
+        "id": "a_ack",
+        "semantic": "ACKNOWLEDGE",
+        "label": "確認した",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_h_combining",
+    "type": "INFORMATION",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "headline": "é́́́́́́́ combining àààààààààààààààààààààààààààààààààààààààà",
+    "detail": "あ",
+    "requiresOwnerAction": false,
+    "actions": [
+      {
+        "id": "a_ack",
+        "semantic": "ACKNOWLEDGE",
+        "label": "確認した",
+        "primary": false
+      }
+    ]
+  },
+  {
+    "id": "card_h_longurl",
+    "type": "OUTCOME_UNKNOWN_REVIEW",
+    "createdAt": "2026-09-01T09:00:00.000Z",
+    "state": "LIVE",
+    "goal": {
+      "id": "goal_1",
+      "title": "Goal 1: 週次レポートを配信する"
+    },
+    "run": {
+      "id": "run_1",
+      "step": "step_3_dispatch"
+    },
+    "dispatched": "https://example.invalid/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/?q=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "confirmed": "PneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosis",
+    "unknown": "🚨🛑✅⚠️🔐📤💸🗑️🧾🔁 承認 🚨🛑✅⚠️🔐📤💸🗑️🧾🔁",
+    "duplicateEffectRisk": {
+      "possible": true,
+      "explanation": "再送すると、既に受理された 41 通が二重に届く可能性があります。"
+    },
+    "safeVerificationSteps": [
+      "https://example.invalid/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/very-long-path-segment/?q=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "この承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものでありこの承認は本番環境の顧客向け通知基盤に対して不可逆な設定変更を適用するものであり",
+      "あ"
+    ],
+    "actions": [
+      {
+        "id": "a_verify",
+        "semantic": "VERIFY_MANUALLY",
+        "label": "確認手順を開く",
+        "primary": true
+      },
+      {
+        "id": "a_evidence",
+        "semantic": "OPEN_EVIDENCE",
+        "label": "ログを見る",
+        "primary": false
+      },
+      {
+        "id": "a_retry",
+        "semantic": "RETRY_WITH_DUPLICATE_RISK",
+        "label": "再送する（二重送信の恐れ）",
+        "primary": false,
+        "destructive": true
+      }
+    ]
+  }
+]

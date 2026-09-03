@@ -1,0 +1,13 @@
+/* calm operations console — 既定。静かで、余白が広く、判断に集中させる */
+@layer themes {
+  [data-theme="calm-console"] {
+    --surface-page: oklch(97.5% 0.006 250);
+    --surface-card: oklch(100% 0 0);
+    --surface-sunken: oklch(96% 0.008 250);
+    --accent: oklch(48% 0.13 245);
+    --card-padding: var(--space-lg);
+    --feed-gap: var(--space-lg);
+    --radius-lg: 12px;
+    --card-shadow: 0 1px 2px oklch(0% 0 0 / 0.05), 0 8px 24px oklch(0% 0 0 / 0.04);
+  }
+}
