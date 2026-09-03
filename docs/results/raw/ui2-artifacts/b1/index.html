@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Aurora — 光を、あなたの手のひらに。</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">本文へスキップ</a>
+
+<header class="chrome">
+  <div class="chrome__inner">
+    <span class="chrome__brand">Aurora</span>
+
+    <fieldset class="scheme-switch">
+      <legend class="visually-hidden">配色モード</legend>
+      <input type="radio" name="scheme" id="scheme-auto" checked>
+      <label for="scheme-auto">自動</label>
+      <input type="radio" name="scheme" id="scheme-light">
+      <label for="scheme-light">ライト</label>
+      <input type="radio" name="scheme" id="scheme-dark">
+      <label for="scheme-dark">ダーク</label>
+    </fieldset>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Hero -->
+  <section class="hero" data-theme="dark" aria-labelledby="hero-heading">
+    <div class="hero__media" aria-hidden="true">
+      <img class="hero__img" width="1600" height="900" alt=""
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236d28d9'/%3E%3Cstop offset='.55' stop-color='%232563eb'/%3E%3Cstop offset='1' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3CradialGradient id='r' cx='.72' cy='.28' r='.65'%3E%3Cstop offset='0' stop-color='%23ffffff' stop-opacity='.4'/%3E%3Cstop offset='1' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='1600' height='900' fill='url(%23g)'/%3E%3Crect width='1600' height='900' fill='url(%23r)'/%3E%3Crect x='560' y='190' width='480' height='520' rx='56' fill='%230b1220' fill-opacity='.5'/%3E%3Crect x='620' y='250' width='360' height='400' rx='40' fill='%23f8fafc' fill-opacity='.08'/%3E%3C/svg%3E">
+    </div>
+    <div class="hero__content">
+      <p class="eyebrow">新登場</p>
+      <h1 id="hero-heading" class="hero__headline">光を、あなたの手のひらに。</h1>
+      <p class="hero__subhead">Aurora は一日中続くバッテリーと、目にやさしい有機ディスプレイを一台に。</p>
+      <div class="cta-group">
+        <a class="btn btn--primary" href="/buy">購入する</a>
+        <a class="btn btn--secondary" href="/learn">詳しく見る</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene: display -->
+  <section class="scene scene--display" data-theme="dark" data-emphasis="strong" aria-labelledby="scene-display-heading">
+    <div class="scene__grid">
+      <figure class="scene__media">
+        <img width="1200" height="1400" alt="拡大したディスプレイ"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1400'%3E%3Cdefs%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='40'/%3E%3C/filter%3E%3C/defs%3E%3Crect width='1200' height='1400' fill='%23070a12'/%3E%3Crect x='90' y='120' width='1020' height='1160' rx='72' fill='%23111827'/%3E%3Cg filter='url(%23b)'%3E%3Ccircle cx='430' cy='420' r='170' fill='%23e11d8f' opacity='.8'/%3E%3Ccircle cx='760' cy='560' r='190' fill='%232563eb' opacity='.85'/%3E%3Ccircle cx='560' cy='860' r='210' fill='%2306b6d4' opacity='.8'/%3E%3Ccircle cx='800' cy='1020' r='150' fill='%23f59e0b' opacity='.7'/%3E%3C/g%3E%3C/svg%3E">
+      </figure>
+      <div class="scene__content">
+        <h2 id="scene-display-heading" class="scene__heading">見たままの色。</h2>
+        <p class="scene__body">10.1 インチの有機ディスプレイは、10 億色を正確に再現します。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene: battery -->
+  <section class="scene scene--battery" data-theme="light" data-emphasis="normal" aria-labelledby="scene-battery-heading">
+    <div class="scene__grid">
+      <figure class="scene__media">
+        <img width="1200" height="900" alt="バッテリー内部の図"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 900'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fef3c7'/%3E%3Cstop offset='1' stop-color='%23fde68a'/%3E%3C/linearGradient%3E%3ClinearGradient id='cell' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23f59e0b'/%3E%3Cstop offset='1' stop-color='%23fbbf24'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1200' height='900' fill='url(%23bg)'/%3E%3Crect x='260' y='240' width='620' height='420' rx='48' fill='%23ffffff' stroke='%23b45309' stroke-width='10'/%3E%3Crect x='880' y='380' width='40' height='140' rx='12' fill='%23b45309'/%3E%3Crect x='300' y='280' width='540' height='340' rx='28' fill='url(%23cell)'/%3E%3Cpath d='M560 320 L470 470 L540 470 L500 600 L650 430 L570 430 Z' fill='%23ffffff'/%3E%3C/svg%3E">
+      </figure>
+      <div class="scene__content">
+        <h2 id="scene-battery-heading" class="scene__heading">止まらない一日。</h2>
+        <p class="scene__body">最大 22 時間の連続再生。急速充電に対応し、5 分で 2 時間ぶん。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene: material -->
+  <section class="scene scene--material scene--reverse" data-theme="dark" data-emphasis="normal" aria-labelledby="scene-material-heading">
+    <div class="scene__grid">
+      <figure class="scene__media">
+        <img width="1600" height="1000" alt="側面の質感"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000'%3E%3Cdefs%3E%3ClinearGradient id='m' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23334155'/%3E%3Cstop offset='.5' stop-color='%2364748b'/%3E%3Cstop offset='1' stop-color='%23334155'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1600' height='1000' fill='url(%23m)'/%3E%3Cg stroke='%23e2e8f0' stroke-opacity='.15' stroke-width='2'%3E%3Cline x1='0' y1='120' x2='1600' y2='60'/%3E%3Cline x1='0' y1='260' x2='1600' y2='200'/%3E%3Cline x1='0' y1='400' x2='1600' y2='340'/%3E%3Cline x1='0' y1='540' x2='1600' y2='480'/%3E%3Cline x1='0' y1='680' x2='1600' y2='620'/%3E%3Cline x1='0' y1='820' x2='1600' y2='760'/%3E%3C/g%3E%3Crect x='560' y='260' width='480' height='480' rx='64' fill='%23f1f5f9' fill-opacity='.08' stroke='%23f8fafc' stroke-opacity='.35' stroke-width='4'/%3E%3C/svg%3E">
+      </figure>
+      <div class="scene__content">
+        <h2 id="scene-material-heading" class="scene__heading">手になじむ、軽さ。</h2>
+        <p class="scene__body">再生アルミニウムの一体成形。わずか 320g。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Spec -->
+  <section class="spec" data-theme="light" aria-labelledby="spec-heading">
+    <div class="spec__inner">
+      <h2 id="spec-heading" class="spec__heading">仕様</h2>
+      <dl class="spec__list">
+        <div class="spec__row">
+          <dt>ディスプレイ</dt>
+          <dd>10.1インチ 有機EL 2400×1600</dd>
+        </div>
+        <div class="spec__row">
+          <dt>重量</dt>
+          <dd>320g</dd>
+        </div>
+        <div class="spec__row">
+          <dt>バッテリー</dt>
+          <dd>最大22時間</dd>
+        </div>
+        <div class="spec__row">
+          <dt>価格</dt>
+          <dd>¥89,800（税込）</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- Footer CTA -->
+  <section class="footer-cta" data-theme="dark" aria-labelledby="footer-cta-heading">
+    <div class="footer-cta__inner">
+      <h2 id="footer-cta-heading" class="footer-cta__heading">Aurora を購入する</h2>
+      <a class="btn btn--primary btn--huge" href="/buy" aria-label="Aurora を購入する">購入する</a>
+    </div>
+  </section>
+
+</main>
+
+<!-- Sticky CTA -->
+<div class="sticky-cta">
+  <div class="sticky-cta__inner">
+    <span class="sticky-cta__product">Aurora</span>
+    <span class="sticky-cta__price">¥89,800（税込）</span>
+    <a class="btn btn--primary btn--compact" href="/buy">購入する</a>
+  </div>
+</div>
+
+</body>
+</html>

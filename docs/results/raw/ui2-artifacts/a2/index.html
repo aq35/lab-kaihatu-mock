@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aurora — 光を、あなたの手のひらに。</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  /* Cinematic drift animation for decorative aurora blobs.
+     Wrapped everywhere with motion-safe: so prefers-reduced-motion:reduce disables it automatically. */
+  @keyframes auroraDrift {
+    0%   { transform: translate3d(-4%, -2%, 0) scale(1);   opacity: .55; }
+    50%  { transform: translate3d(4%, 3%, 0) scale(1.15);  opacity: .85; }
+    100% { transform: translate3d(-4%, -2%, 0) scale(1);   opacity: .55; }
+  }
+  @keyframes auroraDriftSlow {
+    0%   { transform: translate3d(3%, 2%, 0) rotate(0deg);   }
+    50%  { transform: translate3d(-3%, -2%, 0) rotate(4deg); }
+    100% { transform: translate3d(3%, 2%, 0) rotate(0deg);   }
+  }
+</style>
+</head>
+<body class="bg-neutral-950 text-neutral-50 antialiased selection:bg-fuchsia-500/30">
+
+  <!-- Sticky top bar: always reachable primary CTA, no JS / motion required -->
+  <header class="sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-white/10 bg-neutral-950/70 px-5 py-3 backdrop-blur-md sm:px-8">
+    <span class="text-sm font-semibold tracking-[0.35em] uppercase text-white/90">Aurora</span>
+    <a href="/buy"
+       class="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-neutral-950 shadow-[0_2px_20px_rgba(255,255,255,0.25)] transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98] sm:px-6 sm:py-3 sm:text-base">
+      購入する
+    </a>
+  </header>
+
+  <main>
+
+    <!-- ============ HERO ============ -->
+    <section class="relative isolate flex min-h-[100vh] w-full flex-col justify-end overflow-hidden bg-neutral-950 px-5 pb-16 pt-28 sm:px-10 sm:pb-24 lg:px-16">
+
+      <!-- background layer: gradient art + vignette mask, kept separate from text so text never fades -->
+      <div class="pointer-events-none absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)]">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Aurora 本体の正面"
+             class="h-full w-full aspect-[1600/900] object-cover [filter:saturate(1.35)_contrast(1.05)]">
+          <defs>
+            <linearGradient id="heroGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"  stop-color="#0b0410"/>
+              <stop offset="35%" stop-color="#4c1d95"/>
+              <stop offset="65%" stop-color="#4338ca"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+            <radialGradient id="heroGlow" cx="70%" cy="30%" r="65%">
+              <stop offset="0%" stop-color="#f0abfc" stop-opacity="0.55"/>
+              <stop offset="100%" stop-color="#f0abfc" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="1600" height="900" fill="url(#heroGrad)"/>
+          <rect width="1600" height="900" fill="url(#heroGlow)"/>
+        </svg>
+        <div class="absolute inset-0 bg-neutral-950/35"></div>
+      </div>
+
+      <!-- decorative drifting blobs (pure filter/gradient, mix-blend, motion-safe only) -->
+      <div aria-hidden="true"
+           class="motion-safe:animate-[auroraDrift_16s_ease-in-out_infinite] pointer-events-none absolute -top-24 -right-24 -z-10 h-[38rem] w-[38rem] rounded-full bg-[radial-gradient(circle_at_center,#e879f9_0%,transparent_70%)] mix-blend-screen blur-3xl"></div>
+      <div aria-hidden="true"
+           class="motion-safe:animate-[auroraDriftSlow_22s_ease-in-out_infinite] pointer-events-none absolute -bottom-32 -left-16 -z-10 h-[30rem] w-[30rem] rounded-full bg-[radial-gradient(circle_at_center,#22d3ee_0%,transparent_70%)] mix-blend-screen blur-3xl"></div>
+
+      <div class="relative mx-auto w-full max-w-6xl">
+        <span class="mb-6 inline-flex w-fit items-center rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-medium tracking-[0.3em] uppercase text-white/90 backdrop-blur-md">
+          新登場
+        </span>
+
+        <h1 class="max-w-4xl text-[clamp(2.5rem,3.2vw+1.6rem,5.75rem)] font-black leading-[1.03] tracking-tight text-white [text-wrap:balance] [filter:drop-shadow(0_6px_30px_rgba(0,0,0,0.45))]">
+          光を、あなたの手のひらに。
+        </h1>
+
+        <p class="mt-6 max-w-[38ch] text-[clamp(1.05rem,0.5vw+1rem,1.375rem)] leading-relaxed text-white/85 sm:max-w-[46ch]">
+          Aurora は一日中続くバッテリーと、目にやさしい有機ディスプレイを一台に。
+        </p>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4">
+          <a href="/buy"
+             class="inline-flex items-center justify-center rounded-full bg-white px-8 py-4 text-base font-semibold text-neutral-950 shadow-[0_8px_40px_rgba(255,255,255,0.3)] transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98] sm:text-lg">
+            購入する
+          </a>
+          <a href="/learn"
+             class="inline-flex items-center justify-center rounded-full border border-white/40 px-8 py-4 text-base font-semibold text-white/95 backdrop-blur-md transition-colors duration-200 hover:bg-white/10 sm:text-lg">
+            詳しく見る
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE: display (dark / strong emphasis) ============ -->
+    <section class="relative isolate overflow-hidden bg-neutral-950 px-5 py-24 sm:px-10 sm:py-32 lg:px-16">
+      <div aria-hidden="true"
+           class="motion-safe:animate-[auroraDriftSlow_20s_ease-in-out_infinite] pointer-events-none absolute inset-y-0 right-[-10%] -z-10 w-[55%] bg-[radial-gradient(ellipse_at_center,#818cf8_0%,transparent_65%)] mix-blend-screen blur-3xl"></div>
+
+      <div class="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-20">
+        <div class="order-2 lg:order-1">
+          <h2 class="text-[clamp(1.75rem,1.6vw+1.3rem,3.5rem)] font-black leading-tight tracking-tight text-white [text-wrap:balance]">
+            見たままの色。
+          </h2>
+          <p class="mt-6 max-w-[70ch] text-lg leading-relaxed text-white/80 sm:text-xl">
+            10.1 インチの有機ディスプレイは、10 億色を正確に再現します。
+          </p>
+        </div>
+        <div class="order-1 lg:order-2">
+          <div class="relative aspect-[1200/1400] w-full overflow-hidden rounded-[2.5rem] [mask-image:radial-gradient(ellipse_120%_120%_at_50%_20%,black_60%,transparent_100%)] shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+            <svg viewBox="0 0 1200 1400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="拡大したディスプレイ"
+                 class="h-full w-full [filter:saturate(1.4)_contrast(1.1)]">
+              <defs>
+                <linearGradient id="dispGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#0ea5e9"/>
+                  <stop offset="45%" stop-color="#6366f1"/>
+                  <stop offset="100%" stop-color="#c026d3"/>
+                </linearGradient>
+              </defs>
+              <rect width="1200" height="1400" fill="#020617"/>
+              <rect x="80" y="120" width="1040" height="1160" rx="60" fill="url(#dispGrad)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE: battery (light / normal emphasis) ============ -->
+    <section class="relative isolate overflow-hidden bg-neutral-50 px-5 py-24 text-neutral-900 sm:px-10 sm:py-32 lg:px-16">
+      <div aria-hidden="true"
+           class="motion-safe:animate-[auroraDrift_18s_ease-in-out_infinite] pointer-events-none absolute inset-y-0 left-[-10%] -z-10 w-[50%] bg-[radial-gradient(ellipse_at_center,#22d3ee_0%,transparent_65%)] opacity-40 blur-3xl"></div>
+
+      <div class="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-20">
+        <div>
+          <div class="relative aspect-[1200/900] w-full overflow-hidden rounded-[2rem] [mask-image:linear-gradient(120deg,black_65%,transparent_100%)] shadow-[0_20px_60px_rgba(15,23,42,0.15)]">
+            <svg viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="バッテリー内部の図"
+                 class="h-full w-full [filter:saturate(1.2)]">
+              <defs>
+                <linearGradient id="battGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#a7f3d0"/>
+                  <stop offset="55%" stop-color="#22d3ee"/>
+                  <stop offset="100%" stop-color="#6366f1"/>
+                </linearGradient>
+              </defs>
+              <rect width="1200" height="900" fill="url(#battGrad)"/>
+              <rect x="140" y="330" width="920" height="240" rx="30" fill="#0f172a" fill-opacity="0.12"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h2 class="text-[clamp(1.75rem,1.6vw+1.3rem,3.5rem)] font-black leading-tight tracking-tight text-neutral-950 [text-wrap:balance]">
+            止まらない一日。
+          </h2>
+          <p class="mt-6 max-w-[70ch] text-lg leading-relaxed text-neutral-700 sm:text-xl">
+            最大 22 時間の連続再生。急速充電に対応し、5 分で 2 時間ぶん。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE: material (dark / normal emphasis) ============ -->
+    <section class="relative isolate overflow-hidden bg-neutral-950 px-5 py-24 sm:px-10 sm:py-32 lg:px-16">
+      <div aria-hidden="true"
+           class="motion-safe:animate-[auroraDriftSlow_24s_ease-in-out_infinite] pointer-events-none absolute inset-x-0 top-0 -z-10 h-[60%] bg-[radial-gradient(ellipse_at_top,#a855f7_0%,transparent_60%)] mix-blend-screen blur-3xl opacity-60"></div>
+
+      <div class="mx-auto w-full max-w-6xl">
+        <div class="relative aspect-[1600/1000] w-full overflow-hidden rounded-[2.5rem] [mask-image:linear-gradient(to_top,black_60%,transparent_100%)] shadow-[0_30px_90px_rgba(0,0,0,0.55)]">
+          <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" role="img" aria-label="側面の質感"
+               class="h-full w-full [filter:contrast(1.1)_saturate(1.25)]">
+            <defs>
+              <linearGradient id="matGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e1b4b"/>
+                <stop offset="50%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#ec4899"/>
+              </linearGradient>
+            </defs>
+            <rect width="1600" height="1000" fill="url(#matGrad)"/>
+          </svg>
+        </div>
+
+        <div class="mt-10 max-w-2xl lg:mt-14">
+          <h2 class="text-[clamp(1.75rem,1.6vw+1.3rem,3.5rem)] font-black leading-tight tracking-tight text-white [text-wrap:balance]">
+            手になじむ、軽さ。
+          </h2>
+          <p class="mt-6 max-w-[70ch] text-lg leading-relaxed text-white/80 sm:text-xl">
+            再生アルミニウムの一体成形。わずか 320g。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SPEC (light) ============ -->
+    <section class="bg-neutral-50 px-5 py-24 text-neutral-900 sm:px-10 sm:py-28 lg:px-16">
+      <div class="mx-auto w-full max-w-4xl">
+        <h2 class="text-[clamp(1.5rem,1vw+1.2rem,2.5rem)] font-black tracking-tight text-neutral-950">
+          仕様
+        </h2>
+        <dl class="mt-10 divide-y divide-neutral-200 border-t border-neutral-200">
+          <div class="grid grid-cols-1 gap-1 py-5 sm:grid-cols-[10rem_1fr] sm:gap-6">
+            <dt class="text-sm font-semibold tracking-wide text-neutral-500">ディスプレイ</dt>
+            <dd class="text-lg text-neutral-900">10.1インチ 有機EL 2400×1600</dd>
+          </div>
+          <div class="grid grid-cols-1 gap-1 py-5 sm:grid-cols-[10rem_1fr] sm:gap-6">
+            <dt class="text-sm font-semibold tracking-wide text-neutral-500">重量</dt>
+            <dd class="text-lg text-neutral-900">320g</dd>
+          </div>
+          <div class="grid grid-cols-1 gap-1 py-5 sm:grid-cols-[10rem_1fr] sm:gap-6">
+            <dt class="text-sm font-semibold tracking-wide text-neutral-500">バッテリー</dt>
+            <dd class="text-lg text-neutral-900">最大22時間</dd>
+          </div>
+          <div class="grid grid-cols-1 gap-1 py-5 sm:grid-cols-[10rem_1fr] sm:gap-6">
+            <dt class="text-sm font-semibold tracking-wide text-neutral-500">価格</dt>
+            <dd class="text-lg text-neutral-900">¥89,800（税込）</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ============ FOOTER CTA (dark) ============ -->
+    <footer class="relative isolate overflow-hidden bg-neutral-950 px-5 py-28 text-center sm:px-10 sm:py-36">
+      <div aria-hidden="true"
+           class="motion-safe:animate-[auroraDrift_20s_ease-in-out_infinite] pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_40%,#7c3aed_0%,transparent_60%)] mix-blend-screen blur-3xl opacity-70"></div>
+
+      <div class="mx-auto max-w-2xl">
+        <p class="text-sm font-medium tracking-[0.3em] text-white/60 uppercase">Aurora</p>
+        <a href="/buy"
+           class="mt-8 inline-flex items-center justify-center rounded-full bg-white px-10 py-5 text-lg font-bold text-neutral-950 shadow-[0_12px_50px_rgba(255,255,255,0.35)] transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98] sm:text-xl">
+          Aurora を購入する
+        </a>
+      </div>
+    </footer>
+
+  </main>
+
+</body>
+</html>
