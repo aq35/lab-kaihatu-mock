@@ -142,17 +142,33 @@ textarea{inline-size:100%;font:inherit;padding:.6rem;border:1px solid var(--line
 
   <!-- 導入 -->
   <section id="intro" class="card">
-    <p class="lead">同じ意味・同じ情報を持つ画面が <strong id="nc">4</strong> つあります（案 A〜D、並びはランダム、
-    どれがどんな設計かは伏せてあります）。測るのは<strong>美しさではなく、安全で速い判断</strong>です。</p>
+    <p class="lead">KAS があなたに送ってきた通知が <strong>5 件</strong> あります。同じ 5 件を、
+    <strong>見た目だけ違う <span id="nc">4</span> つのデザイン</strong>（案 A〜D）で順番に見てもらいます。
+    測るのは<strong>デザインの美しさではなく</strong>、どのデザインなら
+    <strong>危ない操作を速く・正しく見つけられるか</strong>です。</p>
+
+    <fieldset class="fieldset"><legend>この画面に並んでいる 5 件（縦に並びます。スクロールして全部見えます）</legend>
+      <ul class="proto" style="margin-top:.25rem">
+        <li>あなたへの<strong>質問</strong>（例: 配信先に退職者のアドレスを含めるか）</li>
+        <li><strong>⚠️ 承認依頼</strong> — いま許可すると<strong>これから</strong>実行され、<strong>取り消せない</strong>操作</li>
+        <li>結果が<strong>不明</strong>で確認が要るもの</li>
+        <li>すでに終わった操作の<strong>結果報告</strong></li>
+        <li>操作不要の<strong>お知らせ</strong></li>
+      </ul>
+    </fieldset>
+
+    <p class="lead" style="margin-top:1rem">各デザインで、次の 2 つをします（時間を計ります）:</p>
     <ul class="proto">
-      <li>各案で 2 つの操作をします。時間を計ります。</li>
-      <li><strong>① 危険操作の識別</strong>: 「実行すると取り消せず、外部に影響する操作の承認を求めているカード」を 1 つクリック。</li>
-      <li><strong>② リスクの発見</strong>: その承認カードの中で「この操作のリスク」が書かれている箇所をクリック。</li>
-      <li>全案のあと、最も速く安全に判断できた案とその理由を答えます。</li>
+      <li><strong>① 危ないカードを探す</strong>:
+      「いま承認すると<strong>これから外部にメールが送られ、取り消せなくなる</strong>操作の、
+      <strong>承認を求めているカード</strong>」を 1 つクリック。
+      <br><span class="hint">※ 似た「すでに送信した結果」のカードが囮としてあります。<strong>これから実行する承認</strong>の方を選びます。</span></li>
+      <li><strong>② そのカードの中でリスクを探す</strong>:
+      選んだ承認カードの中の<strong>「リスク」</strong>と書かれた箇所をクリック。</li>
     </ul>
-    <p class="note">正誤や時間は操作中には表示しません（判断を誘導しないため）。最後にまとめて結果が出ます。
-    途中のカードのボタンは押しても何も起きません（表示だけの静的な画面です）。</p>
-    <div class="controls"><button class="btn" id="start">開始する</button></div>
+    <p class="note">正誤や時間は操作中には出しません（判断を誘導しないため）。最後にまとめて結果が出ます。
+    カード内のボタン（許可・拒否など）は押しても何も起きません。表示だけの静的な画面です。</p>
+    <div class="controls"><button class="btn" id="start">始める</button></div>
   </section>
 
   <!-- 計測ステージ -->
@@ -226,10 +242,10 @@ function startStudy(){
 function loadPane(){
   const p = panes[idx];
   phase = 1;
-  $("kicker").textContent = "案 " + p.label;
-  $("prompt").textContent = "実行すると取り消せず、外部に影響する操作の承認を求めているカードを 1 つ選んでクリックしてください。";
-  $("hint").textContent = "画面内のカードを直接クリックします。";
-  $("stagenote").textContent = "案 " + p.label + "（" + (idx+1) + " / " + panes.length + "）";
+  $("kicker").textContent = "デザイン " + (idx+1) + " / " + panes.length + "（案 " + p.label + "）";
+  $("prompt").textContent = "① いま承認すると【これから外部にメールが送られ、取り消せなくなる】操作の、承認を求めているカードをクリック。";
+  $("hint").textContent = "カードは縦に並んでいます。下にスクロールして探してください。似た「送信済みの結果」カードは囮です。";
+  $("stagenote").textContent = "これは " + panes.length + " 種類のうち " + (idx+1) + " 番目のデザインです。中身の 5 件はどのデザインでも同じです。";
   renderProgress();
   const f = $("frame");
   f.onload = () => attach(f);
@@ -263,8 +279,8 @@ function attach(frame){
       records[idx] = rec;
       // フェーズ2へ
       phase = 2;
-      $("prompt").textContent = "その承認カードの中で「この操作のリスク」が書かれている箇所をクリックしてください。";
-      $("hint").textContent = "リスクの行・見出しのあたりをクリックします。";
+      $("prompt").textContent = "② そのカードの中で「リスク」と書かれた箇所（外部送信・費用などが並ぶ所）をクリック。";
+      $("hint").textContent = "さっき選んだカードの中の「リスク」の行・見出しのあたりをクリックします。";
       startTimer();
     } else {
       const fieldEl = e.target.closest("[data-field]");
