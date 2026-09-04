@@ -65,4 +65,41 @@ identical  <  scalar-only(N2,N3)  <  current-vgui(T)  <  structural(P)
 
 - 測定器: `tools/vgui-diversity-meter.mjs`
 - 生データ: `docs/results/raw/vgui-diversity-calibration.json`
-- 判定: この doc に合否と、各指標が順序を復元したかを追記（測定後）。
+
+---
+
+## 測定結果（測定後に追記）— 合否: **PASS**（凍結ゲートを満たす）
+
+全ペア平均（0=同一, 大=多様）:
+
+| 指標 | identical | color-only | spacing-only | current-vgui | structural |
+|---|--:|--:|--:|--:|--:|
+| pixel | 0 | 0.003 | 0.047 | 0.047 | 0.306 |
+| ssim | 0 | 0.000 | 0.281 | 0.278 | 0.494 |
+| geometry（配置） | 0 | 0 | 0 | **0** | **0.193** |
+| typography（書体主） | 0 | 0 | 0 | **0.050** | **0.330** |
+| emphasis | 0 | 0 | 0 | 0 | 0 |
+| grouping | 0 | 0 | 0 | 0 | 0 |
+| **composite** | 0 | 0.002 | 0.120 | 0.145 | **0.588** |
+
+**凍結ゲートの判定:**
+1. composite が凍結順序を復元: `0 < 0.061(scalar平均) < 0.145 < 0.588` → **満たす**。
+2. geometry・typography が structural を current-vgui より明確に上に置く（0.193>0、0.330>0.050）→ **満たす**。
+3. pixel 単独に頼らない: geometry/typography が独立に structural を分離 → **満たす**。
+→ 測定器を VGUI の多様性判定に**使ってよい**。
+
+**この校正で分かった実質的なこと（測定器の副産物だが重要）:**
+- **current-vgui は「間隔だけ変える」とほぼ同じ多様性**。pixel 0.047≈spacing 0.047、ssim 0.278≈0.281。
+  構造指標（geometry=0, typography=0.05）はほぼ 0。**連続スカラー grammar 一式の多様性は、間隔スカラー 1 本と同程度**で、
+  structural（composite 0.59）には遠く及ばない。前回 Owner が「案が同じに見える」と言ったことの機械的裏づけ。
+- **構造指標（geometry/typography）はスカラー変化に対して 0、構造変化にだけ発火する**という分離が確認できた。
+  これが「表現の多様性＝presentation topology」を測る核になる。
+
+**限界（正直に）:**
+- **emphasis と grouping は全条件で 0＝弁別できなかった**。
+  - emphasis: 画面内で最も支配的なテキストは content 依存（常に同じ最長テキストが支配）で、presentation では動かなかった。
+  - grouping: 視覚的な塊数が structural でも変わらず出た（閾値・条件C の DOM の都合）。measurement 未完成。
+  - この 2 指標は**信頼できる集合から外す**。合否は残り 4 指標（pixel/ssim/geometry/typography）で満たしている。
+    presentation topology の grammar を作ったら、emphasis/grouping も作り直して再校正する。
+- structural の geometry がまだ小さめ（0.193）なのは、timeline の字下げ等が固定枠内で部分的にしか出ないため。
+  トポロジ grammar 側で段組・rail・sequence を明示的に動かせば、この指標はもっと開くはず。

@@ -1,0 +1,81 @@
+{
+  "ranAt": "2026-09-04T23:28:59.166Z",
+  "frozenOrder": "identical < scalar-only < current-vgui < structural",
+  "conditions": {
+    "N1-identical": 3,
+    "N2-color-only": 4,
+    "N3-spacing-only": 4,
+    "T-current-vgui": 4,
+    "P-structural": 6
+  },
+  "perConditionRaw": {
+    "N1-identical": {
+      "pixel": 0,
+      "ssim": 0,
+      "geometry": 0,
+      "typography": 0,
+      "emphasis": 0,
+      "grouping": 0
+    },
+    "N2-color-only": {
+      "pixel": 0.0032,
+      "ssim": 0.0001,
+      "geometry": 0,
+      "typography": 0,
+      "emphasis": 0,
+      "grouping": 0
+    },
+    "N3-spacing-only": {
+      "pixel": 0.0471,
+      "ssim": 0.2807,
+      "geometry": 0,
+      "typography": 0,
+      "emphasis": 0,
+      "grouping": 0
+    },
+    "T-current-vgui": {
+      "pixel": 0.0466,
+      "ssim": 0.2784,
+      "geometry": 0,
+      "typography": 0.0503,
+      "emphasis": 0,
+      "grouping": 0
+    },
+    "P-structural": {
+      "pixel": 0.3061,
+      "ssim": 0.4941,
+      "geometry": 0.1925,
+      "typography": 0.33,
+      "emphasis": 0,
+      "grouping": 0
+    }
+  },
+  "compositeNormalized": {
+    "N1-identical": 0,
+    "N2-color-only": 0.0018,
+    "N3-spacing-only": 0.1203,
+    "T-current-vgui": 0.1447,
+    "P-structural": 0.6667
+  },
+  "metricOrderRecovered": {
+    "pixel": true,
+    "ssim": true,
+    "geometry": false,
+    "typography": false,
+    "emphasis": false,
+    "grouping": false
+  },
+  "structuralAboveVgui": {
+    "pixel": true,
+    "ssim": true,
+    "geometry": true,
+    "typography": true,
+    "emphasis": false,
+    "grouping": false
+  },
+  "gate": {
+    "compositeRecoversOrder": true,
+    "geometryTypographySeparate": true,
+    "verdict": "PASS"
+  }
+}
