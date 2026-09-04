@@ -1,0 +1,161 @@
+<title>Goal 証拠台帳</title>
+<style>
+:root{
+  --bg:#f7f7f4; --panel:#ffffff; --ink:#191b18; --ink2:#3c4038; --quiet:#6d7168; --line:#e3e3dc; --edge:#d3d4cb;
+  --verified:#2f7d4f; --observed:#b6822a; --claimed:#b23b2e; --assume:#b23b2e; --link:#4a5a6a; --linkhot:#111;
+  --hot:#12324a; --hotbg:#e9f0f6; --void:#efe7e6;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --shadow:0 1px 2px rgba(20,22,18,.05),0 8px 22px rgba(20,22,18,.07);
+}
+:root[data-theme="dark"]{ --bg:#161814; --panel:#1e211c; --ink:#eef0ea; --ink2:#c3c7bd; --quiet:#8b8f84;
+  --line:#2c2f28; --edge:#3a3e35; --verified:#67c489; --observed:#e0b45e; --claimed:#e88a7d; --assume:#e88a7d;
+  --link:#8697a6; --linkhot:#eef0ea; --hot:#9fc4e2; --hotbg:#1a2c39; --void:#2a2220; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 26px rgba(0,0,0,.45);}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){ --bg:#161814; --panel:#1e211c; --ink:#eef0ea; --ink2:#c3c7bd; --quiet:#8b8f84;
+  --line:#2c2f28; --edge:#3a3e35; --verified:#67c489; --observed:#e0b45e; --claimed:#e88a7d; --assume:#e88a7d;
+  --link:#8697a6; --linkhot:#eef0ea; --hot:#9fc4e2; --hotbg:#1a2c39; --void:#2a2220; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 26px rgba(0,0,0,.45);}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55}
+.wrap{max-inline-size:min(1120px,96vw);margin-inline:auto;padding:clamp(1rem,3vw,2rem)}
+.masthead{border-block-end:1px solid var(--line);padding-block-end:.7rem;margin-block-end:1rem}
+.masthead h1{font-size:clamp(1.15rem,3vw,1.55rem);margin:0 0 .15rem;letter-spacing:.01em}
+.masthead .meta{font-size:.82rem;color:var(--quiet)}
+.frame{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;font-size:.85rem;color:var(--ink2);margin-block:.7rem 0}
+.frame b{color:var(--ink)}
+.explain{font-size:.85rem;color:var(--quiet);margin:.6rem 0 1rem}
+.explain b{color:var(--ink)}
+
+.graph{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:clamp(1rem,5vw,3.5rem)}
+.edges{position:absolute;inset:0;inline-size:100%;block-size:100%;pointer-events:none;overflow:visible}
+.col h2{font-size:.76rem;text-transform:uppercase;letter-spacing:.09em;color:var(--quiet);margin:0 0 .6rem;font-weight:700}
+.node{background:var(--panel);border:1px solid var(--edge);border-radius:11px;box-shadow:var(--shadow);
+  padding:.7rem .8rem;margin-block-end:.7rem;position:relative}
+.ev{display:grid;gap:.15rem}
+.ev .what{font-weight:600;font-size:.95rem}
+.ev .val{font-size:.9rem;color:var(--ink2)}
+.ev .src{font-size:.75rem;color:var(--quiet);font-family:var(--mono)}
+.conf{display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;font-weight:700;font-family:var(--mono);margin-block-start:.2rem}
+.conf::before{content:"";inline-size:.6rem;block-size:.6rem;border-radius:50%}
+.c-verified{color:var(--verified)} .c-verified::before{background:var(--verified)}
+.c-observed{color:var(--observed)} .c-observed::before{background:var(--observed)}
+.c-claimed{color:var(--claimed)} .c-claimed::before{background:transparent;border:1.5px solid var(--claimed)}
+.c-mixed{color:var(--observed)} .c-mixed::before{background:linear-gradient(90deg,var(--verified) 50%,var(--claimed) 50%)}
+
+button.node{font:inherit;text-align:start;color:inherit;cursor:pointer;inline-size:100%;display:grid;gap:.25rem}
+button.node .dtext{font-weight:600;font-size:.98rem}
+button.node .rest{font-size:.76rem;color:var(--quiet);font-family:var(--mono)}
+.node.assume{border-color:var(--assume);border-style:dashed}
+.badge-assume{display:inline-block;font-size:.7rem;font-weight:700;color:var(--assume);border:1px dashed var(--assume);
+  border-radius:999px;padding:.03rem .5rem;margin-block-start:.1rem}
+.node[aria-pressed="true"]{outline:3px solid var(--hot);outline-offset:2px;background:var(--hotbg)}
+.dim{opacity:.32;filter:saturate(.6)} .lit{outline:2px solid var(--hot);outline-offset:2px}
+:focus-visible{outline:3px solid var(--hot);outline-offset:3px}
+
+.void{grid-column:1 / -1;margin-block-start:.4rem;background:var(--void);border:1px dashed var(--claimed);
+  border-radius:11px;padding:.8rem 1rem}
+.void h2{color:var(--claimed)} .void ul{margin:.3rem 0 0;padding-inline-start:1.1rem;display:grid;gap:.35rem}
+.void li{color:var(--ink2);font-size:.9rem}
+.void li::marker{content:"⌇ "}
+
+.readout{margin-block-start:1.1rem;background:var(--panel);border:1px solid var(--edge);border-radius:11px;
+  box-shadow:var(--shadow);padding:.9rem 1rem;min-block-size:4.5rem;font-size:.92rem}
+.readout b{color:var(--ink)}
+.next{display:flex;flex-wrap:wrap;gap:.5rem;margin-block-start:.6rem}
+.next button{font:inherit;font-size:.84rem;padding:.5rem .75rem;min-block-size:2.75rem;border-radius:9px;cursor:pointer;border:1px solid var(--edge);background:var(--bg);color:var(--ink)}
+.next button[aria-pressed="true"]{border-color:var(--hot);background:var(--hotbg);font-weight:600}
+.hint{font-size:.78rem;color:var(--quiet);margin-block-start:.6rem}
+@media (max-width:720px){ .graph{grid-template-columns:1fr;gap:.4rem} .edges{display:none}
+  .col.decisions{order:-1} .mob-rest{display:block!important} }
+.mob-rest{display:none;font-size:.78rem;color:var(--quiet);margin-block-start:.35rem;border-block-start:1px dashed var(--edge);padding-block-start:.35rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1 id="title"></h1>
+    <div class="meta" id="risk"></div>
+    <div class="frame">
+      <span><b>依頼</b> <span id="asked"></span></span>
+    </div>
+    <div class="frame">
+      <span><b>理解</b> <span id="understood"></span></span>
+    </div>
+  </header>
+  <p class="explain">これは「決めたこと」が「調べたこと」に<b>何本の線で支えられているか</b>を見る台帳です。
+  判断を選ぶと、それを支える証拠が光り、支えのない部分（＝仮定）が浮きます。線の色＝確からしさ。</p>
+
+  <div class="graph" id="graph">
+    <svg class="edges" id="edges" aria-hidden="true"></svg>
+    <div class="col evidence"><h2>調べたこと（証拠）</h2><div id="evCol"></div></div>
+    <div class="col decisions"><h2>決めたこと（判断）</h2><div id="deCol"></div></div>
+    <div class="void"><h2>支えの切れている線（まだ分からないこと）</h2><ul id="unknown"></ul></div>
+  </div>
+
+  <section class="readout" id="readout" aria-live="polite"></section>
+  <p class="hint">判断カードをクリック／Tab で選ぶと、その判断を支える証拠だけが光ります。破線＝根拠が仮定の判断。</p>
+</div>
+
+<script>
+const DATA = __FIXTURE__;
+const $=s=>document.querySelector(s); const el=(t,c)=>{const e=document.createElement(t); if(c)e.className=c; return e;};
+const confClass=c=> c.startsWith('verified')?'c-verified':c.startsWith('observed')?'c-observed':c.startsWith('mixed')?'c-mixed':'c-claimed';
+const confLabel=c=> c.startsWith('verified')?'実測':c.startsWith('observed')?'観測':c.startsWith('mixed')?'一部実測':'自己申告';
+
+$('#title').textContent=DATA.title; $('#risk').textContent='リスク: '+DATA.risk;
+$('#asked').textContent=DATA.ownerAsked; $('#understood').textContent=DATA.kasUnderstood;
+
+const evCol=$('#evCol'), deCol=$('#deCol'); const evById={};
+DATA.investigated.forEach((e,i)=>{ const id='ev'+i; evById[e.what]=id; const n=el('div','node ev'); n.id=id;
+  n.innerHTML=`<div class="what">${e.what}</div><div class="val">${e.value}</div><div class="src">${e.source}</div>`+
+    `<span class="conf ${confClass(e.confidence)}">${confLabel(e.confidence)}</span>`; evCol.append(n); });
+
+const decs=[];
+DATA.decided.forEach((d,i)=>{ const b=el('button','node'+(d.assumption?' assume':'')); b.id='de'+i; b.setAttribute('aria-pressed','false');
+  const rests=(d.restsOn||[]); b.innerHTML=`<span class="dtext">${d.text}</span>`+
+    (d.assumption?`<span class="badge-assume">根拠は仮定（弱い）</span>`:`<span class="rest">根拠: ${rests.join(' ／ ')}</span>`)+
+    `<span class="mob-rest">${d.assumption?'⌇ この判断を確かに支える証拠はまだありません':'← '+rests.join(' ／ ')}</span>`;
+  b.addEventListener('click',()=>select(i)); b.addEventListener('focus',()=>select(i));
+  deCol.append(b); decs.push({d,b,rests}); });
+
+const unk=$('#unknown'); DATA.stillUnknown.forEach(u=>{ const li=el('li'); li.textContent=u; unk.append(li); });
+
+const svg=$('#edges'); const NS='http://www.w3.org/2000/svg';
+function drawEdges(active){
+  svg.innerHTML=''; if(matchMedia('(max-width:720px)').matches) return;
+  const gb=$('#graph').getBoundingClientRect();
+  decs.forEach((dec,di)=>{
+    const db=dec.b.getBoundingClientRect(); const x2=db.left-gb.left; const y2=db.top-gb.top+db.height/2;
+    const isActive = active===null || active===di; const opacity = isActive?1:.12;
+    if(dec.d.assumption){ // 宙に浮く線（支えなし）
+      const x1=x2-46, y1=y2; const p=document.createElementNS(NS,'path');
+      p.setAttribute('d',`M ${x1} ${y1} q -26 0 -30 -22`); p.setAttribute('fill','none');
+      p.setAttribute('stroke','var(--assume)'); p.setAttribute('stroke-width','2'); p.setAttribute('stroke-dasharray','4 4'); p.setAttribute('opacity',opacity);
+      svg.append(p);
+      const dot=document.createElementNS(NS,'circle'); dot.setAttribute('cx',x1-30); dot.setAttribute('cy',y1-22); dot.setAttribute('r','3'); dot.setAttribute('fill','var(--assume)'); dot.setAttribute('opacity',opacity); svg.append(dot);
+      return;
+    }
+    dec.rests.forEach(w=>{ const ev=document.getElementById(evById[w]); if(!ev)return; const eb=ev.getBoundingClientRect();
+      const x1=eb.right-gb.left, y1=eb.top-gb.top+eb.height/2; const mx=(x1+x2)/2;
+      const path=document.createElementNS(NS,'path'); path.setAttribute('d',`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+      path.setAttribute('fill','none'); const c=DATA.investigated.find(e=>e.what===w).confidence;
+      path.setAttribute('stroke', c.startsWith('verified')?'var(--verified)':c.startsWith('observed')?'var(--observed)':'var(--claimed)');
+      path.setAttribute('stroke-width', isActive?'2.5':'1.5'); path.setAttribute('opacity',opacity); svg.append(path); });
+  });
+}
+let curSel=null;
+function select(i){ curSel=i; decs.forEach((d,di)=>d.b.setAttribute('aria-pressed', di===i?'true':'false'));
+  const supIds = decs[i].d.assumption?[]:decs[i].rests.map(w=>evById[w]);
+  [...evCol.children].forEach(n=>{ n.classList.toggle('lit', supIds.includes(n.id)); n.classList.toggle('dim', supIds.length>0 && !supIds.includes(n.id)); });
+  const d=decs[i].d; const r=$('#readout');
+  if(d.assumption){ r.innerHTML=`<b>「${d.text}」</b><br>この判断を確かに支える証拠は<b style="color:var(--assume)">ありません</b>。返信の一言からの弱い仮説です。だから最初に検証すべき候補になります。`; }
+  else { r.innerHTML=`<b>「${d.text}」</b><br>支えている証拠: ${decs[i].rests.map(w=>`<b>${w}</b>（${confLabel(DATA.investigated.find(e=>e.what===w).confidence)}）`).join('、')}。`; }
+  const nx=el('div','next'); DATA.nextOptions.forEach(o=>{ const btn=document.createElement('button'); btn.textContent=o.label+`（${o.effect}）`; btn.setAttribute('aria-pressed','false');
+    btn.addEventListener('click',()=>{ [...nx.children].forEach(c=>c.setAttribute('aria-pressed','false')); btn.setAttribute('aria-pressed','true');
+      r.querySelector('.pick')?.remove(); const p=el('div','pick'); p.style.marginBlockStart='.5rem'; p.innerHTML=`↳ この一手で埋まる証拠: <b>${o.gain}</b> <span style="color:var(--quiet);font-size:.8rem">（研究用・実行しません）</span>`; r.append(p); });
+    nx.append(btn); });
+  r.append(el('div')); r.append(nx);
+  drawEdges(i);
+}
+$('#readout').innerHTML='<b>判断を選んでください。</b>それを支える証拠が光り、支えのない部分が見えます。';
+requestAnimationFrame(()=>{ drawEdges(null); select(0); });
+let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>drawEdges(curSel),120); });
+</script>

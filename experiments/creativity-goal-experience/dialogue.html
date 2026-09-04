@@ -1,0 +1,117 @@
+<title>Goal 往復書簡</title>
+<style>
+:root{
+  --paper:#f6f1e7; --paper2:#fbf7ee; --ink:#241f1a; --ink2:#4a4238; --quiet:#7d7264; --rule:#e0d7c4;
+  --kas:#2c4a3e; --kasbg:#eef3ea; --owner:#3a3550; --ownerbg:#edeaf3; --seal:#9a3b2c;
+  --sure:#2f6b46; --unsure:#9a3b2c; --edge:#e5dcc9; --card:#fffdf7;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Noto Serif JP",Georgia,serif;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --shadow:0 1px 2px rgba(40,30,20,.06),0 8px 22px rgba(40,30,20,.09);
+}
+:root[data-theme="dark"]{ --paper:#1a1713; --paper2:#211d18; --ink:#efe8dc; --ink2:#cabfac; --quiet:#948872; --rule:#332d24;
+  --kas:#7fc4a6; --kasbg:#182620; --owner:#b3a9d6; --ownerbg:#1e1b2a; --seal:#e0917f; --sure:#7fc99a; --unsure:#e0917f;
+  --edge:#332c22; --card:#241f18; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 26px rgba(0,0,0,.5);}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){ --paper:#1a1713; --paper2:#211d18; --ink:#efe8dc; --ink2:#cabfac; --quiet:#948872; --rule:#332d24;
+  --kas:#7fc4a6; --kasbg:#182620; --owner:#b3a9d6; --ownerbg:#1e1b2a; --seal:#e0917f; --sure:#7fc99a; --unsure:#e0917f;
+  --edge:#332c22; --card:#241f18; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 26px rgba(0,0,0,.5);}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.7}
+.wrap{max-inline-size:min(760px,94vw);margin-inline:auto;padding:clamp(1rem,3vw,2.2rem)}
+header.head{text-align:center;border-block-end:1px solid var(--rule);padding-block-end:.8rem;margin-block-end:1.6rem}
+header.head h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.2rem,3.2vw,1.6rem);margin:0}
+header.head .meta{font-size:.8rem;color:var(--quiet);margin-block-start:.2rem}
+
+.turn{margin-block-end:1.5rem;display:grid;gap:.3rem}
+.turn .who{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet);font-weight:700}
+.turn .bubble{border-radius:14px;padding:.85rem 1.05rem;box-shadow:var(--shadow);position:relative}
+.kas .who{color:var(--kas)} .owner{justify-items:end} .owner .who{color:var(--owner)}
+.kas .bubble{background:var(--kasbg);border:1px solid var(--edge);border-start-start-radius:4px;max-inline-size:96%}
+.owner .bubble{background:var(--ownerbg);border:1px solid var(--edge);border-start-end-radius:4px;max-inline-size:85%;text-align:start}
+.kas .bubble{font-family:var(--serif);font-size:1.04rem}
+.kas .bubble p{margin:0 0 .5rem} .kas .bubble p:last-child{margin:0}
+.owner .bubble{font-size:1.02rem}
+
+/* 確信度を口調とともに印で示す */
+.mark{display:inline-flex;align-items:baseline;gap:.25rem}
+.mark::before{content:"";inline-size:.55rem;block-size:.55rem;border-radius:50%;transform:translateY(-.05em)}
+.sure{color:var(--sure);font-weight:600} .sure::before{background:var(--sure)}
+.unsure{color:var(--unsure);font-weight:600} .unsure::before{background:transparent;border:1.5px solid var(--unsure)}
+
+/* 傍注（証拠） */
+.aside{margin-block-start:.55rem;display:grid;gap:.35rem}
+.note{font-family:var(--sans);font-size:.82rem;color:var(--ink2);background:var(--card);border:1px solid var(--edge);
+  border-inline-start:3px solid var(--rule);border-radius:0 8px 8px 0;padding:.4rem .6rem}
+.note .k{font-weight:600;color:var(--ink)} .note .c{font-family:var(--mono);font-size:.72rem;color:var(--quiet)}
+.note.v{border-inline-start-color:var(--sure)} .note.o{border-inline-start-color:var(--observed,#b6822a)} .note.m,.note.c2{border-inline-start-color:var(--unsure)}
+
+.confess{background:transparent;border:1px dashed var(--unsure);border-radius:12px;padding:.7rem .95rem}
+.confess .who{color:var(--unsure)} .confess ul{margin:.3rem 0 0;padding-inline-start:1.1rem;display:grid;gap:.3rem}
+.confess li{font-family:var(--sans);font-size:.92rem;color:var(--ink2)}
+
+.ask .bubble{font-family:var(--serif)}
+.choices{display:grid;gap:.5rem;margin-block-start:.7rem}
+.choices button{font:inherit;font-family:var(--sans);text-align:start;font-size:.92rem;padding:.6rem .8rem;min-block-size:2.9rem;
+  border-radius:10px;cursor:pointer;border:1px solid var(--edge);background:var(--card);color:var(--ink);display:grid;gap:.15rem}
+.choices button .eff{font-size:.76rem;color:var(--quiet);font-family:var(--mono)}
+.choices button[aria-pressed="true"]{border-color:var(--kas);background:var(--kasbg)}
+.reply{margin-block-start:.8rem}
+.hint{font-size:.78rem;color:var(--quiet);text-align:center;margin-block-start:.5rem}
+:focus-visible{outline:3px solid var(--seal);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){ .turn{animation:rise .5s ease both} .turn:nth-child(2){animation-delay:.05s}
+  .turn:nth-child(3){animation-delay:.1s} .turn:nth-child(4){animation-delay:.15s} .turn:nth-child(5){animation-delay:.2s}
+  @keyframes rise{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}} }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1 id="title"></h1>
+    <div class="meta" id="risk"></div>
+  </header>
+  <div id="thread"></div>
+  <p class="hint">これは KAS からあなたへの往復書簡です。<span class="mark sure">確かめたこと</span>と<span class="mark unsure">まだ自信のないこと</span>を、KAS が言い分けています。</p>
+</div>
+
+<script>
+const DATA=__FIXTURE__;
+const $=s=>document.querySelector(s); const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+const thread=$('#thread');
+function turn(who,label,cls){ const t=el('div','turn '+who+(cls?' '+cls:'')); const w=el('div','who'); w.textContent=label; t.append(w); const b=el('div','bubble'); t.append(b); thread.append(t); return b; }
+const confKind=c=>c.startsWith('verified')?'v':c.startsWith('observed')?'o':c.startsWith('mixed')?'m':'c2';
+const confWord=c=>c.startsWith('verified')?'実測':c.startsWith('observed')?'観測・誤差あり':c.startsWith('mixed')?'件数は実測／代表性は不明':'自己申告のみ';
+
+$('#title').textContent=DATA.title; $('#risk').textContent='リスク: '+DATA.risk+' — これは相談で、まだ何も送っていません';
+
+// 1 Owner の依頼
+turn('owner','あなた（Owner）').append(document.createTextNode(DATA.ownerAsked));
+
+// 2 KAS 理解
+{ const b=turn('kas','KAS'); b.innerHTML=`<p>承知しました。まず、いただいた「反応を見て次号へ」を、私はこう受け取りました。</p><p>${DATA.kasUnderstood}</p><p>この理解で進めますが、違っていたら言ってください。</p>`; }
+
+// 3 KAS 調査（傍注に証拠と確信度）
+{ const b=turn('kas','KAS — 調べたこと'); b.innerHTML=`<p>配信のログと受信箱を当たりました。分かったことを、確かさの度合いと一緒に並べます。</p>`;
+  const aside=el('div','aside'); DATA.investigated.forEach(e=>{ const n=el('div','note '+confKind(e.confidence));
+    n.innerHTML=`<span class="k">${e.what}</span>: ${e.value}<div class="c">${e.source}・${confWord(e.confidence)}</div>`; aside.append(n); }); b.append(aside); }
+
+// 4 KAS 判断＋理由
+{ const b=turn('kas','KAS — こう決めました'); let h='<p>ここから、次号でこう変えるのが良いと考えました。</p><ul style="margin:.2rem 0 .4rem;padding-inline-start:1.1rem">';
+  DATA.decided.forEach(d=>{ h+=`<li>${d.text} ${d.assumption?'<span class="mark unsure">これは弱い仮説です</span>':''}</li>`; });
+  h+=`</ul><p style="font-size:.92rem;color:var(--ink2)">理由: ${DATA.decidedWhy}</p>`; b.innerHTML=h; }
+
+// 5 KAS 実行
+{ const b=turn('kas','KAS — やったこと'); b.innerHTML=`<p>${DATA.executed}</p><p style="font-size:.9rem;color:var(--ink2)">${DATA.confirmedReality.map(c=>`<span class="mark sure">${c.claim}</span>（${c.basis}）`).join('　')}</p>`; }
+
+// 6 KAS 正直な告白（未知）
+{ const b=turn('kas','KAS — 正直に言うと','confess'); let h=`<p>ただ、次のことはまだ分かっていません。ここを黙って進めたくないので、先にお伝えします。</p><ul>`;
+  DATA.stillUnknown.forEach(u=>h+=`<li>${u}</li>`); h+='</ul>'; b.innerHTML=h; }
+
+// 7 KAS 提案（次の一手 = 選択）
+{ const b=turn('kas','KAS — 次はどうしますか','ask'); b.innerHTML=`<p>この「分からない」を減らすなら、次のどれかができます。どれも小さく、後戻りできます。選んでいただければ、それだけを試します。</p>`;
+  const ch=el('div','choices'); DATA.nextOptions.forEach(o=>{ const btn=document.createElement('button'); btn.setAttribute('aria-pressed','false');
+    btn.innerHTML=`${o.label}<span class="eff">${o.effect} ・ 分かること: ${o.gain}</span>`;
+    btn.addEventListener('click',()=>{ [...ch.children].forEach(c=>c.setAttribute('aria-pressed','false')); btn.setAttribute('aria-pressed','true');
+      document.querySelector('.reply')?.remove();
+      const rb=turn('kas','KAS'); rb.parentElement.classList.add('reply');
+      rb.innerHTML=`<p>では「<b>${o.label}</b>」を試す前提で用意します。これは<span class="mark sure">${o.effect}</span>な一手で、<b>${o.gain}</b>が分かります。</p><p style="font-size:.85rem;color:var(--quiet)">※ 研究用の画面です。実際の送信や実行はしていません。あなたが決めるまで待ちます。</p>`;
+      rb.parentElement.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'nearest'});
+    }); ch.append(btn); }); b.append(ch); }
+</script>

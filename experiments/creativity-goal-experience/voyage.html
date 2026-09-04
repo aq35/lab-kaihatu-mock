@@ -1,0 +1,178 @@
+<title>Goal 航海図</title>
+<style>
+:root{
+  --sea:#0b2a3a; --sea2:#123a4e; --deep:#08202c; --parch:#f4edda;
+  --ink:#10242e; --ink2:#33505c; --quiet:#5f7783; --line:#c8b98f; --gold:#b8862f;
+  --hull:#e9dfc4; --known:#1f6f6b; --fog:#9fb4bd; --danger:#a23a2a;
+  --card:#fbf6e9; --edge:#d8c79b; --shadow:0 1px 2px rgba(10,30,40,.12),0 10px 30px rgba(10,30,40,.14);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Noto Serif JP",Georgia,serif;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+:root[data-theme="dark"]{
+  --parch:#0e2530; --ink:#e8edf0; --ink2:#b7c6cd; --quiet:#8aa0a9; --line:#2f4a56;
+  --card:#123240; --edge:#27414d; --hull:#1a3844; --known:#4fbfb4; --fog:#3a5560; --gold:#d6a94e;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --parch:#0e2530; --ink:#e8edf0; --ink2:#b7c6cd; --quiet:#8aa0a9; --line:#2f4a56;
+  --card:#123240; --edge:#27414d; --hull:#1a3844; --known:#4fbfb4; --fog:#3a5560; --gold:#d6a94e;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
+}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:
+   radial-gradient(120% 80% at 15% 0%, color-mix(in oklab,var(--parch),#fff 6%), var(--parch) 60%);
+  color:var(--ink);font-family:var(--sans);line-height:1.6}
+.wrap{max-inline-size:min(1180px,96vw);margin-inline:auto;padding:clamp(1rem,3vw,2rem)}
+header.chart{display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;align-items:flex-end;justify-content:space-between;
+  border-block-end:2px solid var(--line);padding-block-end:.7rem}
+.chart h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.25rem,3.4vw,1.7rem);margin:0;letter-spacing:.01em;color:var(--ink)}
+.chart .sub{font-size:.82rem;color:var(--quiet)}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem .9rem;font-size:.76rem;color:var(--ink2)}
+.legend b{font-weight:600}
+.sound{display:inline-grid;place-items:center;inline-size:1.05em;block-size:1.05em;margin-inline-end:.15em;
+  border-radius:50%;font-size:.7em;color:#fff;font-family:var(--mono)}
+.s-verified{background:var(--known)} .s-observed{background:var(--gold)} .s-claimed{background:transparent;border:1.5px solid var(--danger);color:var(--danger)}
+
+/* 航路 */
+.route{position:relative;margin-block:1.4rem;overflow-x:auto;overflow-y:visible;padding:2.4rem .5rem 1rem;
+  scroll-snap-type:x proximity}
+.sealine{position:absolute;inset-block-start:3.3rem;inset-inline:1.5rem;height:3px;
+  background:repeating-linear-gradient(90deg,var(--line) 0 14px,transparent 14px 22px)}
+.stations{display:flex;gap:clamp(.7rem,2vw,1.4rem);min-inline-size:max-content;position:relative}
+.station{scroll-snap-align:start;inline-size:clamp(9.5rem,20vw,12rem);background:transparent;border:0;padding:0;
+  text-align:start;cursor:pointer;font:inherit;color:inherit;display:grid;gap:.4rem;position:relative}
+.node{inline-size:1.4rem;block-size:1.4rem;border-radius:50%;background:var(--known);border:3px solid var(--parch);
+  box-shadow:0 0 0 2px var(--known);margin-block-start:.6rem;transition:transform .18s ease}
+.station:hover .node,.station:focus-visible .node{transform:scale(1.18)}
+.station:focus-visible{outline:3px solid var(--gold);outline-offset:4px;border-radius:8px}
+.cap{font-family:var(--serif);font-weight:600;font-size:.98rem;color:var(--ink)}
+.gloss{font-size:.8rem;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tag{font-size:.72rem;color:var(--quiet);font-family:var(--mono)}
+
+/* 現在地の境界：ここから未知の海 */
+.boundary{scroll-snap-align:start;align-self:stretch;inline-size:2px;background:var(--danger);position:relative;margin-inline:.4rem}
+.boundary::after{content:"現在地 — ここから未知の海";position:absolute;inset-block-start:-2.1rem;inset-inline-start:50%;
+  transform:translateX(-50%);white-space:nowrap;font-size:.72rem;font-weight:700;color:var(--danger);
+  font-family:var(--mono)}
+.future .node{background:var(--fog);box-shadow:0 0 0 2px var(--fog)}
+.future .cap{color:var(--ink2)}
+.future{filter:saturate(.7)}
+.fogwrap{position:relative}
+.fogwrap::before{content:"";position:absolute;inset:-1rem -.5rem;pointer-events:none;border-radius:12px;
+  background:linear-gradient(90deg,transparent, color-mix(in oklab,var(--fog),transparent 55%) 55%);}
+
+/* 詳細 */
+.log{margin-block-start:1rem;background:var(--card);border:1px solid var(--edge);border-radius:12px;
+  box-shadow:var(--shadow);padding:clamp(1rem,2.4vw,1.5rem);min-block-size:9rem}
+.log h2{font-family:var(--serif);margin:.1rem 0 .5rem;font-size:1.15rem;color:var(--ink)}
+.log .body{font-size:.98rem;color:var(--ink2);max-inline-size:70ch}
+.log ul{margin:.5rem 0 0;padding-inline-start:1.1rem;display:grid;gap:.45rem}
+.log li{color:var(--ink2)}
+.log .why{margin-block-start:.7rem;padding:.6rem .8rem;border-inline-start:3px solid var(--gold);
+  background:color-mix(in oklab,var(--gold),transparent 88%);font-size:.9rem;border-radius:0 8px 8px 0}
+.opt{display:flex;flex-wrap:wrap;gap:.5rem;margin-block-start:.6rem}
+.opt button{font:inherit;font-size:.86rem;padding:.5rem .8rem;min-block-size:2.75rem;border-radius:9px;cursor:pointer;
+  border:1px solid var(--edge);background:var(--parch);color:var(--ink)}
+.opt button[aria-pressed="true"]{border-color:var(--gold);background:color-mix(in oklab,var(--gold),transparent 82%);font-weight:600}
+.hint{font-size:.78rem;color:var(--quiet);margin-block-start:.5rem}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media (max-width:640px){
+  .route{overflow-x:visible;padding-block-start:1rem}
+  .sealine{display:none}
+  .stations{flex-direction:column;min-inline-size:0}
+  .station{inline-size:auto;grid-template-columns:1.4rem 1fr;column-gap:.7rem;align-items:start}
+  .node{margin-block-start:.15rem}
+  .cap,.gloss,.tag{grid-column:2}
+  .boundary{inline-size:auto;block-size:2px;margin-block:1.2rem}
+  .boundary::after{inset-block-start:-1.5rem;inset-inline-start:0;transform:none}
+  .fogwrap::before{background:linear-gradient(180deg,transparent,color-mix(in oklab,var(--fog),transparent 60%) 40%)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="chart">
+    <div>
+      <h1 id="title"></h1>
+      <div class="sub" id="risk"></div>
+    </div>
+    <div class="legend" aria-label="確からしさの凡例">
+      <span><span class="sound s-verified">✓</span><b>実測</b></span>
+      <span><span class="sound s-observed">◐</span>観測（誤差あり）</span>
+      <span><span class="sound s-claimed">?</span>自己申告のみ</span>
+    </div>
+  </header>
+
+  <div class="route" role="tablist" aria-label="この Goal の航路。左が依頼、右へ進むほど新しく、現在地から先は未知">
+    <div class="stations" id="stations"></div>
+  </div>
+
+  <section class="log" id="log" aria-live="polite">
+    <h2 id="logTitle"></h2>
+    <div class="body" id="logBody"></div>
+  </section>
+  <p class="hint">港（依頼）から目的地へ向かう航路です。駅をクリック／← → で移動。<b>現在地</b>の線から先は、まだ確かめていない海です。</p>
+</div>
+
+<script>
+const DATA = __FIXTURE__;
+const $ = s => document.querySelector(s);
+const el = (t,c,txt) => { const e=document.createElement(t); if(c)e.className=c; if(txt!=null)e.textContent=txt; return e; };
+const soundClass = c => c && c.startsWith('verified') ? 's-verified' : (c && c.startsWith('observed') ? 's-observed' : 's-claimed');
+
+// 航路の駅（過去＝確かな海 / 現在地 / 未来＝未知の海）
+const past = [
+  { key:'asked', cap:'出発港', gloss:'Ownerが求めたこと', render:()=>({h:'Ownerが求めたこと', body:DATA.ownerAsked}) },
+  { key:'understood', cap:'海図を引く', gloss:'KASが理解したこと', render:()=>({h:'KASが理解したこと', body:DATA.kasUnderstood}) },
+  { key:'investigated', cap:'測深する', gloss:'調べたこと（水深＝確からしさ）', render:()=>({h:'調べたこと', list:DATA.investigated.map(x=>({sound:x.confidence, t:`${x.what}: ${x.value}`, s:`— ${x.source}`}))}) },
+  { key:'decided', cap:'針路を決める', gloss:'判断したこと', render:()=>({h:'判断したこと', list:DATA.decided.map(d=>({t:d.text, s:(d.assumption?'（仮定に基づく）':'根拠: '+ (d.restsOn||[]).join(' / '))})), why:DATA.decidedWhy}) },
+  { key:'executed', cap:'出航', gloss:'実行したこと', render:()=>({h:'実行したこと', body:DATA.executed}) },
+  { key:'confirmed', cap:'寄港・確認', gloss:'現実に確認できたこと', render:()=>({h:'現実に確認できたこと', list:DATA.confirmedReality.map(c=>({sound:c.ok?'verified':'claimed', t:c.claim, s:'— '+c.basis}))}) },
+];
+const future = [
+  { key:'unknown', cap:'未測深の海', gloss:'まだ分からないこと', fog:true, render:()=>({h:'まだ分からないこと（未測深）', list:DATA.stillUnknown.map(u=>({sound:'claimed', t:u}))}) },
+  { key:'next', cap:'次の針路', gloss:'次にできること', fog:true, render:()=>({h:'次にできること', opts:DATA.nextOptions}) },
+];
+
+const stations = $('#stations');
+let nodes=[];
+function addStation(st, idx){
+  const b = el('button','station'+(st.fog?' future':''));
+  b.setAttribute('role','tab'); b.dataset.idx = idx;
+  b.append(el('div','node'));
+  b.append(el('div','cap', st.cap));
+  b.append(el('div','gloss', st.gloss));
+  b.addEventListener('click',()=>select(idx));
+  b.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'){e.preventDefault();select(Math.min(nodes.length-1,idx+1),true);} if(e.key==='ArrowLeft'){e.preventDefault();select(Math.max(0,idx-1),true);} });
+  stations.append(b); nodes.push({st,b});
+}
+past.forEach((s,i)=>addStation(s,i));
+const bnd = el('div','boundary'); bnd.setAttribute('aria-hidden','true');
+const fogwrap = el('div','fogwrap'); fogwrap.style.display='contents';
+stations.append(bnd);
+future.forEach((s,i)=>addStation(s, past.length+i));
+
+let cur=-1;
+function select(idx, focus){
+  cur=idx; const {st,b}=nodes[idx];
+  nodes.forEach(n=>n.b.setAttribute('aria-selected', n===nodes[idx] ? 'true':'false'));
+  if(focus) b.focus();
+  const d = st.render();
+  $('#logTitle').textContent = d.h;
+  const body = $('#logBody'); body.innerHTML='';
+  if(d.body) body.append(el('p',null,d.body));
+  if(d.list){ const ul=el('ul'); d.list.forEach(it=>{ const li=el('li');
+    if(it.sound){ const s=el('span','sound '+soundClass(it.sound)); s.textContent = it.sound.startsWith('verified')?'✓':(it.sound.startsWith('observed')?'◐':'?'); li.append(s); }
+    li.append(document.createTextNode(it.t)); if(it.s){ const sm=el('div','tag',it.s); li.append(sm);} ul.append(li); }); body.append(ul); }
+  if(d.why){ const w=el('div','why'); w.innerHTML='<b>なぜこの針路か</b><br>'+d.why; body.append(w); }
+  if(d.opts){ const wrap=el('div','opt'); d.opts.forEach((o,i)=>{ const btn=el('button',null,o.label+`（${o.effect}）`); btn.setAttribute('aria-pressed','false');
+     btn.addEventListener('click',()=>{ [...wrap.children].forEach(c=>c.setAttribute('aria-pressed','false')); btn.setAttribute('aria-pressed','true');
+       $('#logTitle').textContent='次の針路: '+o.label; body.querySelector('.pick')?.remove();
+       const p=el('div','why'); p.className='why pick'; p.innerHTML='<b>選ぶと得られる証拠</b><br>'+o.gain+'<br><span class="tag">※ 研究用。実際の送信・実行はしません。</span>'; body.append(p); });
+     wrap.append(btn); }); body.append(wrap); }
+}
+$('#title').textContent = DATA.title;
+$('#risk').textContent = 'リスク: '+DATA.risk;
+select(0);
+</script>
