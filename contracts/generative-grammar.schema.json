@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kas.local/contracts/generative-grammar.schema.json",
+  "title": "Constrained Generative Grammar (VGUI)",
+  "description": "固定 enum ではなく、意図 + 制約 + 連続パラメータの生成文法。AI/生成器は experiments の parameters を出すだけ。compiler が展開し、ブラウザが検証する。parameters は CSS へ 1:1 対応しない。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["intent", "constraints"],
+  "properties": {
+    "intent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["primary_emotion", "attention_path", "reading_rhythm"],
+      "properties": {
+        "primary_emotion": { "type": "string", "description": "自由記述の表現意図（例: quiet anticipation）。生成器がパラメータ平均へ写す" },
+        "attention_path": { "type": "array", "items": { "enum": ["identity", "evidence", "action", "risk", "context"] }, "description": "視線を運ぶ順序" },
+        "reading_rhythm": { "enum": ["slow_then_decisive", "steady", "scan_first", "urgent"] }
+      }
+    },
+    "constraints": {
+      "type": "object", "additionalProperties": false,
+      "required": ["protected_meaning", "minimum_contrast", "maximum_lcp_ms", "reduced_motion_required"],
+      "properties": {
+        "protected_meaning": { "const": true, "description": "required field を隠す案は淘汰される。false は取れない" },
+        "minimum_contrast": { "type": "number", "minimum": 4.5 },
+        "maximum_lcp_ms": { "type": "number" },
+        "reduced_motion_required": { "const": true },
+        "min_target_px": { "type": "number", "default": 24 },
+        "max_css_bytes": { "type": "number" }
+      }
+    },
+    "experiments": {
+      "type": "array",
+      "description": "表現仮説。各案は連続パラメータの点。生成器が seed から N 個サンプルする",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["hypothesis", "parameters"],
+        "properties": {
+          "hypothesis": { "type": "string" },
+          "parameters": {
+            "type": "object", "additionalProperties": false,
+            "description": "連続パラメータ 0..1（accentHue のみ 0..360）",
+            "properties": {
+              "density": { "type": "number", "minimum": 0, "maximum": 1 },
+              "hierarchy": { "type": "number", "minimum": 0, "maximum": 1 },
+              "contrastEmphasis": { "type": "number", "minimum": 0, "maximum": 1 },
+              "motionIntensity": { "type": "number", "minimum": 0, "maximum": 1 },
+              "whitespace": { "type": "number", "minimum": 0, "maximum": 1 },
+              "riskProminence": { "type": "number", "minimum": 0, "maximum": 1 },
+              "radius": { "type": "number", "minimum": 0, "maximum": 1 },
+              "ruleWeight": { "type": "number", "minimum": 0, "maximum": 1 },
+              "accentHue": { "type": "number", "minimum": 0, "maximum": 360 },
+              "accentChroma": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "ranAt": "2026-09-04T13:12:25.205Z",
+  "grammar": {
+    "intent": {
+      "primary_emotion": "quiet anticipation",
+      "attention_path": [
+        "identity",
+        "evidence",
+        "action"
+      ],
+      "reading_rhythm": "slow_then_decisive"
+    },
+    "constraints": {
+      "protected_meaning": true,
+      "minimum_contrast": 4.5,
+      "maximum_lcp_ms": 2500,
+      "reduced_motion_required": true,
+      "min_target_px": 24,
+      "max_css_bytes": 12000
+    }
+  },
+  "gen1": {
+    "generated": 12,
+    "survived": 4,
+    "culled": 8,
+    "cullReasons": [
+      {
+        "id": "cand-00",
+        "fails": [
+          "target_px"
+        ]
+      },
+      {
+        "id": "cand-02",
+        "fails": [
+          "target_px"
+        ]
+      },
+      {
+        "id": "cand-03",
+        "fails": [
+          "min_contrast"
+        ]
+      },
+      {
+        "id": "cand-05",
+        "fails": [
+          "min_contrast"
+        ]
+      },
+      {
+        "id": "cand-06",
+        "fails": [
+          "min_contrast"
+        ]
+      },
+      {
+        "id": "cand-09",
+        "fails": [
+          "target_px"
+        ]
+      },
+      {
+        "id": "cand-10",
+        "fails": [
+          "min_contrast"
+        ]
+      },
+      {
+        "id": "cand-11",
+        "fails": [
+          "min_contrast"
+        ]
+      }
+    ],
+    "survivorDiversity": {
+      "axes": [
+        "density",
+        "hierarchy",
+        "contrastEmphasis",
+        "motionIntensity",
+        "whitespace",
+        "riskProminence",
+        "radius",
+        "ruleWeight"
+      ],
+      "meanPairwise": 0.723
+    }
+  },
+  "selection": {
+    "method": "SIMULATED_SELECTION (intent 中心に最近傍。実 Owner 評価の代理)",
+    "winner": "cand-01",
+    "winnerParams": {
+      "density": 0.1195758683482806,
+      "hierarchy": 0.4663777373731136,
+      "contrastEmphasis": 0.8543507374823094,
+      "motionIntensity": 0.2261486430466175,
+      "whitespace": 0.7114374765505392,
+      "riskProminence": 0.6996115669608116,
+      "radius": 0.4819907373438279,
+      "ruleWeight": 0.3612934324890375,
+      "accentHue": 256.3990724738687,
+      "accentChroma": 0.6225717812776566
+    },
+    "ownerVerification": "REQUIRED — 未実施"
+  },
+  "gen2": {
+    "generated": 12,
+    "survived": 10,
+    "culled": 2,
+    "improvedSurvivalRate": true
+  },
+  "grownGrammar": {
+    "survivorBounds": {
+      "density": {
+        "min": 0,
+        "max": 0.73
+      },
+      "hierarchy": {
+        "min": 0.35,
+        "max": 1
+      },
+      "contrastEmphasis": {
+        "min": 0.64,
+        "max": 0.96
+      },
+      "motionIntensity": {
+        "min": 0.1,
+        "max": 0.48
+      },
+      "whitespace": {
+        "min": 0.57,
+        "max": 1
+      },
+      "riskProminence": {
+        "min": 0.57,
+        "max": 1
+      },
+      "radius": {
+        "min": 0.22,
+        "max": 0.74
+      },
+      "ruleWeight": {
+        "min": 0.12,
+        "max": 0.52
+      }
+    },
+    "proposedRules": [
+      {
+        "id": "VG-R1",
+        "rule": "contrastEmphasis >= 0.64",
+        "basis": "低いと axe contrast 違反で淘汰された",
+        "status": "PROPOSED",
+        "reproducedIn": [
+          "gen1",
+          "gen2"
+        ],
+        "promoteRequires": [
+          "複数 Goal/fixture で再現",
+          "Owner 選択",
+          "counter-proof"
+        ]
+      },
+      {
+        "id": "VG-R2",
+        "rule": "density <= 0.73",
+        "basis": "高いと target-size<24px で淘汰された",
+        "status": "PROPOSED",
+        "reproducedIn": [
+          "gen1",
+          "gen2"
+        ],
+        "promoteRequires": [
+          "複数 Goal/fixture で再現",
+          "Owner 選択"
+        ]
+      }
+    ],
+    "governance": "PROPOSED のみ。self-eval で ENABLED にしない。複数 Goal 再現 + Owner 選択で昇格"
+  },
+  "artifacts": {
+    "gallery": "dist/vgui/gallery.html",
+    "gen1": "dist/vgui/gen1/",
+    "gen2": "dist/vgui/gen2/"
+  }
+}

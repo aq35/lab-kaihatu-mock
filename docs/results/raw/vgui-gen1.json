@@ -1,0 +1,395 @@
+{
+  "ranAt": "2026-09-04T13:09:37.341Z",
+  "seed": 7,
+  "n": 12,
+  "grammar": {
+    "intent": {
+      "primary_emotion": "quiet anticipation",
+      "attention_path": [
+        "identity",
+        "evidence",
+        "action"
+      ],
+      "reading_rhythm": "slow_then_decisive"
+    },
+    "constraints": {
+      "protected_meaning": true,
+      "minimum_contrast": 4.5,
+      "maximum_lcp_ms": 2500,
+      "reduced_motion_required": true,
+      "min_target_px": 24,
+      "max_css_bytes": 12000
+    }
+  },
+  "generated": 12,
+  "survived": 4,
+  "culled": 8,
+  "cullReasons": [
+    {
+      "id": "cand-00",
+      "fails": [
+        "target_px: 1<24"
+      ]
+    },
+    {
+      "id": "cand-02",
+      "fails": [
+        "target_px: 1<24"
+      ]
+    },
+    {
+      "id": "cand-03",
+      "fails": [
+        "min_contrast: 38 axe"
+      ]
+    },
+    {
+      "id": "cand-05",
+      "fails": [
+        "min_contrast: 38 axe"
+      ]
+    },
+    {
+      "id": "cand-06",
+      "fails": [
+        "min_contrast: 38 axe"
+      ]
+    },
+    {
+      "id": "cand-09",
+      "fails": [
+        "target_px: 1<24"
+      ]
+    },
+    {
+      "id": "cand-10",
+      "fails": [
+        "min_contrast: 72 axe"
+      ]
+    },
+    {
+      "id": "cand-11",
+      "fails": [
+        "min_contrast: 38 axe"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "id": "cand-00",
+      "params": {
+        "density": 0.38,
+        "hierarchy": 0.7,
+        "contrastEmphasis": 0.6,
+        "motionIntensity": 0.12,
+        "whitespace": 0.7,
+        "riskProminence": 0.75,
+        "radius": 0.5,
+        "ruleWeight": 0.5,
+        "accentHue": 250,
+        "accentChroma": 0.5
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 1,
+      "contrastViolations": 0,
+      "cssBytes": 5039,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": false,
+      "fails": [
+        "target_px: 1<24"
+      ]
+    },
+    {
+      "id": "cand-01",
+      "params": {
+        "density": 0.1195758683482806,
+        "hierarchy": 0.4663777373731136,
+        "contrastEmphasis": 0.8543507374823094,
+        "motionIntensity": 0.2261486430466175,
+        "whitespace": 0.7114374765505392,
+        "riskProminence": 0.6996115669608116,
+        "radius": 0.4819907373438279,
+        "ruleWeight": 0.3612934324890375,
+        "accentHue": 256.3990724738687,
+        "accentChroma": 0.6225717812776566
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 0,
+      "cssBytes": 5086,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": true,
+      "fails": []
+    },
+    {
+      "id": "cand-02",
+      "params": {
+        "density": 0.24276215124720088,
+        "hierarchy": 0.5050374062343811,
+        "contrastEmphasis": 0.7496509357200314,
+        "motionIntensity": 0.13042810923730333,
+        "whitespace": 0.5283777807295943,
+        "riskProminence": 0.6751765362685547,
+        "radius": 0.38284015815394623,
+        "ruleWeight": 0.5196857311297208,
+        "accentHue": 225.55962978862226,
+        "accentChroma": 0.7708361258730292
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 1,
+      "contrastViolations": 0,
+      "cssBytes": 5099,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": false,
+      "fails": [
+        "target_px: 1<24"
+      ]
+    },
+    {
+      "id": "cand-03",
+      "params": {
+        "density": 0.22852015655487776,
+        "hierarchy": 0.926667757332325,
+        "contrastEmphasis": 0.4144750256091356,
+        "motionIntensity": 0,
+        "whitespace": 0.49278641808778045,
+        "riskProminence": 0.624570727860555,
+        "radius": 0.5287408589385449,
+        "ruleWeight": 0.6571242170408368,
+        "accentHue": 198.9421708136797,
+        "accentChroma": 0.7477644247934222
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 38,
+      "cssBytes": 4900,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": false,
+      "fails": [
+        "min_contrast: 38 axe"
+      ]
+    },
+    {
+      "id": "cand-04",
+      "params": {
+        "density": 0.4140168070513755,
+        "hierarchy": 0.7770290614726643,
+        "contrastEmphasis": 0.7140575748945897,
+        "motionIntensity": 0.4151268123928457,
+        "whitespace": 0.7787744079794113,
+        "riskProminence": 1,
+        "radius": 0.707498040011463,
+        "ruleWeight": 0.20865303347818553,
+        "accentHue": 210.9929856378585,
+        "accentChroma": 0.4094213089517628
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 0,
+      "cssBytes": 5098,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": true,
+      "fails": []
+    },
+    {
+      "id": "cand-05",
+      "params": {
+        "density": 0.33021048296863836,
+        "hierarchy": 0.3801174095210929,
+        "contrastEmphasis": 0.3254041568376123,
+        "motionIntensity": 0.29867723712697625,
+        "whitespace": 0.6126462034570673,
+        "riskProminence": 0.7011438024540743,
+        "radius": 0.47910841880366206,
+        "ruleWeight": 0.7974807804760834,
+        "accentHue": 274.39373031258583,
+        "accentChroma": 0.625531645026058
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 38,
+      "cssBytes": 5095,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": false,
+      "fails": [
+        "min_contrast: 38 axe"
+      ]
+    },
+    {
+      "id": "cand-06",
+      "params": {
+        "density": 0.2614535469515249,
+        "hierarchy": 0.5994341663084923,
+        "contrastEmphasis": 0.34715384342707695,
+        "motionIntensity": 0,
+        "whitespace": 0.9891244077356531,
+        "riskProminence": 0.6256988738663495,
+        "radius": 0.2832628688309342,
+        "ruleWeight": 0.5925461232895032,
+        "accentHue": 230.41251147165895,
+        "accentChroma": 0.18054193386342376
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 38,
+      "cssBytes": 4902,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": false,
+      "fails": [
+        "min_contrast: 38 axe"
+      ]
+    },
+    {
+      "id": "cand-07",
+      "params": {
+        "density": 0.5151194365726163,
+        "hierarchy": 1,
+        "contrastEmphasis": 0.6351066048567493,
+        "motionIntensity": 0.3594901845759402,
+        "whitespace": 0.81384588003469,
+        "riskProminence": 1,
+        "radius": 0.2191636891880383,
+        "ruleWeight": 0.5219479988639554,
+        "accentHue": 267.8999231662601,
+        "accentChroma": 0.7867809333062421
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 0,
+      "cssBytes": 5072,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": true,
+      "fails": []
+    },
+    {
+      "id": "cand-08",
+      "params": {
+        "density": 0.7330487676461537,
+        "hierarchy": 0.9591007310897111,
+        "contrastEmphasis": 0.6722465123593186,
+        "motionIntensity": 0.47563427490027,
+        "whitespace": 1,
+        "riskProminence": 0.7872356720113506,
+        "radius": 0.7441971256242443,
+        "ruleWeight": 0.12103662211447958,
+        "accentHue": 251.92881894297898,
+        "accentChroma": 0.36817654847788317
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 0,
+      "cssBytes": 5096,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": true,
+      "fails": []
+    },
+    {
+      "id": "cand-09",
+      "params": {
+        "density": 0.5594172758236527,
+        "hierarchy": 0.7395960815250873,
+        "contrastEmphasis": 0.8043330822139978,
+        "motionIntensity": 0.5015471667796374,
+        "whitespace": 0.7460426591336726,
+        "riskProminence": 1,
+        "radius": 0.44399530701339246,
+        "ruleWeight": 0.6138811200857163,
+        "accentHue": 278.62644023261964,
+        "accentChroma": 0.5413573669269681
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 1,
+      "contrastViolations": 0,
+      "cssBytes": 5087,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": false,
+      "fails": [
+        "target_px: 1<24"
+      ]
+    },
+    {
+      "id": "cand-10",
+      "params": {
+        "density": 0.2236531894064198,
+        "hierarchy": 0.48069598223858817,
+        "contrastEmphasis": 0.1910956819231311,
+        "motionIntensity": 0,
+        "whitespace": 1,
+        "riskProminence": 1,
+        "radius": 0.6088345048871512,
+        "ruleWeight": 0.09533434574647492,
+        "accentHue": 264.26752833649516,
+        "accentChroma": 0.5790805303646872
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 72,
+      "cssBytes": 4904,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": false,
+      "fails": [
+        "min_contrast: 72 axe"
+      ]
+    },
+    {
+      "id": "cand-11",
+      "params": {
+        "density": 0.5679364521397898,
+        "hierarchy": 1,
+        "contrastEmphasis": 0.40759775002176557,
+        "motionIntensity": 0.5414385710656643,
+        "whitespace": 0.8299749398448815,
+        "riskProminence": 1,
+        "radius": 0.6078123916716626,
+        "ruleWeight": 0.7861203800731649,
+        "accentHue": 206.68769902549684,
+        "accentChroma": 0.9283054707416644
+      },
+      "contract": {
+        "hidden": []
+      },
+      "targetTooSmall": 0,
+      "contrastViolations": 38,
+      "cssBytes": 5089,
+      "reducedMotionOk": true,
+      "hostileOverflow": 0,
+      "survived": false,
+      "fails": [
+        "min_contrast: 38 axe"
+      ]
+    }
+  ]
+}
