@@ -17,10 +17,14 @@ export function startServer(port = 0, root = ROOT) {
       const s = await stat(file).catch(() => null);
       if (s?.isDirectory()) file = join(file, 'index.html');
       const buf = await readFile(file);
+      // VGUI の Owner gallery だけは、生存案を same-origin の iframe に隔離して blind 比較する。
+      // そのため /vgui/ 配下に限り frame-ancestors を 'self' にする（他 origin からの framing は依然禁止＝
+      // clickjacking 防御は維持、script-src 'self' も不変）。それ以外は 'none' のまま。
+      const frameAncestors = p.startsWith('/vgui/') ? "'self'" : "'none'";
       res.writeHead(200, {
         'content-type': TYPES[extname(file)] ?? 'application/octet-stream',
         'cache-control': 'no-store',
-        'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+        'content-security-policy': `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors ${frameAncestors}; base-uri 'none'`,
         'x-content-type-options': 'nosniff',
       });
       res.end(buf);
