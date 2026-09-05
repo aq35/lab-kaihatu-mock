@@ -1,0 +1,86 @@
+<title>巻きの美から始める</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;500;700&family=Shippori+Mincho:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eef1e6; --bg2:#f8faf1; --ink:#26301f; --ink2:#4f5c42; --quiet:#8a927a; --edge:#dde3cf;
+  --herb:#4c7a3f; --leaf:#6fa14a; --coral:#d47a5f; --gold:#a58a3a;
+  --sh-card:0 30px 70px rgba(60,80,40,.14),0 2px 8px rgba(60,80,40,.07);
+  --mincho:"Zen Old Mincho","Hiragino Mincho ProN",serif;
+  --body:"Shippori Mincho","Hiragino Mincho ProN",Georgia,serif;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.95;-webkit-font-smoothing:antialiased;letter-spacing:.02em;position:relative}
+/* 微かな和紙の質感（触覚のレバー） */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.45;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.05'/></svg>")}
+.hero,.wrap{position:relative;z-index:1}
+.wrap{max-inline-size:min(720px,100%);margin-inline:auto;padding-inline:clamp(1.2rem,5vw,2.4rem)}
+.hero{position:relative;inline-size:100%;block-size:min(66vh,520px);overflow:hidden;background:var(--bg)}
+.hero img{inline-size:100%;block-size:100%;object-fit:cover;display:block;filter:saturate(1.05) contrast(1.02) brightness(1.04)}
+.hero .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(238,241,230,0) 55%,rgba(238,241,230,.5) 80%,var(--bg) 100%)}
+.hero .mask{position:absolute;inset-inline:0;inset-block-end:-1px;inline-size:100%;height:88px;display:block}
+.head{padding:2.2rem 0 0}
+.over{font-family:var(--sans);font-size:.72rem;letter-spacing:.42em;text-transform:uppercase;color:var(--herb);margin:0 0 .8rem;padding-inline-start:.3em}
+.head h1{font-family:var(--mincho);font-weight:500;font-size:clamp(2rem,7.2vw,3.2rem);line-height:1.32;margin:0;text-wrap:balance;color:var(--ink);letter-spacing:.05em}
+.lede{font-family:var(--mincho);font-weight:400;font-size:clamp(1.2rem,3.4vw,1.6rem);line-height:1.9;color:var(--ink);margin:2rem 0 1.2rem;text-wrap:balance}
+.prose{font-size:clamp(1.02rem,2.6vw,1.15rem);color:var(--ink2);margin:1rem 0}
+.prose .em{color:var(--ink);border-block-end:1px solid color-mix(in oklab,var(--herb),transparent 45%);padding-block-end:1px}
+.orn{display:block;margin:2.8rem auto;inline-size:120px;height:26px;color:var(--leaf);opacity:.9}
+.turn{font-family:var(--sans);font-size:.72rem;letter-spacing:.34em;text-transform:uppercase;color:var(--herb);margin:0 0 .8rem;text-align:center}
+.note-card{background:var(--bg2);border:1px solid var(--edge);border-radius:28px;padding:clamp(1.3rem,4vw,2rem);box-shadow:var(--sh-card)}
+.note-card p{margin:.3rem 0;color:var(--ink2)} .note-card p:first-child{margin-block-start:0}
+.decide{margin:3rem 0 1rem} .choices{display:flex;flex-wrap:wrap;gap:.6rem}
+.choices button{font-family:var(--sans);font-size:.94rem;padding:.7rem 1.15rem;min-block-size:3rem;border-radius:999px;cursor:pointer;border:1px solid var(--edge);background:var(--bg2);color:var(--ink);box-shadow:0 1px 2px rgba(60,80,40,.06);transition:border-color .2s,background .2s,box-shadow .2s}
+.choices button[aria-pressed="true"]{border-color:var(--herb);background:color-mix(in oklab,var(--herb),transparent 88%);color:var(--herb);font-weight:700;box-shadow:0 6px 16px rgba(76,122,63,.18)}
+.reason{margin-block-start:1rem;font-size:.98rem;color:var(--ink2);font-family:var(--body);min-block-size:1.6rem}
+.foot{color:var(--quiet);font-family:var(--sans);font-size:.72rem;line-height:1.7;padding:2.4rem 0 3.4rem}
+:focus-visible{outline:2px solid var(--herb);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="hero">
+  <img src="__IMG__" alt="生春巻き。半透明のライスペーパー越しに、えび・香草・野菜が透けて見える。">
+  <div class="veil"></div>
+  <svg class="mask" viewBox="0 0 1440 88" preserveAspectRatio="none" aria-hidden="true"><path d="M0,88 L0,44 C240,84 480,18 720,32 C960,46 1200,90 1440,38 L1440,88 Z" fill="var(--bg)"/></svg>
+</div>
+
+<div class="wrap">
+  <div class="head">
+    <p class="over">巻きの美</p>
+    <h1>張った紙は、光を通した。</h1>
+  </div>
+
+  <p class="lede">シワひとつない、薄い一枚。その向こうが、透けている。</p>
+  <p class="prose">水にくぐらせ、ぴんと張った<span class="em">半透明のライスペーパー</span>。
+  内に透ける、<span class="em">香草の緑</span>とえびの淡い紅。巻きの締まり、切り口のみずみずしさ。
+  指でつまむと、しっとりと、たよりなく、やわらかい。</p>
+
+  <svg class="orn" viewBox="0 0 120 26" aria-hidden="true"><path d="M2,13 C30,2 44,24 60,13 C76,2 90,24 118,13" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="60" cy="13" r="2.4" fill="currentColor"/></svg>
+
+  <p class="turn">この一巻きについて</p>
+  <div class="note-card" id="note"></div>
+
+  <div class="decide">
+    <p class="turn" style="text-align:start">見て、どう感じましたか</p>
+    <div class="choices" id="choices"></div>
+    <div class="reason" id="reason">この写真で、食べたく（作りたく）なったか。</div>
+  </div>
+
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+// 画像の出典・注記は build 時に __CREDIT__ / __NOTE__ へ差し込む（Owner 供給・許可のもと）
+const CREDIT="__CREDIT__"; const NOTE="__NOTE__";
+document.getElementById('note').innerHTML = NOTE;
+document.getElementById('foot').textContent = CREDIT + ' 料理イメージです。研究用の画面で、販売・予約はしません。';
+let cur=null; const decs=[['want','食べたい'],['make','作ってみたい'],['neither','特に惹かれない'],['unsure','わからない']];
+const cb=document.getElementById('choices');
+decs.forEach(([v,l])=>{const b=document.createElement('button');b.textContent=l;b.setAttribute('aria-pressed','false');
+  b.onclick=()=>{cur=v;[...cb.children].forEach(c=>c.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');
+    document.getElementById('reason').textContent = (v==='neither'||v==='unsure')?'惹かれない理由も、この実験では価値ある結果です。':'その気持ちが、この一枚のねらいでした。味・香り・食感は、食べてこそ。';
+  };cb.append(b);});
+</script>
