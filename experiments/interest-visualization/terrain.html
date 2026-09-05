@@ -1,0 +1,113 @@
+<title>速い遅いの地形</title>
+<style>
+:root{
+  --bg:#0e1613; --panel:#15201c; --ink:#eaf2ee; --ink2:#b3c5bd; --quiet:#7c8f87; --line:#26332d; --edge:#31423a;
+  --fast:#43b47a; --slow:#d3695a; --void:#8a6a3a; --inf:#c99a4b;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.5);
+}
+:root[data-theme="light"]{ --bg:#f2f6f3; --panel:#ffffff; --ink:#13201a; --ink2:#3a4b43; --quiet:#63756c; --line:#dde8e2; --edge:#cfdbd4;
+  --fast:#1f8a52; --slow:#b23e2e; --void:#8a6a2a; --inf:#8a6a1a; --shadow:0 1px 2px rgba(20,25,20,.06),0 10px 26px rgba(20,25,20,.09);}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){ --bg:#f2f6f3; --panel:#ffffff; --ink:#13201a; --ink2:#3a4b43; --quiet:#63756c; --line:#dde8e2; --edge:#cfdbd4;
+  --fast:#1f8a52; --slow:#b23e2e; --void:#8a6a2a; --inf:#8a6a1a; --shadow:0 1px 2px rgba(20,25,20,.06),0 10px 26px rgba(20,25,20,.09);}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55}
+.wrap{max-inline-size:min(920px,95vw);margin-inline:auto;padding:clamp(1rem,3vw,2rem)}
+h1{font-size:clamp(1.05rem,2.8vw,1.4rem);margin:0 0 .15rem}
+.anchor{font-size:.76rem;color:var(--quiet)} .lede{font-size:.92rem;color:var(--ink2);margin:.8rem 0 1rem;max-inline-size:66ch}
+.split{display:grid;grid-template-columns:1fr;gap:1.2rem}
+@media(min-width:820px){.split{grid-template-columns:1.35fr 1fr}}
+.field{position:relative;aspect-ratio:1/.82;background:
+  linear-gradient(45deg, color-mix(in oklab,var(--fast),transparent 80%), transparent 48%, color-mix(in oklab,var(--slow),transparent 80%));
+  border:1px solid var(--edge);border-radius:14px;overflow:hidden}
+.axis{position:absolute;color:var(--quiet);font-size:.72rem;font-family:var(--mono)}
+.axis.x1{inset-inline-start:.6rem;inset-block-end:.4rem} .axis.x2{inset-inline-end:.6rem;inset-block-end:.4rem;text-align:end}
+.axis.y1{inset-block-start:.5rem;inset-inline-start:.6rem} .axis.y2{inset-block-end:1.6rem;inset-inline-start:.6rem}
+.diag{position:absolute;inset:0;pointer-events:none}
+.voidzone{position:absolute;inset:34% 34% 34% 34%;border:1.5px dashed var(--void);border-radius:10px;
+  display:grid;place-items:center;color:var(--void);font-size:.72rem;font-weight:700;text-align:center;padding:.3rem}
+.mark{position:absolute;transform:translate(-50%,50%);inline-size:auto}
+.mark button{font:inherit;cursor:pointer;border:2px solid;border-radius:999px;padding:.3rem .7rem;font-size:.82rem;font-weight:700;
+  background:var(--panel);box-shadow:var(--shadow);white-space:nowrap}
+.mark.fast button{border-color:var(--fast);color:var(--fast)} .mark.slow button{border-color:var(--slow);color:var(--slow)}
+.mark button[aria-pressed="true"]{outline:3px solid currentColor;outline-offset:2px}
+.pin{position:absolute;transform:translate(-50%,50%);inline-size:1.5rem;block-size:1.5rem;border-radius:50%;
+  background:var(--ink);border:3px solid var(--bg);box-shadow:0 0 0 2px var(--ink),var(--shadow);pointer-events:none}
+.pin::after{content:"あなたの現場";position:absolute;inset-block-start:-1.5rem;inset-inline-start:50%;transform:translateX(-50%);
+  white-space:nowrap;font-size:.68rem;font-weight:700;color:var(--ink);font-family:var(--mono)}
+.controls{display:grid;gap:.7rem;margin-block-start:.8rem}
+.controls label{font-size:.82rem;color:var(--ink2);display:grid;gap:.2rem}
+.controls input[type=range]{inline-size:100%}
+.readout{background:var(--panel);border:1px solid var(--edge);border-radius:12px;box-shadow:var(--shadow);padding:.9rem 1rem;min-block-size:5rem;font-size:.92rem}
+.readout .rtag{font-family:var(--mono);font-weight:700} .rtag.fast{color:var(--fast)} .rtag.slow{color:var(--slow)} .rtag.void{color:var(--void)}
+.detail{margin-block-start:.8rem;font-size:.9rem;color:var(--ink2)}
+.detail .kv{display:flex;gap:.4rem;flex-wrap:wrap} .detail b{color:var(--ink)}
+a.src{color:inherit;text-underline-offset:2px;text-decoration-color:var(--quiet)}
+.aggr{margin-block-start:1rem;background:var(--panel);border:1px dashed var(--edge);border-radius:12px;padding:.7rem .9rem;font-size:.85rem;color:var(--ink2)}
+.aggr h2{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--quiet);margin:0 0 .35rem}
+.aggr li{margin-block:.25rem} .aggr a{color:inherit}
+.inf{margin-block-start:.8rem;font-size:.82rem;color:var(--inf);border-inline-start:3px solid var(--inf);padding-inline-start:.6rem}
+.hint{font-size:.78rem;color:var(--quiet);margin-block-start:1rem}
+:focus-visible{outline:3px solid var(--fast);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div class="wrap">
+  <h1 id="title"></h1><div class="anchor" id="anchor"></div>
+  <p class="lede">「+55% 速い」と「−19% 遅い」は、どちらも RCT の実測です。矛盾ではなく<b>タスクの型</b>と<b>経験</b>で
+  置き場所が違うだけかもしれません。地図に置くと、まだ誰も測っていない<b>空白</b>が見えます。</p>
+  <div class="split">
+    <div>
+      <div class="field" id="field">
+        <div class="axis y1">↑ 熟練</div><div class="axis y2">↓ 経験浅い</div>
+        <div class="axis x1">greenfield・単純 →</div><div class="axis x2">← familiar・複雑</div>
+        <svg class="diag" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="18" y1="82" x2="82" y2="18" stroke="var(--inf)" stroke-width="0.8" stroke-dasharray="3 3"/></svg>
+        <div class="voidzone">RCT の空白<br>（ここは未検証）</div>
+      </div>
+      <div class="controls">
+        <label>あなたの現場のタスク型 <input type="range" id="sx" min="0" max="100" value="50" aria-label="タスク型: 左=greenfield/単純, 右=familiar/複雑"></label>
+        <label>あなたの現場の経験 <input type="range" id="sy" min="0" max="100" value="50" aria-label="経験: 左=浅い, 右=熟練"></label>
+      </div>
+    </div>
+    <div>
+      <div class="readout" id="readout" aria-live="polite"></div>
+      <div class="inf" id="inf"></div>
+      <div class="aggr"><h2>この地図の軸に乗らない集計指標（位置を作らない）</h2><ul id="aggr"></ul></div>
+    </div>
+  </div>
+  <p class="hint">丸をクリックで研究の中身。スライダーで「あなたの現場」を動かすと、速い側／遅い側／未検証 が変わります。対角の点線は<span style="color:var(--inf)">未検証の仮説</span>です。</p>
+</div>
+<script>
+const DATA=__FIXTURE__; const $=s=>document.querySelector(s);
+$('#title').textContent=DATA.topic; $('#anchor').textContent='あなたの関心: '+DATA.owner_known_interest;
+const S=id=>DATA.items.find(i=>i.id===id);
+// 位置は母集団/タスクから（fabricate せず、RCT の記述に基づく）
+const marks=[
+  {id:'copilot_rct', cls:'fast', label:'+55.8%（Copilot）', x:20, y:26, pop:'95人・混在（経験浅めで効果大）', task:'greenfield の HTTP サーバ（単一課題）'},
+  {id:'metr_rct', cls:'slow', label:'−19%（METR）', x:82, y:82, pop:'熟練 OSS 開発者 16 人', task:'自分のよく知る repo の実 issue 246 件'},
+];
+const field=$('#field');
+marks.forEach(m=>{ const w=document.createElement('div'); w.className='mark '+m.cls;
+  w.style.left=m.x+'%'; w.style.bottom=m.y+'%'; // y: 0=経験浅い(下) → 100=熟練(上)。軸・pin と一致させる
+  const b=document.createElement('button'); b.textContent=m.label; b.setAttribute('aria-pressed','false');
+  b.onclick=()=>{ marks.forEach(x=>document.getElementById('b_'+x.id)?.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); showStudy(m); };
+  b.id='b_'+m.id; w.append(b); field.append(w); });
+const pin=document.createElement('div'); pin.className='pin'; field.append(pin);
+function showStudy(m){ const it=S(m.id); $('#readout').innerHTML=`<div class="rtag ${m.cls}">${m.label}</div>`+
+  `<div class="detail"><div class="kv"><b>母集団</b> ${m.pop}</div><div class="kv"><b>タスク</b> ${m.task}</div>`+
+  `<div class="kv"><b>証拠</b> ${it.evidence_level}</div><div class="kv"><b>種別</b> ${it.kind}</div>`+
+  `<div class="kv"><a class="src" href="${it.source[0]}" target="_blank" rel="noopener">source ↗</a></div></div>`; }
+function region(x,y){ // x:0(greenfield)→100(familiar), y:0(浅い)→100(熟練)
+  if(x<42 && y<48) return {t:'速い側の可能性', c:'fast', note:'greenfield・経験浅めは Copilot RCT に近い領域'};
+  if(x>58 && y>52) return {t:'遅い側の可能性', c:'slow', note:'familiar・熟練は METR RCT に近い領域'};
+  return {t:'未検証（RCT の空白）', c:'void', note:'この中間は、速い/遅いのどちらを裏づける RCT も無い'};
+}
+function place(){ const x=+$('#sx').value, y=+$('#sy').value; pin.style.left=x+'%'; pin.style.bottom=y+'%';
+  const r=region(x,y); $('#readout').innerHTML=`あなたの現場は <span class="rtag ${r.c}">${r.t}</span><div class="detail">${r.note}。`+
+   `<br>※「あなたの現場」の位置はあなたが動かした仮のもので、保存も推測もしません。</div>`; }
+$('#sx').oninput=place; $('#sy').oninput=place;
+$('#inf').innerHTML='<b>点線＝未検証の仮説</b>: '+DATA.reconciling_hypotheses.find(h=>h.id==='reconcile_tasktype').content;
+const ag=$('#aggr'); ['gitclear','dora_survey'].forEach(id=>{ const it=S(id); const li=document.createElement('li');
+  li.innerHTML=`${it.content.split('。')[0]}。<a href="${it.source[0]}" target="_blank" rel="noopener">source ↗</a> <span style="color:var(--quiet)">（${it.evidence_level}）</span>`; ag.append(li); });
+place();
+</script>

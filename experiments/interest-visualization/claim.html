@@ -1,0 +1,96 @@
+<title>主張と反証の地図</title>
+<style>
+:root{
+  --bg:#131215; --panel:#1c1a20; --panel2:#232028; --ink:#f0edf2; --ink2:#c0bac8; --quiet:#867f92; --line:#2e2a34; --edge:#3a3542;
+  --for:#5aa9d6; --against:#d3695a; --mixed:#c99a4b; --strong:#e7e2ee; --weak:#867f92; --coi:#d98a3a; --unk:#b06fb0;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.5);
+}
+:root[data-theme="light"]{ --bg:#f5f4f7; --panel:#ffffff; --panel2:#f0eef4; --ink:#181620; --ink2:#413b4c; --quiet:#6b6577; --line:#e5e1ec; --edge:#d8d3e0;
+  --for:#2073a6; --against:#b23e2e; --mixed:#8a6a1a; --strong:#181620; --weak:#8b8598; --coi:#9a6a1a; --unk:#8a3f8a; --shadow:0 1px 2px rgba(20,18,25,.06),0 10px 26px rgba(20,18,25,.09);}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){ --bg:#f5f4f7; --panel:#ffffff; --panel2:#f0eef4; --ink:#181620; --ink2:#413b4c; --quiet:#6b6577; --line:#e5e1ec; --edge:#d8d3e0;
+  --for:#2073a6; --against:#b23e2e; --mixed:#8a6a1a; --strong:#181620; --weak:#8b8598; --coi:#9a6a1a; --unk:#8a3f8a; --shadow:0 1px 2px rgba(20,18,25,.06),0 10px 26px rgba(20,18,25,.09);}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}
+.wrap{max-inline-size:min(1000px,96vw);margin-inline:auto;padding:clamp(1rem,3vw,2rem)}
+h1{font-size:clamp(1.05rem,2.8vw,1.4rem);margin:0 0 .15rem} .anchor{font-size:.76rem;color:var(--quiet)}
+.claim{margin:1rem 0;background:var(--panel2);border:1px solid var(--edge);border-radius:12px;padding:.8rem 1rem;text-align:center}
+.claim .q{font-weight:700;font-size:1.05rem} .claim .sub{font-size:.8rem;color:var(--quiet);margin-block-start:.2rem}
+.bar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:space-between;margin-block:.6rem 1rem}
+.bar .note{font-size:.8rem;color:var(--quiet);max-inline-size:60ch}
+.bar button{font:inherit;font-size:.84rem;padding:.5rem .8rem;min-block-size:2.6rem;border-radius:9px;cursor:pointer;border:1px solid var(--edge);background:var(--panel);color:var(--ink)}
+.bar button[aria-pressed="true"]{border-color:var(--for);background:color-mix(in oklab,var(--for),transparent 84%);font-weight:600}
+.cols{display:grid;grid-template-columns:1fr;gap:1rem} @media(min-width:760px){.cols{grid-template-columns:1fr 1fr 1fr}}
+.col h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;margin:0 0 .5rem;font-weight:700}
+.col.for h2{color:var(--for)} .col.mixed h2{color:var(--mixed)} .col.against h2{color:var(--against)}
+.card{inline-size:100%;text-align:start;font:inherit;color:inherit;cursor:pointer;background:var(--panel);border:1px solid var(--edge);
+  border-radius:11px;box-shadow:var(--shadow);padding:.75rem .85rem;margin-block-end:.7rem;display:grid;gap:.4rem}
+/* すべて同寸: 視覚の大きさは重要度でも真実性でもない */
+.card .txt{font-size:.92rem} .card .row{display:flex;flex-wrap:wrap;gap:.4rem .6rem;align-items:center}
+.strength{display:inline-flex;gap:.13rem;align-items:center}
+.dot{inline-size:.5rem;block-size:.5rem;border-radius:50%;background:var(--weak)} .dot.on{background:var(--strong)}
+.slabel{font-family:var(--mono);font-size:.68rem;color:var(--quiet)}
+.badge{font-family:var(--mono);font-size:.66rem;font-weight:700;padding:.05rem .4rem;border-radius:4px;border:1px solid currentColor}
+.b-fact{color:var(--for)} .b-mix{color:var(--mixed)} .b-inf{color:var(--unk)} .b-coi{color:var(--coi)}
+.card.for{border-inline-start:4px solid var(--for)} .card.against{border-inline-start:4px solid var(--against)} .card.mixed{border-inline-start:4px solid var(--mixed)}
+.card[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:2px}
+a.src{color:inherit;text-underline-offset:2px;text-decoration-color:var(--quiet)}
+.detail{background:var(--panel);border:1px solid var(--edge);border-radius:11px;box-shadow:var(--shadow);padding:.9rem 1rem;margin-block-start:1rem;min-block-size:4rem;font-size:.92rem}
+.detail b{color:var(--ink)} .detail .u{color:var(--unk)}
+.unknowns{margin-block-start:1.2rem;background:transparent;border:1.5px dashed var(--unk);border-radius:12px;padding:.9rem 1rem}
+.unknowns h2{color:var(--unk);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;margin:0 0 .4rem}
+.unknowns li{color:var(--ink2);font-size:.9rem;margin-block:.3rem} .unknowns li::marker{content:"? "}
+.hint{font-size:.78rem;color:var(--quiet);margin-block-start:1rem}
+:focus-visible{outline:3px solid var(--for);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div class="wrap">
+  <h1 id="title"></h1><div class="anchor" id="anchor"></div>
+  <div class="claim"><div class="q">主張:「AI は開発を速くする」</div><div class="sub">この 1 文への 支持 / 両義 / 反証 を、証拠の強さと立場つきで並べます。<b>カードの大きさは同じ</b>＝目立ち≠正しさ。</div></div>
+  <div class="bar">
+    <span class="note">強さ: ●●● = RCT/実測が強い、●●○ = 大規模だが相関、●○○ = 弱い/自己申告。<b class="badge b-coi" style="margin-inline:.2rem">COI</b>=利害関係。</span>
+    <button id="sortBtn" aria-pressed="false">証拠の強さで並べ替え</button>
+  </div>
+  <div class="cols">
+    <div class="col for"><h2>支持（速い）</h2><div id="colFor"></div></div>
+    <div class="col mixed"><h2>両義</h2><div id="colMixed"></div></div>
+    <div class="col against"><h2>反証（遅い/悪化）</h2><div id="colAgainst"></div></div>
+  </div>
+  <section class="detail" id="detail" aria-live="polite"></section>
+  <div class="unknowns"><h2>未解決（誰も答えていない）</h2><ul id="unknowns"></ul></div>
+  <p class="hint">カードを選ぶと、その証拠の強さ・立場・反対・未解決が出ます。「並べ替え」で、一番強い反証と、一番派手だが弱い主張が見えます。</p>
+</div>
+<script>
+const DATA=__FIXTURE__; const $=s=>document.querySelector(s);
+$('#title').textContent=DATA.topic; $('#anchor').textContent='あなたの関心: '+DATA.owner_known_interest;
+const S=id=>DATA.items.find(i=>i.id===id);
+// この主張への立場・強さ(1..3)・COI・種別を、material の evidence_level/kind から人手で対応づけ（fabricate せず要約）
+const cards=[
+  {id:'copilot_rct', stance:'for', txt:'greenfield の RCT で 55.8% 速い（単一課題）', strength:2, coi:true, kind:'b-fact', kindLabel:'fact＋claim', why:'RCT だが単一の greenfield 課題に限られ、GitHub 自身が関与'},
+  {id:'metr_rct', stance:'against', txt:'熟練×既知 repo の RCT で 19% 遅い（体感は +20%）', strength:3, coi:false, kind:'b-fact', kindLabel:'fact', why:'非営利の RCT。母集団は熟練・既知 repo に限る'},
+  {id:'gitclear', stance:'against', txt:'重複 8 倍・churn 増（品質の負債が増える）', strength:2, coi:true, kind:'b-mix', kindLabel:'fact＋inference', why:'大規模だが相関。AI 原因は推定。分析製品ベンダー'},
+  {id:'dora_survey', stance:'mixed', txt:'個人の生産性は実感 75%／配信の安定性は −7.2%', strength:2, coi:false, kind:'b-mix', kindLabel:'fact＋inference', why:'大規模調査だが相関。実感（支持）と客観（反証）が同居'},
+];
+function dots(n){ let h='<span class="strength" title="証拠の強さ">'; for(let i=0;i<3;i++) h+=`<span class="dot ${i<n?'on':''}"></span>`; return h+'</span>'; }
+function render(){
+  ['for','mixed','against'].forEach(st=>{ const box=$('#col'+st[0].toUpperCase()+st.slice(1)); box.innerHTML='';
+    let list=cards.filter(c=>c.stance===st); if(sorted) list=list.slice().sort((a,b)=>b.strength-a.strength);
+    list.forEach(c=>{ const b=document.createElement('button'); b.className='card '+c.stance; b.id='c_'+c.id; b.setAttribute('aria-pressed','false');
+      b.innerHTML=`<div class="txt">${c.txt}</div><div class="row">${dots(c.strength)}<span class="slabel">${c.strength===3?'RCT 強':c.strength===2?'大規模/相関':'弱い'}</span>`+
+        `<span class="badge ${c.kind}">${c.kindLabel}</span>${c.coi?'<span class="badge b-coi">COI</span>':''}</div>`;
+      b.onclick=()=>show(c); box.append(b); }); });
+}
+function show(c){ cards.forEach(x=>document.getElementById('c_'+x.id)?.setAttribute('aria-pressed', x.id===c.id?'true':'false'));
+  const it=S(c.id); $('#detail').innerHTML=`<b>${c.txt}</b><div style="margin-block-start:.4rem;color:var(--ink2)">`+
+    `<div>${dots(c.strength)} 強さ: ${c.why}</div>`+
+    `<div style="margin-block-start:.3rem"><b>種別</b> ${it.kind}</div>`+
+    `<div><b>証拠</b> ${it.evidence_level}</div>`+
+    (it.unknowns&&it.unknowns.length?`<div class="u" style="margin-block-start:.3rem">未解決: ${it.unknowns.join(' / ')}</div>`:'')+
+    `<div style="margin-block-start:.3rem"><a class="src" href="${it.source[0]}" target="_blank" rel="noopener">source ↗</a></div></div>`; }
+let sorted=false; $('#sortBtn').onclick=()=>{ sorted=!sorted; $('#sortBtn').setAttribute('aria-pressed',sorted); render(); };
+// 未解決を集約（各 item の unknowns ＋ reconcile の unknowns）
+const uSet=new Set(); DATA.items.forEach(i=>(i.unknowns||[]).forEach(u=>uSet.add(u))); DATA.reconciling_hypotheses.forEach(h=>(h.unknowns||[]).forEach(u=>uSet.add(u)));
+$('#unknowns').innerHTML=[...uSet].map(u=>`<li>${u}</li>`).join('');
+$('#detail').innerHTML='<b>カードを選んでください。</b>証拠の強さ・立場（COI）・未解決が出ます。まず「並べ替え」で、一番強い反証がどれか見てください。';
+render();
+</script>
