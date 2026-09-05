@@ -1,0 +1,81 @@
+{
+  "topic": "AI コーディング支援は本当に開発を速くするか",
+  "collected_at": "2026-09-05",
+  "collection_method": "ライブ Web 検索（WebSearch）で取得。各 item は実在の source に紐づく。情報の無い部分は補完していない。",
+  "owner_known_interest": "AI エージェントの実力・検証・不確実性の扱い（Owner が確認したアンカー。推測で保存した嗜好ではない）",
+  "note_on_honesty": "kind で fact(測定)/claim(自己申告)/inference(本実験による推測) を区別する。provider failure やキャッシュは含めていない（すべて今回の検索で得た観測）。",
+  "items": [
+    {
+      "id": "copilot_rct",
+      "content": "GitHub Copilot の RCT: 95 人の開発者が JS で HTTP サーバを実装。Copilot 群は 55.8% 速く完了（平均 1h11 vs 2h41）。別に Accenture 企業内研究では「最大 55% 速い」「85% が自信向上」。効果は経験の浅い・高負荷・年長の開発者で最大とされる。",
+      "kind": "observed_fact（速度は RCT の実測）＋ claim（企業内研究の一部は自己申告）",
+      "evidence_level": "RCT だが greenfield な単一課題。企業内研究は GitHub 自身が関与＝利害関係あり",
+      "source": ["https://arxiv.org/abs/2302.06590", "https://github.blog/news-insights/research/research-quantifying-github-copilots-impact-in-the-enterprise-with-accenture/"],
+      "observed_at": "2026-09-05",
+      "relations": [
+        { "to": "metr_rct", "type": "contradicts", "note": "こちらは速い、METR は遅い" },
+        { "to": "reconcile_tasktype", "type": "supports", "note": "greenfield・経験浅めで速い、という位置づけ" }
+      ],
+      "counter": ["metr_rct"],
+      "unknowns": ["現実の複雑・既知のコードベースへ一般化するか", "自己申告部分の客観性"]
+    },
+    {
+      "id": "metr_rct",
+      "content": "METR の RCT（2025-07 公表）: 経験豊富な OSS 開発者 16 人が、自分のよく知る repo の実 issue 246 件で作業（2025 年 2〜6 月、主に Cursor Pro + Claude 3.5/3.7）。AI 使用時は 19% 遅かった。開発者は事前に +24% 速いと予想し、体験後も +20% 速くなったと信じた（実測は逆）。",
+      "kind": "observed_fact（RCT の実測）",
+      "evidence_level": "RCT。ただし n=16・特定母集団（熟練・既知の repo）。METR は非営利",
+      "source": ["https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/", "https://www.theregister.com/2025/07/11/ai_code_tools_slow_down/"],
+      "observed_at": "2026-09-05",
+      "relations": [
+        { "to": "copilot_rct", "type": "contradicts", "note": "速度の符号が逆" },
+        { "to": "dora_survey", "type": "shares_pattern", "note": "主観（速く感じる）と客観（遅い/悪化）の乖離" },
+        { "to": "reconcile_tasktype", "type": "supports", "note": "familiar・熟練で遅い、という位置づけ" }
+      ],
+      "counter": ["copilot_rct"],
+      "unknowns": ["2025 後半の agentic tool で結果が変わるか（METR 自身が 2026-02 に実験設計の見直しを告知）", "熟練×既知 repo 以外への一般化"]
+    },
+    {
+      "id": "gitclear",
+      "content": "GitClear が 2020〜2024 の 2.11 億変更行を分析: 2024 年に copy/paste が「移動された行」を史上初めて上回り、移動コード（＝再利用/リファクタの兆候）は 10% 未満（前年比 44% 減）。5 行以上の重複ブロックは 8 倍に増加。追加コードの 7.9% が 2 週間以内に手直し（2020 年は 5.5%）。",
+      "kind": "observed_fact（大規模メトリクス）＋ inference（AI が原因という結び付けは相関に基づく推定）",
+      "evidence_level": "大規模観測だが相関（因果ではない）。GitClear はコード分析製品を持つベンダー＝立場あり",
+      "source": ["https://www.gitclear.com/ai_assistant_code_quality_2025_research", "https://www.devclass.com/ai-ml/2025/02/20/ai-is-eroding-code-quality-states-new-in-depth-report/1626250"],
+      "observed_at": "2026-09-05",
+      "relations": [
+        { "to": "dora_survey", "type": "mechanism_for", "note": "重複・churn 増が、配信の安定性低下の説明になりうる" }
+      ],
+      "counter": [],
+      "unknowns": ["AI が原因か（相関のみ）", "重複・churn の増加が実際の障害・保守コストに結びつくか"]
+    },
+    {
+      "id": "dora_survey",
+      "content": "DORA 2024（Accelerate State of DevOps）: モデル推定で AI 採用が 25% 増えると配信の安定性は 7.2% 低下・スループットは 1.5% 低下。一方で 75% が生産性向上を実感し、75.9% が業務の一部で AI を利用。2 年連続で「AI 利用は配信性能の悪化と相関」。",
+      "kind": "observed_fact（大規模調査）＋ inference（影響量はモデル推定）",
+      "evidence_level": "大規模 survey + 統計モデル（相関）。Google/DORA",
+      "source": ["https://dora.dev/research/2024/dora-report/", "https://redmonk.com/rstephens/2024/11/26/dora2024/"],
+      "observed_at": "2026-09-05",
+      "relations": [
+        { "to": "metr_rct", "type": "shares_pattern", "note": "実感の生産性向上（75%）と客観の悪化が併存" },
+        { "to": "gitclear", "type": "explained_by", "note": "安定性低下の機序として重複・churn" }
+      ],
+      "counter": ["copilot_rct"],
+      "unknowns": ["因果の向き", "バッチサイズ等の交絡", "個人の生産性と組織の配信性能のどちらを見るべきか"]
+    }
+  ],
+  "reconciling_hypotheses": [
+    {
+      "id": "reconcile_tasktype",
+      "content": "「速い」と「遅い」は矛盾ではなく、タスクの型で分かれる可能性: greenfield・単純・経験浅めでは速く（Copilot RCT）、familiar・複雑・熟練では遅い（METR）。",
+      "kind": "inference（本実験による仮説。fact ではない）",
+      "evidence_level": "2 つの RCT の母集団差からの推論。直接検証はされていない",
+      "unknowns": ["この軸で本当に分かれるかは未検証", "中間領域がどうなるか"]
+    },
+    {
+      "id": "reconcile_perception",
+      "content": "主観的な速さの実感（METR の +20% 体感、DORA の 75% 実感）は、客観的な速度・安定性（METR −19%、DORA 安定性 −7.2%）と乖離しうる。",
+      "kind": "inference（本実験による観察。fact は各 item の測定値）",
+      "evidence_level": "複数 source に共通して現れるパターンだが、因果は未確定",
+      "unknowns": ["なぜ乖離するのか（労力の再配分か、認知バイアスか）"]
+    }
+  ]
+}
