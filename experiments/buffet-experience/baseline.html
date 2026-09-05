@@ -1,0 +1,75 @@
+<title>北海道ブッフェ 紹介</title>
+<style>
+:root{
+  --bg:#faf7f2; --panel:#fffdf9; --panel2:#f2ece1; --ink:#241d16; --ink2:#4d4336; --quiet:#7a6e5d; --line:#e9e0d1; --edge:#ddd2be;
+  --accent:#b5532e; --gold:#b8862f; --good:#2f7d4f; --unk:#8a6a2a;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace; --serif:"Iowan Old Style",Georgia,"Noto Serif JP",serif;
+  --shadow:0 1px 2px rgba(40,25,15,.06),0 10px 26px rgba(40,25,15,.09);
+}
+:root[data-theme="dark"]{ --bg:#181410; --panel:#211b15; --panel2:#2a2219; --ink:#f3ece1; --ink2:#cabca8; --quiet:#968a76; --line:#322a20; --edge:#3d3327;
+  --accent:#e0805a; --gold:#d6a94e; --good:#7bbe8a; --unk:#cda45e; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 26px rgba(0,0,0,.5);}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){ --bg:#181410; --panel:#211b15; --panel2:#2a2219; --ink:#f3ece1; --ink2:#cabca8; --quiet:#968a76; --line:#322a20; --edge:#3d3327;
+  --accent:#e0805a; --gold:#d6a94e; --good:#7bbe8a; --unk:#cda45e; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 26px rgba(0,0,0,.5);}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6}
+.wrap{max-inline-size:min(760px,94vw);margin-inline:auto;padding:clamp(1rem,3vw,2rem)}
+.hero{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:.8rem;display:block;inline-size:100%}
+.note{font-size:.74rem;color:var(--quiet);margin-block-start:.4rem}
+h1{font-family:var(--serif);font-size:clamp(1.3rem,3.4vw,1.8rem);margin:1rem 0 .2rem}
+.meta{font-size:.88rem;color:var(--ink2)} .badge{font-family:var(--mono);font-size:.68rem;font-weight:700;padding:.05rem .45rem;border-radius:5px;border:1px solid var(--unk);color:var(--unk)}
+h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.07em;color:var(--quiet);margin:1.5rem 0 .5rem}
+.grouptitle{font-weight:700;color:var(--accent);margin-block:.6rem .2rem;font-size:.95rem}
+ul{margin:.2rem 0;padding-inline-start:1.2rem;display:grid;gap:.3rem} li{color:var(--ink2)}
+.price div{display:flex;gap:.6rem;border-block-end:1px solid var(--line);padding-block:.4rem;font-size:.92rem} .price b{min-inline-size:9rem;color:var(--ink)}
+a{color:var(--accent);text-underline-offset:2px} .sources a{color:var(--ink2)} .sources li{margin-block:.25rem;font-size:.82rem}
+</style>
+<div class="wrap">
+  <svg class="hero" id="hero" viewBox="0 0 640 150" role="img" aria-label="ビュッフェ台の模式図"></svg>
+  <div class="note">※ 実写ではなく模式図です。公式写真・詳細は <a id="off" target="_blank" rel="noopener">公式ページ ↗</a></div>
+  <h1 id="plan"></h1>
+  <div class="meta" id="venue"></div>
+  <div class="meta" id="period"></div>
+
+  <h2>営業時間</h2>
+  <div class="meta" id="hours"></div>
+
+  <h2>料理（北海道グルメ＆シャインマスカット）</h2>
+  <div id="dishes"></div>
+
+  <h2>参考料金</h2>
+  <div class="meta" style="margin-block-end:.5rem" id="priceStatus"></div>
+  <div class="price" id="prices"></div>
+
+  <h2>予約・アクセス</h2>
+  <div class="meta" id="resv"></div>
+
+  <h2>ご確認ください（未確認事項）</h2>
+  <ul id="unknown"></ul>
+
+  <h2>出典</h2>
+  <ul class="sources" id="sources"></ul>
+</div>
+<script>
+const M=__FIXTURE__; const $=s=>document.querySelector(s); const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+(function(){ const svg=$('#hero'); const NS='http://www.w3.org/2000/svg';
+  const bg=document.createElementNS(NS,'rect'); bg.setAttribute('x',0);bg.setAttribute('y',0);bg.setAttribute('width',640);bg.setAttribute('height',150);bg.setAttribute('fill','transparent'); svg.append(bg);
+  // 台
+  const counter=document.createElementNS(NS,'rect'); counter.setAttribute('x',20);counter.setAttribute('y',96);counter.setAttribute('width',600);counter.setAttribute('height',22);counter.setAttribute('rx',5);counter.setAttribute('fill','var(--edge)'); svg.append(counter);
+  const labels=['寿司','紅ずわい蟹','海鮮丼','ラム/鉄板','スープカレー','シャインマスカット'];
+  labels.forEach((t,i)=>{ const x=55+i*100; const dome=document.createElementNS(NS,'path'); dome.setAttribute('d',`M ${x-30} 96 a 30 22 0 0 1 60 0 z`); dome.setAttribute('fill','var(--panel)'); dome.setAttribute('stroke','var(--line)'); svg.append(dome);
+    const tx=document.createElementNS(NS,'text'); tx.setAttribute('x',x);tx.setAttribute('y',134);tx.setAttribute('text-anchor','middle');tx.setAttribute('font-size','11');tx.setAttribute('fill','var(--ink2)'); tx.textContent=t; svg.append(tx); });
+  const cap=document.createElementNS(NS,'text'); cap.setAttribute('x',20);cap.setAttribute('y',24);cap.setAttribute('font-size','12');cap.setAttribute('fill','var(--quiet)'); cap.textContent='ビュッフェ台（模式図）'; svg.append(cap);
+})();
+$('#off').href=M.identity.official_page; $('#plan').textContent=M.identity.plan_name; $('#venue').textContent=M.identity.venue;
+$('#period').textContent='開催期間: '+M.identity.period;
+$('#hours').innerHTML=`ランチ ${M.hours.lunch}／ディナー 日〜金 ${M.hours.dinner_sun_fri}・土 ${M.hours.dinner_sat}<br><span class="note">${M.hours.note}</span>`;
+const dd=$('#dishes'); const groups=[['平日限定',M.dishes.weekday_only],['ランチ限定',M.dishes.lunch_only],['ディナー限定',M.dishes.dinner_only],['共通',M.dishes.always]];
+groups.forEach(([g,arr])=>{ const h=el('div','grouptitle'); h.textContent=g; dd.append(h); const ul=el('ul'); arr.forEach(x=>{const li=el('li');li.textContent=x;ul.append(li);}); dd.append(ul); });
+dd.append((()=>{const p=el('div','note');p.textContent='出典: '+M.dishes.source;return p;})());
+$('#priceStatus').innerHTML=M.price_status+' <span class="badge">一部 UNKNOWN</span>';
+const pr=$('#prices'); [['ランチ 平日 大人',M.prices_reference.lunch_weekday_adult],['ランチ 休日 大人',M.prices_reference.lunch_holiday_adult],['子供(4〜12歳)',M.prices_reference.lunch_child_4_12],['ディナー 大人',M.prices_reference.dinner_adult]].forEach(([k,v])=>{ const d=el('div'); d.innerHTML=`<b>${k}</b><span>${v}</span>`; pr.append(d); });
+$('#resv').innerHTML=`${M.reservation.online}／電話 ${M.reservation.phone}・空席 <span class="badge">UNKNOWN</span>・観測 ${M.collected_at}<br>会場: ${M.identity.venue}`;
+$('#unknown').innerHTML=M.unknown.map(u=>`<li>${u}</li>`).join('');
+const srcs=[...new Set([M.identity.official_page, M.hours.source, ...M.prices_reference.sources, M.dishes.source, ...M.reservation.sources])];
+$('#sources').innerHTML=srcs.map(s=>`<li><a href="${s}" target="_blank" rel="noopener">${s}</a></li>`).join('');
+</script>
