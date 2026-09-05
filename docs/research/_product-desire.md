@@ -59,5 +59,80 @@ Ownerとの接点: Owner は毎日コードを書く。矢印キーの有無は�
 ## Baseline（Step 8）
 同じ証拠で通常の商品紹介1画面（画像・説明・仕様・長所・短所・価格・販売・出典）。情報量は Exploration と揃える。
 
-## Step 9 Owner 観測・最終報告（Step 13）— 実装後に追記
-（未記入）
+## Step 9 Owner 観測・最終報告（Step 13）
+
+### 購買意欲の推移（順序: 商品名だけ → Baseline → Exploration）
+- 商品名だけ: 興味なし／理解できない／購買意欲なし／場面わからない／無関心。
+- Baseline: 「興味ある人しか興味なさそう」。理解・場面は分かった。意欲は動かず（元々買う気なければ買わない）。
+- Exploration: 「ひとつの問いが、商品に関係なくても関心を呼ぶ」。「私の使い方で答えが明確に」。
+  **購買意欲が徐々に上昇**（ただし元々の見込み客寄り）。
+
+### 15 問（実データ）
+1 最初に目に入った: 配列の模写 → 値段 → 問い（設計どおり）。
+2 hook の答えを知りたい: はい（ただし「英語配列」が気になった）。
+3 外部検索したくなった: 「ホームポジション中心にする理由がわからない」。加えて最後に「比較したい」で離脱しそう。
+4 答えは画面内で得られた: 概ね。ただし「あらかじめ使い方を知っている人向けかも」。
+5 操作の payoff を操作前に理解: **わかった**（＝小実験2 の失敗を解消）。
+6 操作結果が購入判断に関係: 「あえて“使いたい”と考えさせる理由・説明が欲しい」。
+7 使う場面を想像: 「まあ、職場とか?」。
+8 価値の出る/出ない条件を説明: 「テンキーが無いから小さくて便利」＝条件を自分の言葉で言えた。
+9 購買意欲の変化: 徐々に上がった（全体として元々買いたい人向け）。
+10 変化させた情報: **クオリティの高い図・ひとつの問い・あなたの使い方**。
+11 欠点・買わない理由: 理解できた。ただし「値段が妥当かはよく分からない」。
+12 実在性・販売状態の信頼: できた。
+13 誇張・誘導・虚偽っぽさ: なし。
+14 さらに確認したい: 「“あなたの判断”が、選択したものをそのまま表示してほしい」。
+15 Baseline との装飾でない違い: **感じた**。
+補足: 「誰が使っても変わらない」欄が“差がなく価値がない印象”を与えた。
+
+### 最終報告
+```
+Product: HHKB Professional HYBRID Type-S
+Model: PD-KB800BS（英語配列・墨/黒・Type-S 静音）
+Official product source: https://www.pfu.ricoh.com/direct/hhkb/
+Image source: 自作の配列模式図（実写でない旨を明示）＋公式写真は PFU にリンク（埋め込まず）
+Sale observation: ¥36,850・新品・現行販売（在庫数 UNKNOWN）
+Observed at: 2026-09-05
+Independent evidence: TechRadar / Tom's Hardware / InfoWorld / Typecraft（矢印キー欠如=dealbreaker、niche、
+  USB-C ケーブル別売、Topre 学習曲線）
+ONE Hook: 「プログラマ向け ¥36,850 なのに矢印キーが無い。効く制約か毎日つまずく欠陥か」
+Expected intuition: 無関心／「割高そう」
+Reality that challenged it: 矢印“欠如”は設計・Fn 代替。優劣でなく“適合”で割れる。
+Baseline reaction: 「興味ある人しか興味なさそう」。理解・場面は分かるが意欲は動かず。
+Exploration reaction: 「問いが商品に関係なくても関心を呼ぶ」「私の使い方で答えが明確に」。意欲が徐々に上昇。
+Did the interaction payoff make sense: はい（操作前に何が変わるか分かった）。
+Was the core question answered on-page: 概ね yes。ただし「ホームポジションを強みに置く理由」が未説明で
+  非専門に届きにくい。「英語配列は日本人に使えるか」の不安も未解決。
+External escape point: 最終の購入判断で「比較したい」→他サイトへ飛びそう（代替の on-page 比較が無い）。
+Interest change: 無関心 → 限定的 → 問いで関心が立った
+Purchase-intent change: なし → 買わない → 徐々に上昇（元々の見込み客寄り）
+Understanding change: わからない → わかった → よりわかった（価値の条件を自分の言葉で説明できた）
+What increased trust: 実在性・観測日・source・誇張なし
+What reduced trust: なし（虚偽感なし）。ただし「価格が妥当か不明」で“納得”は未完。
+Final decision: INFORMED_COMPARISON 寄り（条件付き関心。買うには代替比較を要する）。「不要」ではない。
+Failure classification: 全体は成功。部分的弱点 = (a) QUESTION_WITHOUT_ANSWER 気味（ホームポジションの
+  理由・英語配列の不安が未解決）(b) EXTERNAL_ESCAPE リスク（比較で離脱しうる）。
+  DECORATIVE_ONLY / MISLEADING_DESIRE は無し。
+What felt creative: 質の高い配列図・ONE Hook・「あなたの使い方で試す」。
+What was only decoration: 「誰が使っても変わらない」欄（差がなく価値がない印象＝この列だけ装飾寄り）。
+Foundry hypothesis (PROPOSED / KAS 本体へ実装しない):
+  PH-1: ONE Hook ＋ payoff 先出しの「自分の条件で試す」＋ 高品質な図は、informed な購買意欲を動かし、
+    かつ“装飾でない”と認識される（小実験2 で欠けていた要素が全部そろった）。ただし on-page 完結には
+    「あなたの条件での代替比較（HHKB vs REALFORCE vs Keychron）」を画面内に持ち込む必要がある。
+    比較欲求が唯一の離脱点であり、加えて前提概念（例: ホームポジションの利点）と価格の妥当性を
+    橋渡ししないと、核の答えが非専門に届かない。
+Exact next small experiment: Exploration に「あなたの条件で HHKB vs 代替」の 1 画面内比較を 1 つだけ足し、
+  比較起因の離脱が消えて on-page 完結するかを 1 回測る。同時に「ホームポジションの利点」を 1 文で
+  説明すると非専門の理解が上がるかも確認する。
+```
+
+### 完了条件（§12）— すべて満たした
+実在商品1件 ✓／型番・画像(模式図)・販売状態 ✓／ONE Hook 事前 freeze ✓／Baseline 1画面 ✓／
+Exploration 1画面 ✓／実ブラウザ操作確認 ✓／Owner が操作 ✓／画面内で hook の答えへ到達 ✓（概ね）／
+購買判断と理由を記録 ✓／虚偽・誇張・離脱・装飾化を確認 ✓／Foundry 仮説 1 件 ✓／追加拡張せず終了 ✓。
+
+### 3 実験を貫く到達点
+- 小実験1: 創造は「情報の関係の組み替え」で立つ（関係 > 散文）。
+- 小実験2: だが“期待どおりの関係(賛否の俯瞰)”は情報整理に落ちる。好奇心には非対称・自分事・操作の payoff が要る。
+- 小実験3: その3つを 1 つの ONE Hook＋「自分の条件で試す(payoff 先出し)」＋高品質な図に束ねたら、
+  informed な購買意欲が動き、装飾でないと認識された。**残る課題は「比較の on-page 完結」と「前提概念・価格の橋渡し」**。
