@@ -1,0 +1,159 @@
+<title>巻きの美から始める（焼き菓子）</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;500;700&family=Shippori+Mincho:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f1e6cf; --bg2:#fbf4e4; --ink:#3a2a17; --ink2:#6c5533; --quiet:#9b855e; --edge:#e6d6b6;
+  --gold:#a9791f; --caramel:#7c5216;
+  --sh-card:0 30px 70px rgba(120,80,30,.16),0 2px 8px rgba(120,80,30,.08);
+  --mincho:"Zen Old Mincho","Hiragino Mincho ProN",serif;
+  --body:"Shippori Mincho","Hiragino Mincho ProN",Georgia,serif;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.95;-webkit-font-smoothing:antialiased;letter-spacing:.02em;position:relative}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.4;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.05'/></svg>")}
+.hero,.wrap{position:relative;z-index:1}
+.wrap{max-inline-size:min(720px,100%);margin-inline:auto;padding-inline:clamp(1.2rem,5vw,2.4rem)}
+.hero{position:relative;inline-size:100%;block-size:min(64vh,500px);overflow:hidden;background:radial-gradient(120% 100% at 30% 20%,#f7eeda,#eadcbe 70%,#e2d0ac)}
+.hero svg.art{position:absolute;inset:0;inline-size:100%;block-size:100%;display:block}
+.hero .mask{position:absolute;inset-inline:0;inset-block-end:-1px;inline-size:100%;height:80px;display:block;z-index:2}
+.head{padding:2.2rem 0 0}
+.over{font-family:var(--sans);font-size:.72rem;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);margin:0 0 .8rem;padding-inline-start:.3em}
+.head h1{font-family:var(--mincho);font-weight:500;font-size:clamp(2rem,7.2vw,3.2rem);line-height:1.32;margin:0;text-wrap:balance;color:var(--ink);letter-spacing:.05em}
+.lede{font-family:var(--mincho);font-weight:400;font-size:clamp(1.2rem,3.4vw,1.6rem);line-height:1.9;color:var(--ink);margin:2rem 0 1.2rem;text-wrap:balance}
+.prose{font-size:clamp(1.02rem,2.6vw,1.15rem);color:var(--ink2);margin:1rem 0}
+.prose .em{color:var(--ink);border-block-end:1px solid color-mix(in oklab,var(--gold),transparent 45%);padding-block-end:1px}
+.orn{display:block;margin:2.8rem auto;inline-size:120px;height:26px;color:var(--gold);opacity:.9}
+.turn{font-family:var(--sans);font-size:.72rem;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin:0 0 .8rem;text-align:center}
+.note-card{background:var(--bg2);border:1px solid var(--edge);border-radius:28px;padding:clamp(1.3rem,4vw,2rem);box-shadow:var(--sh-card)}
+.note-card p{margin:.3rem 0;color:var(--ink2)} .note-card p:first-child{margin-block-start:0} .note-card b{color:var(--ink)}
+.decide{margin:3rem 0 1rem} .choices{display:flex;flex-wrap:wrap;gap:.6rem}
+.choices button{font-family:var(--sans);font-size:.94rem;padding:.7rem 1.15rem;min-block-size:3rem;border-radius:999px;cursor:pointer;border:1px solid var(--edge);background:var(--bg2);color:var(--ink);box-shadow:0 1px 2px rgba(120,80,30,.06);transition:border-color .2s,background .2s,box-shadow .2s}
+.choices button[aria-pressed="true"]{border-color:var(--gold);background:color-mix(in oklab,var(--gold),transparent 86%);color:var(--caramel);font-weight:700;box-shadow:0 6px 16px rgba(169,121,31,.2)}
+.reason{margin-block-start:1rem;font-size:.98rem;color:var(--ink2);font-family:var(--body);min-block-size:1.6rem}
+.foot{color:var(--quiet);font-family:var(--sans);font-size:.72rem;line-height:1.7;padding:2.4rem 0 3.4rem}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="hero">
+  <svg class="art" viewBox="0 0 1200 620" preserveAspectRatio="xMidYMid slice" role="img" aria-label="こんがり黄金色に焼けた、葉巻型の巻き焼き菓子のイラスト">
+    <defs>
+      <radialGradient id="floor" cx="34%" cy="22%" r="90%">
+        <stop offset="0%" stop-color="#f7eeda"/><stop offset="60%" stop-color="#ead9ba"/><stop offset="100%" stop-color="#ddc9a1"/>
+      </radialGradient>
+      <!-- 円筒のシェーディング(上左から光) -->
+      <linearGradient id="tube" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#c68b34"/><stop offset="16%" stop-color="#e6b45f"/>
+        <stop offset="34%" stop-color="#f4d488"/><stop offset="50%" stop-color="#e7b95f"/>
+        <stop offset="74%" stop-color="#b57e2c"/><stop offset="100%" stop-color="#8a591b"/>
+      </linearGradient>
+      <linearGradient id="tube2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#bd8330"/><stop offset="18%" stop-color="#dca954"/>
+        <stop offset="38%" stop-color="#ecc678"/><stop offset="55%" stop-color="#d7a44f"/>
+        <stop offset="78%" stop-color="#a5701f"/><stop offset="100%" stop-color="#7c4e14"/>
+      </linearGradient>
+      <radialGradient id="endcap" cx="42%" cy="40%" r="70%">
+        <stop offset="0%" stop-color="#f2d493"/><stop offset="55%" stop-color="#d7a24d"/><stop offset="100%" stop-color="#9c6a22"/>
+      </radialGradient>
+      <clipPath id="clipBack"><rect x="0" y="0" width="720" height="96" rx="48"/></clipPath>
+      <clipPath id="clipFront"><rect x="0" y="0" width="820" height="120" rx="60"/></clipPath>
+      <filter id="soft"><feGaussianBlur stdDeviation="10"/></filter>
+      <filter id="crumb"><feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" result="n"/><feColorMatrix in="n" type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer><feComposite operator="in" in2="SourceGraphic"/></filter>
+    </defs>
+    <rect width="1200" height="620" fill="url(#floor)"/>
+    <!-- 影 -->
+    <ellipse cx="600" cy="470" rx="430" ry="52" fill="rgba(110,70,25,.28)" filter="url(#soft)"/>
+    <ellipse cx="470" cy="500" rx="250" ry="34" fill="rgba(110,70,25,.20)" filter="url(#soft)"/>
+
+    <!-- 後ろの一本 -->
+    <g transform="rotate(-13 600 330)">
+      <g transform="translate(250 250)">
+        <rect x="0" y="0" width="720" height="96" rx="48" fill="url(#tube2)"/>
+        <g clip-path="url(#clipBack)">
+          <g stroke="#7c4e14" stroke-opacity=".5" stroke-width="3" fill="none">
+            <path d="M40,-10 L110,110"/><path d="M120,-10 L190,110"/><path d="M200,-10 L270,110"/><path d="M280,-10 L350,110"/>
+            <path d="M360,-10 L430,110"/><path d="M440,-10 L510,110"/><path d="M520,-10 L590,110"/><path d="M600,-10 L670,110"/>
+          </g>
+          <g stroke="#f6dc9a" stroke-opacity=".45" stroke-width="1.5" fill="none">
+            <path d="M52,-10 L122,110"/><path d="M132,-10 L202,110"/><path d="M212,-10 L282,110"/><path d="M292,-10 L362,110"/>
+            <path d="M372,-10 L442,110"/><path d="M452,-10 L522,110"/><path d="M532,-10 L602,110"/><path d="M612,-10 L682,110"/>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- 手前の主役の一本 -->
+    <g transform="rotate(-13 600 330)">
+      <g transform="translate(150 340)">
+        <rect x="0" y="0" width="820" height="120" rx="60" fill="url(#tube)"/>
+        <!-- 巻きの継ぎ目(斜めの線=層) -->
+        <g clip-path="url(#clipFront)">
+          <g stroke="#7a4d14" stroke-opacity=".55" stroke-width="4" fill="none">
+            <path d="M50,-12 L138,132"/><path d="M140,-12 L228,132"/><path d="M230,-12 L318,132"/><path d="M320,-12 L408,132"/>
+            <path d="M410,-12 L498,132"/><path d="M500,-12 L588,132"/><path d="M590,-12 L678,132"/><path d="M680,-12 L768,132"/>
+          </g>
+          <g stroke="#f8e0a4" stroke-opacity=".55" stroke-width="2" fill="none">
+            <path d="M66,-12 L154,132"/><path d="M156,-12 L244,132"/><path d="M246,-12 L334,132"/><path d="M336,-12 L424,132"/>
+            <path d="M426,-12 L514,132"/><path d="M516,-12 L604,132"/><path d="M606,-12 L694,132"/><path d="M696,-12 L784,132"/>
+          </g>
+          <!-- 上面のツヤ -->
+          <ellipse cx="410" cy="26" rx="360" ry="12" fill="#fff3d6" opacity=".5" filter="url(#soft)"/>
+          <!-- 焼きムラ・粒 -->
+          <rect x="0" y="0" width="820" height="120" fill="#5c3a10" filter="url(#crumb)"/>
+        </g>
+        <!-- 切り口(層が渦巻く) -->
+        <g transform="translate(820 60)">
+          <ellipse cx="0" cy="0" rx="20" ry="60" fill="url(#endcap)"/>
+          <ellipse cx="-2" cy="0" rx="13" ry="42" fill="none" stroke="#a06c22" stroke-width="3"/>
+          <ellipse cx="-3" cy="0" rx="7" ry="24" fill="none" stroke="#8a5a1a" stroke-width="3"/>
+          <ellipse cx="-4" cy="0" rx="3" ry="10" fill="#6e4514"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- くずれた欠片 -->
+    <g fill="#c68b34" opacity=".85"><circle cx="300" cy="520" r="5"/><circle cx="345" cy="536" r="3.4"/><circle cx="820" cy="512" r="4"/><circle cx="760" cy="536" r="2.6"/></g>
+  </svg>
+  <svg class="mask" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true"><path d="M0,80 L0,40 C240,78 480,16 720,30 C960,44 1200,84 1440,34 L1440,80 Z" fill="var(--bg)"/></svg>
+</div>
+
+<div class="wrap">
+  <div class="head">
+    <p class="over">巻きの美</p>
+    <h1>こんがり、ひと巻き。</h1>
+  </div>
+
+  <p class="lede">太陽みたいな色に焼けた、薄い一枚。それを、シワなく巻いた。</p>
+  <p class="prose">薄くのばした生地を、隙間なく<span class="em">くるりと巻いて</span>、黄金色に焼き上げる。
+  表面には<span class="em">つやと、細かな気泡</span>。切り口には、巻いた層がうずまく。
+  指でつまむと、軽い。噛めば、たぶん——サクッと、ほどける。</p>
+
+  <svg class="orn" viewBox="0 0 120 26" aria-hidden="true"><path d="M2,13 C30,2 44,24 60,13 C76,2 90,24 118,13" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="60" cy="13" r="2.4" fill="currentColor"/></svg>
+
+  <p class="turn">この一本について</p>
+  <div class="note-card">
+    <p>葉巻の"形"だけを借りた、<b>ロール状の焼き菓子</b>です。火も、煙も、灰もありません。ただの一本。</p>
+    <p style="font-size:.9rem;color:var(--quiet)">上の絵はイラスト（実写ではありません）。味・香り・食感は、食べてこそ分かります。</p>
+  </div>
+
+  <div class="decide">
+    <p class="turn" style="text-align:start">見て、どう感じましたか</p>
+    <div class="choices" id="choices"></div>
+    <div class="reason" id="reason">この一本で、食べたく（作りたく）なったか。</div>
+  </div>
+
+  <p class="foot">イラスト（実写ではありません）。研究用の画面で、販売・予約はしません。「葉巻型」は形の比喩で、タバコ製品ではありません。</p>
+</div>
+
+<script>
+let cur=null; const decs=[['want','食べたい'],['make','作ってみたい'],['neither','特に惹かれない'],['unsure','わからない']];
+const cb=document.getElementById('choices');
+decs.forEach(([v,l])=>{const b=document.createElement('button');b.textContent=l;b.setAttribute('aria-pressed','false');
+  b.onclick=()=>{cur=v;[...cb.children].forEach(c=>c.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');
+    document.getElementById('reason').textContent=(v==='neither'||v==='unsure')?'惹かれない理由も、この実験では価値ある結果です。':'その気持ちが、この一枚のねらいでした。味・香りは、食べてこそ。';
+  };cb.append(b);});
+</script>

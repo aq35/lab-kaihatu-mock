@@ -4,3 +4,6 @@ experiments/a-tailwind/node_modules/
 
 # 権利画像(Wikimedia CC・Owner 許可のもと使用)は正確な attribution 未確認のため repo へ再配布しない。build 入力として Owner が供給。
 experiments/buffet-experience/roastbeef.jpg
+
+# 作業用スクショ
+experiments/**/_shot-*.png
