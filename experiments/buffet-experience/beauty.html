@@ -1,0 +1,128 @@
+<title>料理の美から始める</title>
+<style>
+:root{
+  --bg:#141010; --bg2:#1c1614; --ink:#f4ece2; --ink2:#cdbfae; --quiet:#9a8c78; --line:#31271f; --edge:#3d3126;
+  --rose:#c85c54; --wine:#8f3a3a; --gold:#c9a24b; --good:#7fbe8a; --unk:#cda45e;
+  --serif:"Shippori Mincho","Hiragino Mincho ProN",Georgia,serif;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-inline-size:min(760px,100%);margin-inline:auto}
+/* hero */
+.hero{position:relative;inline-size:100%;block-size:min(74vh,600px);overflow:hidden;background:#0c0a09}
+.hero img{inline-size:100%;block-size:100%;object-fit:cover;display:block;filter:saturate(1.03) contrast(1.02)}
+.hero .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,8,7,.15) 0%,rgba(10,8,7,0) 30%,rgba(10,8,7,.15) 55%,rgba(12,9,8,.9) 100%)}
+.hero .cap{position:absolute;inset-inline:0;inset-block-end:0;padding:clamp(1.2rem,4vw,2.4rem);max-inline-size:760px;margin-inline:auto}
+.hero .over{font-family:var(--mono);font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 .5rem}
+.hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.7rem,6vw,3rem);line-height:1.2;margin:0;text-wrap:balance;color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.5)}
+.credit{font-size:.7rem;color:var(--quiet);padding:.5rem clamp(1rem,4vw,2rem);background:var(--bg);max-inline-size:760px;margin-inline:auto}
+.credit b{color:var(--ink2);font-weight:600}
+section{padding-inline:clamp(1.1rem,4vw,2rem)}
+.lede{font-family:var(--serif);font-size:clamp(1.15rem,3.2vw,1.5rem);line-height:1.7;color:var(--ink);margin:2rem 0 1rem}
+.eye{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-block:2.2rem .5rem}
+p{color:var(--ink2);margin:.6rem 0} p strong{color:var(--ink)}
+.reads{display:grid;gap:.6rem;margin-block:.6rem 0;padding:0;list-style:none}
+.reads li{position:relative;padding-inline-start:1.1rem;color:var(--ink2)}
+.reads li::before{content:"";position:absolute;inset-inline-start:0;inset-block-start:.62em;inline-size:.5rem;block-size:.5rem;border-radius:50%;background:var(--rose)}
+.cant{border-inline-start:2px solid var(--unk);padding-inline-start:.9rem;color:var(--unk);font-size:.92rem;margin-block:1rem}
+.divider{border:0;border-block-start:1px solid var(--line);margin:2.4rem 0}
+.venue{background:var(--bg2);border:1px solid var(--edge);border-radius:14px;padding:clamp(1rem,3vw,1.5rem);margin-block:1rem}
+.venue h2{font-family:var(--serif);font-size:1.3rem;margin:0 0 .2rem;color:var(--ink)}
+.venue .sub{font-size:.85rem;color:var(--quiet)}
+.dishes{display:flex;flex-wrap:wrap;gap:.4rem;margin-block:.8rem 0}
+.dishes span{font-size:.86rem;border:1px solid var(--edge);border-radius:999px;padding:.28rem .7rem;color:var(--ink2);background:#00000022}
+.facts{display:grid;gap:.5rem;margin-block-start:1rem;font-size:.92rem}
+.facts div{display:flex;gap:.7rem;flex-wrap:wrap;border-block-end:1px solid var(--line);padding-block:.5rem} .facts b{min-inline-size:5rem;color:var(--ink)}
+.badge{font-family:var(--mono);font-size:.66rem;font-weight:700;padding:.05rem .45rem;border-radius:5px;border:1px solid var(--unk);color:var(--unk)}
+a{color:var(--gold);text-underline-offset:3px} a:hover{color:#e6c98a}
+.map{margin-block:1rem 0;border:1px solid var(--edge);border-radius:12px;overflow:hidden;background:#0f0c0b}
+.map svg{display:block;inline-size:100%;height:auto}
+.decide{margin:2rem 0 1rem} .choices{display:flex;flex-wrap:wrap;gap:.5rem}
+.choices button{font:inherit;font-size:.92rem;padding:.6rem 1rem;min-block-size:2.9rem;border-radius:10px;cursor:pointer;border:1px solid var(--edge);background:var(--bg2);color:var(--ink)}
+.choices button[aria-pressed="true"]{border-color:var(--rose);background:color-mix(in oklab,var(--rose),transparent 78%);font-weight:700}
+.reason{margin-block-start:.8rem;font-size:.92rem;color:var(--ink2);border-inline-start:3px solid var(--rose);padding-inline-start:.8rem;min-block-size:1.5rem}
+.foot{color:var(--quiet);font-size:.78rem;padding:2rem clamp(1.1rem,4vw,2rem) 3rem;max-inline-size:760px;margin-inline:auto}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="hero">
+  <img src="__IMG__" alt="スライスされたローストビーフ。断面はロゼ色で、上に黒胡椒とハーブ、バルサミコ系のソースがかかっている。付け合わせにトレビス。">
+  <div class="veil"></div>
+  <div class="cap">
+    <p class="over">料理の美しさ</p>
+    <h1>切った断面は、ロゼ色だった。</h1>
+  </div>
+</div>
+<p class="credit">写真: <b>ローストビーフ</b>（出典 Wikimedia Commons／Owner の許可のもと使用）。
+<b>これは「料理の美しさ」の一般例</b>で、特定の店の実物写真ではありません。</p>
+
+<div class="wrap">
+  <section>
+    <p class="lede">スペックの前に、まず一皿の姿がある。<br>この写真が伝えるのは、火の入り方と、色。</p>
+
+    <p class="eye">写真が語れること</p>
+    <ul class="reads">
+      <li>中心まで火を通しすぎない、<strong>ロゼ色の断面</strong>と細かなサシ</li>
+      <li>粗挽き黒胡椒と刻みハーブ、<strong>照りのあるソース</strong>のかけ方</li>
+      <li>薄くスライスして重ねた、一皿としての<strong>盛り付け</strong>（付け合わせのトレビス）</li>
+    </ul>
+    <p class="cant">写真が語れないこと（＝食べないと分からない）: 味・香り・温度・柔らかさ・塩の効き・当日の一皿。
+    ここは <span class="badge">UNKNOWN</span> のまま残します。写真の美しさは“おいしさの証明”ではありません。</p>
+
+    <hr class="divider">
+
+    <p class="eye">では、こういう体験をどこで</p>
+    <p>目の前で仕上げる料理を売りにするのが、ホテルの<strong>ライブキッチン</strong>。
+    ただし正直に言うと、<strong>上のローストビーフはこの店の提供品として確認できていません</strong>。
+    この秋のプランで<strong>実際に確認できた料理</strong>は次のとおりです（写真は未掲載＝本物の料理画像が要るが、今回は取得できず）。</p>
+
+    <div class="venue">
+      <h2 id="venue"></h2>
+      <div class="sub" id="plan"></div>
+      <div class="dishes" id="dishes"></div>
+      <div class="facts" id="facts"></div>
+      <div class="map" aria-label="おおよその位置（竹芝・浜松町）">
+        <svg viewBox="0 0 640 150" role="img" aria-label="竹芝・浜松町エリアの簡易位置図">
+          <rect x="0" y="0" width="640" height="150" fill="#0f0c0b"></rect>
+          <rect x="0" y="96" width="640" height="14" fill="#241d18"></rect>
+          <text x="12" y="90" font-size="11" fill="#9a8c78" font-family="monospace">東京湾 / 竹芝ふ頭</text>
+          <circle cx="300" cy="70" r="7" fill="#c85c54"></circle>
+          <text x="316" y="74" font-size="13" fill="#f4ece2" font-family="sans-serif">インターコンチネンタル東京ベイ（竹芝・浜松町）</text>
+          <text x="12" y="130" font-size="10" fill="#6f6456" font-family="monospace">簡易図（模式）・正確な地図は公式 →</text>
+        </svg>
+      </div>
+      <p style="font-size:.82rem;color:var(--quiet);margin-block-start:.6rem">正確な場所・アクセス・最新情報・実際の料理写真は <a id="off" target="_blank" rel="noopener">公式ページ ↗</a></p>
+    </div>
+
+    <div class="decide">
+      <p class="eye">あなたはどう感じましたか</p>
+      <div class="choices" id="choices"></div>
+      <div class="reason" id="reason">写真を見て、行ってみたいと思ったか。理由も一言で。</div>
+    </div>
+  </section>
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const M=__FIXTURE__; const $=s=>document.querySelector(s);
+$('#venue').textContent=M.identity.venue.split('（')[0];
+$('#plan').textContent=M.identity.plan_name+'（開催 '+M.identity.period+'）';
+const dishes=[...M.dishes.weekday_only,...M.dishes.dinner_only,...M.dishes.lunch_only,...M.dishes.always];
+$('#dishes').innerHTML=dishes.map(d=>`<span>${d.replace(/（.*?）/,'')}</span>`).join('');
+$('#facts').innerHTML=
+  `<div><b>時間</b><span>ランチ ${M.hours.lunch}／ディナー 日〜金 ${M.hours.dinner_sun_fri}・土 ${M.hours.dinner_sat}</span></div>`+
+  `<div><b>参考料金</b><span>ランチ 平日約¥5,400・休日約¥6,000／ディナーは幅あり <span class="badge">要確認・UNKNOWN</span></span></div>`+
+  `<div><b>空席</b><span><span class="badge">UNKNOWN</span></span></div>`+
+  `<div><b>観測</b><span class="mono">${M.collected_at}</span></div>`;
+$('#off').href=M.identity.official_page;
+$('#foot').innerHTML='研究用の画面です。予約・購入・送信はしません。料理写真は「料理の美しさ」の一般例（Wikimedia、Owner 許可）で、当店の実物ではありません。料金・空席・当日の提供内容は公式で要確認（UNKNOWN）。';
+let cur=null; const decs=[['go','行ってみたい'],['curious','気になる（調べたい）'],['no','今回は行かない'],['unsure','まだ判断できない']];
+const cb=$('#choices');
+decs.forEach(([v,l])=>{const b=document.createElement('button');b.textContent=l;b.setAttribute('aria-pressed','false');
+  b.onclick=()=>{cur=v;[...cb.children].forEach(c=>c.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');
+    $('#reason').innerHTML=`<b>あなたの反応:「${l}」</b><br>`+(v==='no'?'正しく理解した上での「行かない」も価値ある結論です。':'写真の美しさは入口。味・当日の一皿は食べないと分かりません（UNKNOWN）。気になったら公式で確認を。');
+  };cb.append(b);});
+</script>

@@ -1,0 +1,13 @@
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const here = dirname(fileURLToPath(import.meta.url));
+const material = readFileSync(join(here,'material4.json'),'utf8').trim().replace(/<\//g,'<\\/');
+const img = readFileSync(join(here,'roastbeef.jpg'));
+const dataUri = 'data:image/jpeg;base64,' + img.toString('base64');
+let tpl = readFileSync(join(here,'beauty.html'),'utf8');
+if(!tpl.includes('__IMG__')||!tpl.includes('__FIXTURE__')) throw new Error('placeholder 不足');
+tpl = tpl.replace('__IMG__', () => dataUri).replace('__FIXTURE__', () => material);
+mkdirSync('dist/buffet',{recursive:true});
+writeFileSync('dist/buffet/beauty.html', tpl);
+console.log('dist/buffet/beauty.html', (tpl.length/1024|0)+'KB (画像 '+(img.length/1024|0)+'KB 埋め込み)');
