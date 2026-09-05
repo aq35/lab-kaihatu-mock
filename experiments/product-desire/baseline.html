@@ -1,0 +1,75 @@
+<title>HHKB Type-S 商品紹介</title>
+<style>
+:root{
+  --bg:#141210; --panel:#1e1b18; --panel2:#26221e; --ink:#f2ede6; --ink2:#c7bdb0; --quiet:#8b8175; --line:#2f2a25; --edge:#3b352e;
+  --accent:#c98a3a; --good:#4b9e6a; --bad:#c8624f; --unk:#9a7fb0; --keytop:#39322a; --arrow:#c98a3a;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace; --serif:"Iowan Old Style",Georgia,"Noto Serif JP",serif;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.5);
+}
+:root[data-theme="light"]{ --bg:#f5f2ec; --panel:#fffdf8; --panel2:#f1ece2; --ink:#201b15; --ink2:#4a4238; --quiet:#726858; --line:#e6ded0; --edge:#d8cfbe;
+  --accent:#9a6a1a; --good:#1f7d4a; --bad:#b0442f; --unk:#6f4f8a; --keytop:#fbf7ee; --arrow:#9a6a1a; --shadow:0 1px 2px rgba(30,25,18,.06),0 10px 26px rgba(30,25,18,.1);}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){ --bg:#f5f2ec; --panel:#fffdf8; --panel2:#f1ece2; --ink:#201b15; --ink2:#4a4238; --quiet:#726858; --line:#e6ded0; --edge:#d8cfbe;
+  --accent:#9a6a1a; --good:#1f7d4a; --bad:#b0442f; --unk:#6f4f8a; --keytop:#fbf7ee; --arrow:#9a6a1a; --shadow:0 1px 2px rgba(30,25,18,.06),0 10px 26px rgba(30,25,18,.1);}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6}
+.wrap{max-inline-size:min(760px,94vw);margin-inline:auto;padding:clamp(1rem,3vw,2rem)}
+.board{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:.8rem;display:block;inline-size:100%}
+.note{font-size:.74rem;color:var(--quiet);margin-block-start:.4rem}
+h1{font-size:clamp(1.2rem,3.2vw,1.6rem);margin:1rem 0 .1rem;font-family:var(--serif)}
+.model{font-family:var(--mono);font-size:.82rem;color:var(--ink2)}
+.price{font-family:var(--mono);font-weight:700;font-size:1.3rem;margin-block:.6rem 0}
+.avail{font-size:.85rem;color:var(--ink2)} .badge{font-family:var(--mono);font-size:.68rem;font-weight:700;padding:.05rem .45rem;border-radius:5px;border:1px solid var(--unk);color:var(--unk)}
+h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.07em;color:var(--quiet);margin:1.4rem 0 .5rem}
+p.desc{color:var(--ink2)}
+ul{margin:.2rem 0;padding-inline-start:1.2rem;display:grid;gap:.35rem} li{color:var(--ink2)}
+.pros li::marker{color:var(--good)} .cons li::marker{color:var(--bad)}
+.specs{display:grid;gap:.3rem;font-size:.92rem} .specs div{display:flex;gap:.6rem;border-block-end:1px solid var(--line);padding-block:.35rem} .specs b{min-inline-size:9rem;color:var(--ink)}
+a.src{color:var(--accent);text-underline-offset:2px}
+.sources{font-size:.82rem;color:var(--quiet)} .sources a{color:var(--ink2)} .sources li{margin-block:.25rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+</style>
+<div class="wrap">
+  <svg class="board" id="board" viewBox="0 0 640 210" role="img" aria-label="HHKB の配列模式図"></svg>
+  <div class="note">※ 実写ではなく配列の模式図です。公式写真は <a class="src" id="imgsrc" target="_blank" rel="noopener">PFU 公式ページ ↗</a></div>
+  <h1 id="name"></h1><div class="model" id="model"></div>
+  <div class="price" id="price"></div>
+  <div class="avail" id="avail"></div>
+
+  <h2>商品説明</h2>
+  <p class="desc" id="desc"></p>
+
+  <h2>主な仕様</h2>
+  <div class="specs" id="specs"></div>
+
+  <h2>長所</h2><ul class="pros" id="pros"></ul>
+  <h2>短所</h2><ul class="cons" id="cons"></ul>
+
+  <h2>代替</h2><p class="desc" id="alts"></p>
+  <h2>未確認（UNKNOWN）</h2><ul id="unknown"></ul>
+  <h2>出典</h2><ul class="sources" id="sources"></ul>
+</div>
+<script>
+const M=__FIXTURE__; const $=s=>document.querySelector(s); const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+// 同じ模式図（explore と共通の描画）
+(function(){ const svg=$('#board'); const NS='http://www.w3.org/2000/svg';
+  const rows=[['Esc','1','2','3','4','5','6','7','8','9','0','-','=','\\','`'],['Tab','Q','W','E','R','T','Y','U','I','O','P','[*','] ','Del'],
+    ['Ctrl','A','S','D','F','G','H','J','K','L',';*','\'*','Enter'],['Shift','Z','X','C','V','B','N','M',',','.','/*','Shift','Fn'],['','','Meta','Alt','␣ space','Alt','Meta','','']];
+  const arrowCaps={'[*':'↑',';*':'←','\'*':'→','/*':'↓'}; let y=8; const kh=32;
+  rows.forEach((r)=>{ let x=8; const unit=624/15; r.forEach(cap=>{ if(cap===''){x+=unit*0.9;return;} const wIdx=cap==='␣ space'?6:1; const w=unit*wIdx-6;
+    const rect=document.createElementNS(NS,'rect'); rect.setAttribute('x',x);rect.setAttribute('y',y);rect.setAttribute('width',Math.max(w,unit-6));rect.setAttribute('height',kh-6);rect.setAttribute('rx',4);
+    const isA=cap in arrowCaps; rect.setAttribute('fill',isA?'color-mix(in oklab,var(--arrow),transparent 78%)':'var(--keytop)'); rect.setAttribute('stroke',isA?'var(--arrow)':'var(--line)'); rect.setAttribute('stroke-width',isA?'2':'1'); svg.append(rect);
+    const t=document.createElementNS(NS,'text'); t.setAttribute('x',x+6);t.setAttribute('y',y+18);t.setAttribute('font-size','10');t.setAttribute('fill','var(--ink2)'); t.textContent=cap.replace('*','').trim()||cap; svg.append(t);
+    if(isA){ const a=document.createElementNS(NS,'text'); a.setAttribute('x',x+Math.max(w,unit-6)-14);a.setAttribute('y',y+18);a.setAttribute('font-size','12');a.setAttribute('fill','var(--arrow)');a.setAttribute('font-weight','700');a.textContent=arrowCaps[cap]; svg.append(a);} x+=Math.max(w,unit-6)+6; }); y+=kh; });
+  const n=document.createElementNS(NS,'text'); n.setAttribute('x',8);n.setAttribute('y',200);n.setAttribute('font-size','11');n.setAttribute('fill','var(--arrow)');n.setAttribute('font-weight','700'); n.textContent='矢印キーは Fn + [ ; \' / で代替（オレンジ）'; svg.append(n);
+})();
+$('#imgsrc').href=M.identity.official_page; $('#name').textContent=M.identity.name; $('#model').textContent=M.identity.model.split('。')[0];
+$('#price').textContent='¥'+M.availability.price_jpy.toLocaleString(); $('#avail').innerHTML=`${M.availability.condition.split('。')[0]}・販売: ${M.availability.seller}・在庫 <span class="badge">UNKNOWN</span>・観測 ${M.availability.observed_at} <a class="src" href="${M.availability.sources[0]}" target="_blank" rel="noopener">販売元 ↗</a>`;
+$('#desc').textContent=M.usage_reality.who_it_targets_official+' '+M.identity.official_specs[0]+'。'+M.identity.official_specs[2];
+const specs=$('#specs'); [['メーカー',M.identity.maker],['型番',M.identity.model.split('。')[0]],['スイッチ','東プレ静電容量無接点（Topre）・Type-S 静音'],['配列','60% コンパクト（矢印/Fn行/テンキー無し）'],['接続','Bluetooth 最大4台 ＋ USB-C 有線'],['価格','¥'+M.availability.price_jpy.toLocaleString()]].forEach(([k,v])=>{ const d=el('div'); d.innerHTML=`<b>${k}</b><span>${v}</span>`; specs.append(d); });
+$('#pros').innerHTML=['60% コンパクト・軽量で携帯や省スペースに向く','静音・短ストロークの Topre 打鍵感（慣れると快適との声）','Bluetooth 4台切替＋有線、キーマップ変更可'].map(x=>`<li>${x}</li>`).join('');
+$('#cons').innerHTML=M.usage_reality.independent_findings.map(f=>`<li>${f.point} <a class="src" href="${f.source}" target="_blank" rel="noopener">source ↗</a></li>`).join('');
+$('#alts').innerHTML=M.usage_reality.alternatives.map(a=>`<b>${a.name}</b>: ${a.why}`).join(' ／ ')+'（現行モデル・価格は要確認）';
+$('#unknown').innerHTML=M.usage_reality.unknown.map(u=>`<li>${u}</li>`).join('');
+const uniqSrc=[...new Set([M.identity.official_page, M.availability.sources[0], ...M.usage_reality.independent_findings.map(f=>f.source)])];
+$('#sources').innerHTML=uniqSrc.map(s=>`<li><a href="${s}" target="_blank" rel="noopener">${s}</a></li>`).join('');
+</script>

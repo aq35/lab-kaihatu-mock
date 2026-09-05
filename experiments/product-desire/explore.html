@@ -1,0 +1,245 @@
+<title>HHKB を自分の指で試す</title>
+<style>
+:root{
+  --bg:#141210; --panel:#1e1b18; --panel2:#26221e; --ink:#f2ede6; --ink2:#c7bdb0; --quiet:#8b8175; --line:#2f2a25; --edge:#3b352e;
+  --accent:#c98a3a; --good:#4b9e6a; --bad:#c8624f; --cond:#c9a24b; --unk:#9a7fb0; --key:#2b2620; --keytop:#39322a; --arrow:#c98a3a;
+  --sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace; --serif:"Iowan Old Style",Georgia,"Noto Serif JP",serif;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.5);
+}
+:root[data-theme="light"]{ --bg:#f5f2ec; --panel:#fffdf8; --panel2:#f1ece2; --ink:#201b15; --ink2:#4a4238; --quiet:#726858; --line:#e6ded0; --edge:#d8cfbe;
+  --accent:#9a6a1a; --good:#1f7d4a; --bad:#b0442f; --cond:#8a6a1a; --unk:#6f4f8a; --key:#efe8db; --keytop:#fbf7ee; --arrow:#9a6a1a; --shadow:0 1px 2px rgba(30,25,18,.06),0 12px 30px rgba(30,25,18,.1);}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){ --bg:#f5f2ec; --panel:#fffdf8; --panel2:#f1ece2; --ink:#201b15; --ink2:#4a4238; --quiet:#726858; --line:#e6ded0; --edge:#d8cfbe;
+  --accent:#9a6a1a; --good:#1f7d4a; --bad:#b0442f; --cond:#8a6a1a; --unk:#6f4f8a; --key:#efe8db; --keytop:#fbf7ee; --arrow:#9a6a1a; --shadow:0 1px 2px rgba(30,25,18,.06),0 12px 30px rgba(30,25,18,.1);}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6}
+.wrap{max-inline-size:min(860px,95vw);margin-inline:auto;padding:clamp(1rem,3vw,2rem)}
+.stage{margin-block-end:1.6rem}
+.step{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;color:var(--quiet);text-transform:uppercase;margin-block-end:.35rem}
+/* 1 Reality */
+.reality{background:var(--panel);border:1px solid var(--edge);border-radius:14px;box-shadow:var(--shadow);padding:clamp(1rem,2.5vw,1.4rem)}
+.board{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:.8rem;display:block;inline-size:100%}
+.schem-note{font-size:.74rem;color:var(--quiet);margin-block-start:.4rem}
+.idrow{display:flex;flex-wrap:wrap;gap:.3rem 1.1rem;align-items:baseline;margin-block-start:.8rem}
+.idrow h1{font-size:clamp(1.1rem,2.8vw,1.5rem);margin:0;font-family:var(--serif)}
+.idrow .model{font-family:var(--mono);font-size:.82rem;color:var(--ink2)}
+.avail{display:flex;flex-wrap:wrap;gap:.4rem .9rem;margin-block-start:.5rem;font-size:.85rem;color:var(--ink2)}
+.price{font-family:var(--mono);font-weight:700;color:var(--ink);font-size:1.05rem}
+.badge{font-family:var(--mono);font-size:.68rem;font-weight:700;padding:.05rem .45rem;border-radius:5px;border:1px solid currentColor}
+.b-unk{color:var(--unk)} .b-obs{color:var(--quiet)}
+a.src{color:inherit;text-underline-offset:2px;text-decoration-color:var(--quiet)} a.src:hover{text-decoration-color:var(--ink)}
+/* 2 Hook */
+.hook{margin-block-start:1.3rem;background:linear-gradient(180deg,color-mix(in oklab,var(--accent),transparent 90%),transparent);
+  border:1px solid var(--edge);border-inline-start:4px solid var(--accent);border-radius:0 14px 14px 0;padding:1rem 1.1rem}
+.hook .q{font-family:var(--serif);font-size:clamp(1.1rem,3vw,1.4rem);line-height:1.45;margin:0}
+.hook .sub{font-size:.88rem;color:var(--ink2);margin-block-start:.5rem}
+/* 3 Try */
+.try{margin-block-start:1.3rem;background:var(--panel);border:1px solid var(--edge);border-radius:14px;box-shadow:var(--shadow);padding:clamp(1rem,2.5vw,1.4rem)}
+.try h2,.reveal h2{font-size:1.05rem;margin:0 0 .3rem}
+.pref{margin-block:.9rem 0}
+.pref .qlabel{font-weight:600;font-size:.95rem}
+.pref .payoff{font-size:.8rem;color:var(--accent);margin-block:.15rem .4rem}
+.opts{display:flex;flex-wrap:wrap;gap:.45rem}
+.opts button{font:inherit;font-size:.86rem;padding:.5rem .8rem;min-block-size:2.75rem;border-radius:9px;cursor:pointer;border:1px solid var(--edge);background:var(--panel2);color:var(--ink)}
+.opts button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in oklab,var(--accent),transparent 82%);font-weight:700}
+/* verdict */
+.verdict{margin-block-start:1.2rem;border-radius:12px;padding:1rem 1.1rem;border:1px solid var(--edge)}
+.verdict.good{background:color-mix(in oklab,var(--good),transparent 88%);border-color:var(--good)}
+.verdict.cond{background:color-mix(in oklab,var(--cond),transparent 88%);border-color:var(--cond)}
+.verdict.bad{background:color-mix(in oklab,var(--bad),transparent 88%);border-color:var(--bad)}
+.verdict .vh{font-weight:700;font-size:1.02rem;margin-block-end:.4rem}
+.verdict .vh.good{color:var(--good)} .verdict .vh.cond{color:var(--cond)} .verdict .vh.bad{color:var(--bad)}
+.cols{display:grid;gap:.8rem;margin-block-start:.4rem} @media(min-width:640px){.cols{grid-template-columns:1fr 1fr}}
+.cols h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;margin:0 0 .3rem}
+.cols .pro h3{color:var(--good)} .cols .con h3{color:var(--bad)}
+.cols ul{margin:0;padding-inline-start:1.1rem;display:grid;gap:.3rem;font-size:.9rem;color:var(--ink2)}
+.uk{margin-block-start:.6rem;font-size:.85rem;color:var(--unk);border-inline-start:3px solid var(--unk);padding-inline-start:.6rem}
+/* 4 Reveal */
+.reveal{margin-block-start:1.3rem;background:var(--panel);border:1px solid var(--edge);border-radius:14px;box-shadow:var(--shadow);padding:clamp(1rem,2.5vw,1.4rem)}
+.grid2{display:grid;gap:.8rem} @media(min-width:640px){.grid2{grid-template-columns:1fr 1fr}}
+.fact{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:.7rem .85rem;font-size:.9rem;color:var(--ink2)}
+.fact b{color:var(--ink)} .fact .k{font-family:var(--mono);font-size:.66rem;font-weight:700;padding:.03rem .35rem;border-radius:4px;border:1px solid currentColor;margin-inline-start:.3rem}
+.k-off{color:var(--accent)} .k-rev{color:var(--good)} .k-unk{color:var(--unk)}
+.alts{margin-block-start:.8rem;font-size:.9rem;color:var(--ink2)} .alts b{color:var(--ink)}
+/* 5 Decision */
+.decision{margin-block-start:1.3rem;background:var(--panel);border:1px solid var(--edge);border-radius:14px;box-shadow:var(--shadow);padding:clamp(1rem,2.5vw,1.4rem)}
+.choices{display:flex;flex-wrap:wrap;gap:.5rem;margin-block:.6rem 0}
+.choices button{font:inherit;font-size:.9rem;padding:.6rem .9rem;min-block-size:2.9rem;border-radius:10px;cursor:pointer;border:1px solid var(--edge);background:var(--panel2);color:var(--ink)}
+.choices button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg);font-weight:700}
+.reason{margin-block-start:.8rem;background:var(--panel2);border:1px dashed var(--edge);border-radius:10px;padding:.8rem .9rem;font-size:.9rem;color:var(--ink2)}
+.reason b{color:var(--ink)}
+.hint{font-size:.78rem;color:var(--quiet);margin-block-start:.5rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div class="wrap">
+  <!-- 1 Reality -->
+  <section class="stage reality">
+    <div class="step">1 ── これは実在する商品です</div>
+    <svg class="board" id="board" viewBox="0 0 640 210" role="img" aria-label="HHKB の配列模式図。独立した矢印キーが無く、Fn 併用で代替することを示す"></svg>
+    <div class="schem-note">※ これは<strong>実写ではなく配列の模式図</strong>です（実物確認と hook のための図）。公式写真は
+      <a class="src" id="imgsrc" target="_blank" rel="noopener">PFU 公式ページ ↗</a></div>
+    <div class="idrow"><h1 id="name"></h1><span class="model" id="model"></span></div>
+    <div class="avail">
+      <span class="price" id="price"></span>
+      <span id="cond"></span>
+      <span>在庫 <span class="badge b-unk">UNKNOWN</span></span>
+      <span class="badge b-obs" id="obs"></span>
+      <a class="src" id="availsrc" target="_blank" rel="noopener">販売元 ↗</a>
+    </div>
+  </section>
+
+  <!-- 2 Hook -->
+  <section class="stage hook">
+    <div class="step" style="color:var(--accent)">2 ── ひとつの問い</div>
+    <p class="q" id="hookq"></p>
+    <p class="sub" id="hooksub"></p>
+  </section>
+
+  <!-- 3 Try Your Situation -->
+  <section class="stage try">
+    <div class="step">3 ── あなたの使い方で試す</div>
+    <h2>この 4 つで、答えが変わります</h2>
+    <div id="prefs"></div>
+    <div class="verdict" id="verdict" aria-live="polite"></div>
+  </section>
+
+  <!-- 4 Reveal -->
+  <section class="stage reveal">
+    <div class="step">4 ── 変わること・変わらないこと（答えは全部ここにあります）</div>
+    <div class="grid2">
+      <div><h3 style="color:var(--good);font-size:.8rem;text-transform:uppercase;margin:.2rem 0 .4rem">あなたの条件で変わる</h3><div id="varies"></div></div>
+      <div><h3 style="color:var(--quiet);font-size:.8rem;text-transform:uppercase;margin:.2rem 0 .4rem">誰が使っても変わらない</h3><div id="fixed"></div></div>
+    </div>
+    <div class="alts" id="alts"></div>
+  </section>
+
+  <!-- 5 Decision -->
+  <section class="stage decision">
+    <div class="step">5 ── あなたの判断（買うボタンはありません）</div>
+    <div class="choices" id="choices"></div>
+    <div class="reason" id="reason">上の 4 つを選び、最後にあなたの判断を選ぶと、理由がここに出ます。判断はいつでも変えられます。</div>
+    <p class="hint">これは研究用の画面です。購入・送信・アフィリエイトはしません。証拠リンクは確認用で、問いの答えはこの画面内にあります。</p>
+  </section>
+</div>
+
+<script>
+const M=__FIXTURE__; const $=s=>document.querySelector(s); const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+$('#name').textContent=M.identity.name; $('#model').textContent=M.identity.model.split('。')[0];
+$('#price').textContent='¥'+M.availability.price_jpy.toLocaleString(); $('#cond').textContent=M.availability.condition.split('。')[0];
+$('#obs').textContent='観測 '+M.availability.observed_at; $('#imgsrc').href=M.identity.official_page; $('#availsrc').href=M.availability.sources[0];
+
+// --- 配列模式図（矢印キーが無いことを示す）。SVG を JS で描く ---
+(function(){ const svg=$('#board'); const NS='http://www.w3.org/2000/svg';
+  const rows=[
+    ['Esc','1','2','3','4','5','6','7','8','9','0','-','=','\\','`'],
+    ['Tab','Q','W','E','R','T','Y','U','I','O','P','[*','] ','Del'],
+    ['Ctrl','A','S','D','F','G','H','J','K','L',';*','\'*','Enter'],
+    ['Shift','Z','X','C','V','B','N','M',',','.','/*','Shift','Fn'],
+    ['','','Meta','Alt','␣ space','Alt','Meta','','']
+  ];
+  const arrowCaps={'[*':'↑',';*':'←','\'*':'→','/*':'↓'};
+  let y=8; const kh=32;
+  rows.forEach((r)=>{ let x=8; const kw=(624-8)/ (r===rows[4]?9:15) ; const unit=(624)/15;
+    r.forEach(cap=>{ if(cap===''){ x+=unit*0.9; return; }
+      const wIdx = cap==='␣ space'?6:1; const w=unit*wIdx-6;
+      const g=document.createElementNS(NS,'g');
+      const rect=document.createElementNS(NS,'rect'); rect.setAttribute('x',x); rect.setAttribute('y',y); rect.setAttribute('width',Math.max(w,unit-6)); rect.setAttribute('height',kh-6); rect.setAttribute('rx',4);
+      const isArrow=cap in arrowCaps;
+      rect.setAttribute('fill', isArrow?'color-mix(in oklab,var(--arrow),transparent 78%)':'var(--keytop)');
+      rect.setAttribute('stroke', isArrow?'var(--arrow)':'var(--line)'); rect.setAttribute('stroke-width',isArrow?'2':'1');
+      g.append(rect);
+      const t=document.createElementNS(NS,'text'); t.setAttribute('x',x+6); t.setAttribute('y',y+18); t.setAttribute('font-size','10'); t.setAttribute('font-family','var(--mono)'); t.setAttribute('fill','var(--ink2)');
+      t.textContent=cap.replace('*','').trim()||cap; g.append(t);
+      if(isArrow){ const a=document.createElementNS(NS,'text'); a.setAttribute('x',x+Math.max(w,unit-6)-14); a.setAttribute('y',y+18); a.setAttribute('font-size','12'); a.setAttribute('fill','var(--arrow)'); a.setAttribute('font-weight','700'); a.textContent=arrowCaps[cap]; g.append(a); }
+      svg.append(g); x+=Math.max(w,unit-6)+6;
+    }); y+=kh; });
+  // 注記
+  const note=document.createElementNS(NS,'text'); note.setAttribute('x',8); note.setAttribute('y',200); note.setAttribute('font-size','11'); note.setAttribute('fill','var(--arrow)'); note.setAttribute('font-weight','700');
+  note.textContent='独立した矢印キーは無い → Fn + [ ; \' / で ↑ ← → ↓（オレンジ）'; svg.append(note);
+})();
+
+// --- Hook ---
+$('#hookq').textContent='プログラマのために作られた ¥'+M.availability.price_jpy.toLocaleString()+' のキーボードが、コーディングに要る「矢印キー」を捨てている。これはあなたの手に効く制約か、それとも毎日つまずく欠陥か。';
+$('#hooksub').textContent='「キーが少ない＝劣る」ではありません。矢印キーの“欠如”は設計で、Fn 併用で代替します。独立レビューは「矢印を多用する人には致命的／ホームポジション中心なら快適」と条件で割れます。下であなたの条件を入れると、その答えが出ます。';
+
+// --- Try: 4 preferences ---
+const prefs=[
+  {id:'arrow', q:'矢印キーの使い方', payoff:'→ 変えると「矢印キー欠如があなたに致命的か些細か」が変わります',
+    opts:[['always','いつも矢印キーで移動'],['home','ホームポジション/Vim 中心'],['half','半々']]},
+  {id:'use', q:'主な用途', payoff:'→ 変えると「テンキー/矢印の不足がどれだけ効くか」が変わります',
+    opts:[['code','コーディング'],['write','文章を書く'],['num','数値入力・表計算']]},
+  {id:'port', q:'携帯性', payoff:'→ 変えると「コンパクト・軽量・無線の価値」が変わります',
+    opts:[['carry','持ち運ぶ'],['desk','据え置き']]},
+  {id:'learn', q:'学習コストの許容', payoff:'→ 変えると「Topre と配列の“慣れ”がプラスかマイナスか」が変わります',
+    opts:[['ok','数週間かけて慣れてよい'],['now','すぐ快適に使いたい']]},
+];
+const state={arrow:null,use:null,port:null,learn:null};
+const pbox=$('#prefs');
+prefs.forEach(p=>{ const w=el('div','pref'); w.innerHTML=`<div class="qlabel">${p.q}</div><div class="payoff">${p.payoff}</div>`;
+  const o=el('div','opts'); p.opts.forEach(([v,label])=>{ const b=document.createElement('button'); b.textContent=label; b.setAttribute('aria-pressed','false');
+    b.onclick=()=>{ state[p.id]=v; [...o.children].forEach(c=>c.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); update(); }; o.append(b); });
+  w.append(o); pbox.append(w); });
+
+function update(){
+  const {arrow,use,port,learn}=state; const v=$('#verdict');
+  if(!arrow&&!use&&!port&&!learn){ v.className='verdict'; v.innerHTML='<div class="vh">条件を選ぶと、あなたにとって価値が出るか出ないかが出ます</div>'; renderReveal(); return; }
+  let score=0; const pro=[], con=[];
+  if(arrow==='home'){score+=2; pro.push('矢印を Fn レイヤで扱う設計が、あなたのホームポジション中心の操作と噛み合う（欠如が些細）');}
+  if(arrow==='always'){score-=2; con.push('あなたは矢印キーを常用 → 独立レビューが言う dealbreaker に当たりやすい（毎日 Fn 併用）');}
+  if(arrow==='half'){score+=0; con.push('矢印は半々 → Fn 併用に慣れるまで一時的に遅くなる可能性');}
+  if(use==='code'){ if(arrow==='always'){score-=1; con.push('コーディング×矢印常用は、カーソル移動の摩擦が積み重なる');} else {score+=1; pro.push('コーディング中心はもともと HHKB が狙う層');}}
+  if(use==='num'){score-=2; con.push('数値入力・表計算はテンキーが無いのが不利（別途テンキーが要る）');}
+  if(use==='write'){score-=1; con.push('長文の文章書きはレビューいわく本来の狙いから外れ気味（矢印移動が増える）');}
+  if(port==='carry'){score+=1; pro.push('持ち運ぶなら 60% コンパクト・軽量・無線が効く');}
+  if(port==='desk'){score+=0;}
+  if(learn==='ok'){score+=1; pro.push('数週間の慣れを許容できる → Topre と配列の学習曲線を越えれば快適との声');}
+  if(learn==='now'){score-=1; con.push('すぐ快適に、だと Topre と配列の“慣れ”期間がマイナスに出る');}
+  let cls,head;
+  if(score>=2){cls='good';head='あなたの条件では、価値が出やすい';}
+  else if(score<=-2){cls='bad';head='あなたの条件では、価値が出にくい';}
+  else {cls='cond';head='あなたの条件では、条件つき（分かれる）';}
+  v.className='verdict '+cls;
+  v.innerHTML=`<div class="vh ${cls}">${head}</div><div class="cols">`+
+    `<div class="pro"><h3>価値が出る理由</h3><ul>${(pro.length?pro:['—']).map(x=>`<li>${x}</li>`).join('')}</ul></div>`+
+    `<div class="con"><h3>価値が出にくい理由</h3><ul>${(con.length?con:['—']).map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`+
+    `<div class="uk">判断を左右する未確認: 打鍵感（Topre）の好みは<strong>実機でしか分からない=UNKNOWN</strong>／あなたの適応速度も人による。感触が合うかは店頭試打を推奨。</div>`;
+  renderReveal(); if(curDecision) renderReason();
+}
+
+function renderReveal(){
+  const varies=$('#varies'); varies.innerHTML='';
+  [['矢印キー欠如の深刻度','あなたが矢印を常用するほど致命的、ホームポジション中心なら些細'],
+   ['テンキー無しの影響','数値入力が多いほど不利'],
+   ['携帯性の価値','持ち運ぶほどプラス'],
+   ['学習曲線の重み','すぐ使いたいほどマイナス、慣れを許容できるほど解消']].forEach(([k,vv])=>{
+    const d=el('div','fact'); d.innerHTML=`<b>${k}</b>: ${vv}`; varies.append(d); });
+  const fixed=$('#fixed'); fixed.innerHTML='';
+  const off=`<span class="k k-off">公式</span>`, rev=`<span class="k k-rev">独立</span>`, unk=`<span class="k k-unk">UNKNOWN</span>`;
+  [`価格 ¥${M.availability.price_jpy.toLocaleString()}（公式）${off}`,
+   `独立した矢印キー・Fn 行・テンキーは物理的に無い（Fn 併用で代替）${off}`,
+   `Topre は非メカニカル。静音・短ストローク（好みは分かれる）${rev}`,
+   `『きれいだが非常にニッチ／万人向けではない』${rev}`,
+   `USB-C ケーブルは同梱されない場合がある（レビュー時点）${rev}`,
+   `打鍵感の好み・あなたの適応速度・最新の同梱物・ライブ在庫 ${unk}`].forEach((t,i)=>{
+    const d=el('div','fact'); const srcs=[M.availability.sources[0], M.usage_reality.independent_findings[0].source, M.usage_reality.independent_findings[3].source, M.usage_reality.independent_findings[1].source, M.usage_reality.independent_findings[2].source, ''];
+    d.innerHTML=t+(srcs[i]?` <a class="src" href="${srcs[i]}" target="_blank" rel="noopener">source ↗</a>`:''); fixed.append(d); });
+  const alts=$('#alts'); alts.innerHTML='<b>合わないなら代替:</b> '+M.usage_reality.alternatives.map(a=>`${a.name}（${a.why}）`).join(' ／ ')+
+    ' <span style="color:var(--quiet);font-size:.8rem">※代替の現行モデル/価格は要確認</span>';
+}
+
+// --- Decision ---
+let curDecision=null;
+const decs=[['want','欲しい'],['cond','条件付きで欲しい'],['compare','代替と比較したい'],['no','自分には不要'],['unsure','まだ判断できない']];
+const cbox=$('#choices');
+decs.forEach(([v,label])=>{ const b=document.createElement('button'); b.textContent=label; b.setAttribute('aria-pressed','false');
+  b.onclick=()=>{ curDecision=v; [...cbox.children].forEach(c=>c.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); renderReason(); }; cbox.append(b); });
+function renderReason(){
+  const {arrow,use,port,learn}=state; const label=decs.find(d=>d[0]===curDecision)[1];
+  const chosen=[arrow&&({always:'矢印を常用',home:'ホームポジション中心',half:'矢印半々'}[arrow]), use&&({code:'コーディング',write:'文章',num:'数値入力'}[use]), port&&({carry:'持ち運ぶ',desk:'据え置き'}[port]), learn&&({ok:'慣れを許容',now:'すぐ快適に'}[learn])].filter(Boolean).join(' / ')||'（条件未選択）';
+  $('#reason').innerHTML=`<b>あなたの判断:「${label}」</b><br>あなたの条件: ${chosen}<br>`+
+    `この判断の理由は上の「価値が出る/出にくい理由」に基づきます。条件を変えると理由も変わります。`+
+    (curDecision==='want'||curDecision==='cond'?'<br><span style="color:var(--quiet)">※ 感触は実機での試打を推奨（UNKNOWN）。</span>':'')+
+    (curDecision==='no'?'<br><span style="color:var(--good)">正しく理解した上での「不要」も、この実験では価値ある結論です。</span>':'');
+}
+update();
+</script>
