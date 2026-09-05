@@ -1,0 +1,43 @@
+{
+  "collected_at": "2026-09-05",
+  "collection_method": "ライブ Web 検索（read-only）で取得。公式 / 販売者 / 独立レビュー / UNKNOWN を区別。AI 補完なし。",
+  "owner_known_interest": "開発者としての入力環境・道具（Owner は KAS を作る開発者。長時間タイプする）",
+  "identity": {
+    "name": "HHKB Professional HYBRID Type-S",
+    "model": "PD-KB800BS（英語配列・墨/黒・Type-S 静音）。同系: PD-KB800WS(英語白) / PD-KB820WS(日本語白)",
+    "maker": "PFU（Ricoh グループ）",
+    "official_page": "https://www.pfu.ricoh.com/direct/hhkb/",
+    "official_specs": [
+      "60% コンパクト配列。独立した矢印キー・ファンクション行・テンキーは物理的に無い",
+      "東プレ静電容量無接点（Topre）。Type-S は静音・0.2mm 短ストローク",
+      "HYBRID: Bluetooth（最大4台）＋ USB-C 有線。DIP スイッチ/専用ツールでキーマップ変更可（物理キー数は固定）"
+    ],
+    "official_image_source": "公式写真は PFU ダイレクト商品ページ（https://www.pfu.ricoh.com/direct/hhkb/detail_pd-kb800ysc.html 等）にある。",
+    "image_policy": "権利条件が不明なため公式写真は埋め込まず、画面には自作の『配列の模式図』を使い、実写でない旨を明示して source へリンクする。AI 生成の実写・型番違いの流用はしない。"
+  },
+  "availability": {
+    "seller": "PFU ダイレクト（公式）ほか Amazon 等",
+    "price_jpy": 36850,
+    "price_note": "PFU ダイレクト表示価格（英語配列）。海外レビューでは $357 と表記。為替・販路で差あり",
+    "condition": "新品（現行販売）。2026-06-04 に 30周年『押下圧30g』限定モデル(3,000台)も発表",
+    "stock_status": "UNKNOWN（本実験ではライブ在庫数まで確認していない。販売ページの存在＝在庫ありとはしない）",
+    "observed_at": "2026-09-05",
+    "sources": ["https://www.pfu.ricoh.com/direct/hhkb/", "https://www.pfu.ricoh.com/news/2026/news260604.html"]
+  },
+  "usage_reality": {
+    "who_it_targets_official": "長時間タイプする開発者・ヘビーユーザー向け（コンパクト・静音・複数台切替）",
+    "independent_findings": [
+      { "point": "矢印キーが無いのが最大の欠点。コーディング/テキスト編集で矢印を多用する人には dealbreaker。矢印は Fn 併用で代替", "source": "https://www.techradar.com/computing/hhkb-professional-hybrid-type-s-review", "kind": "independent_review" },
+      { "point": "『きれいだが非常にニッチ』。学習曲線があり、万人向けではない", "source": "https://www.tomshardware.com/reviews/hhkb-professional-hybrid-type-s-snow-review-pretty-white-and-very-niche", "kind": "independent_review" },
+      { "point": "高価で、USB-C ケーブルが同梱されない（レビュー時点）", "source": "https://www.infoworld.com/article/2337278/happy-hacking-keyboard-review-tiny-typing-comfort-at-a-cost.html", "kind": "independent_review" },
+      { "point": "Topre は非メカニカル。Cherry MX から移ると感触に慣れが要るが、慣れると快適との声", "source": "https://typecraft.dev/review/happy-hacking-keyboard-type-s-review", "kind": "independent_review" }
+    ],
+    "official_vs_reality": "公式は『開発者向けの快適な入力』を訴求。独立レビューは『矢印キー欠如と学習曲線で万人向けではない=niche』と補足。両者は矛盾ではなく“条件つき”。",
+    "limits": ["物理的な矢印キー/Fn行/テンキーが無い", "Topre 感触は好みが分かれる（実機体験推奨）", "価格が高い・ケーブル別途の可能性"],
+    "alternatives": [
+      { "name": "REALFORCE（東プレ）", "why": "同じ静電容量無接点の打鍵感で、矢印キー・フルサイズ配列がある。HHKB の“感触は欲しいが矢印は必須”な人の代替", "kind": "claim_general", "note": "現行モデル・価格は要確認" },
+      { "name": "Keychron などメカニカルのコンパクト機", "why": "矢印付きコンパクトで安価な選択肢。打鍵感はメカニカル（Topre とは別物）", "kind": "claim_general" }
+    ],
+    "unknown": ["Owner 自身の適応速度", "Topre 感触が Owner の好みに合うか（実機でしか分からない）", "ライブ在庫", "同梱物の最新状況（ケーブル有無は時期で変わりうる）"]
+  }
+}
