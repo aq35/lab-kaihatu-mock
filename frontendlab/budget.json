@@ -1,0 +1,7 @@
+{
+  "$comment": "P1 依存予算ゲートの予算。initial_bytes = bundle+minify した entry chunk の初期ロード bytes。超過 or 未登録 entry で build を止める（fail-closed）。数値は `node plugins/budget-gate.mjs --update` で実測から再生成できる。",
+  "entries": {
+    "fixtures/budget/ok.js": { "initial_bytes": 2048, "initial_gzip": 1024 },
+    "fixtures/budget/bust.js": { "initial_bytes": 2048, "initial_gzip": 1024 }
+  }
+}

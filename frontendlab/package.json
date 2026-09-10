@@ -8,7 +8,8 @@
     "exp2": "node measure.mjs --exp bundle-orders",
     "exp3": "node measure.mjs --exp dependency-cost",
     "exp4": "node measure.mjs --exp minify-orders",
-    "all": "npm run exp1 && npm run exp2 && npm run exp3 && npm run exp4"
+    "all": "npm run exp1 && npm run exp2 && npm run exp3 && npm run exp4",
+    "gate": "node plugins/budget-gate.mjs --budget budget.json"
   },
   "devDependencies": {
     "@babel/core": "8.0.5",
