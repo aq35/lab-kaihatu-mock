@@ -1,0 +1,61 @@
+{
+  "experiment": "transpiler-orders",
+  "hypotheses_frozen": "frontendlab/docs/_hypotheses-transpiler-orders.md",
+  "fixture": "frontendlab/fixtures/app.tsx",
+  "fixture_bytes": 2883,
+  "common_ground": "TS 型除去 + JSX automatic runtime, target=esnext, downlevel なし, 非圧縮",
+  "runs": 60,
+  "measured_at": "2026-09-10T23:26:23.024Z",
+  "env": {
+    "node": "v22.22.2",
+    "platform": "linux 6.18.44-fc-v24",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+    "cpu_count": 4
+  },
+  "results": [
+    {
+      "id": "babel",
+      "lang": "JavaScript",
+      "version": "@babel/core 8.0.5 / preset-typescript 8.0.1 / preset-react 8.0.1",
+      "bytes_raw": 3082,
+      "bytes_gzip": 1370,
+      "ms_median": 6.8747,
+      "ms_min": 5.4048,
+      "deterministic": true,
+      "output_sha256": "8b7949398eecaaf3607314d5947c6deb09717e38fc51b92cb1e545c290ad2731"
+    },
+    {
+      "id": "swc",
+      "lang": "Rust",
+      "version": "@swc/core 1.16.2",
+      "bytes_raw": 3594,
+      "bytes_gzip": 1390,
+      "ms_median": 0.3595,
+      "ms_min": 0.3206,
+      "deterministic": true,
+      "output_sha256": "2668d8f2e7e69596fc563c61bc8da30a861df36792591c82878acd8451850deb"
+    },
+    {
+      "id": "esbuild",
+      "lang": "Go",
+      "version": "esbuild 0.28.2",
+      "bytes_raw": 2385,
+      "bytes_gzip": 967,
+      "ms_median": 1.733,
+      "ms_min": 1.2567,
+      "deterministic": true,
+      "output_sha256": "ffb5506946e6e121986726987901a0664a9115ad9ef321f4c0117bc3928b0a9f"
+    },
+    {
+      "id": "oxc",
+      "lang": "Rust",
+      "version": "oxc-transform 0.149.0",
+      "bytes_raw": 2252,
+      "bytes_gzip": 988,
+      "ms_median": 0.1131,
+      "ms_min": 0.1055,
+      "deterministic": true,
+      "output_sha256": "8bea3b1f30ba78dd98615980a8fa7ce9afad7bc35ca20fc06548ae8e3bda2035"
+    }
+  ]
+}

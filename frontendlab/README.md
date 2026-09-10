@@ -40,7 +40,12 @@ AI にとって扱いやすい compiler の性質を、測れる軸に落とし�
 
 | ID | 問い | 状態 |
 |---|---|---|
-| EXP-1 | transpiler（Babel/SWC/esbuild/Oxc）の速度・出力サイズは「桁で」どう違うか | 進行中 |
+| EXP-1 | transpiler（Babel/SWC/esbuild/Oxc）の速度・出力サイズは「桁で」どう違うか | [第一報](docs/EXP-1-transpiler-orders.md) |
+
+**EXP-1 の要点（実測）**: 速度は 61x 幅・出力サイズは 1.6x 幅。JS 実装(babel)は native より
+1〜2 桁遅い。決定論は 4 者すべて ✓。一番効いた発見は「同じ native でも **API 形態で桁が動く**」
+（esbuild の単発 transform は Go 子プロセスへの IPC が律速で 15x — エンジンでなく呼び出しコスト）。
+→ 「決定論・出力の軽さ」は既製 transpiler に既にある。足りないのは fail-closed・型付き入力・低 context 側。
 
 ## 動かす
 

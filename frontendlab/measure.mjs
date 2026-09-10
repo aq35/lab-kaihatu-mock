@@ -30,7 +30,7 @@ const pkgVer = (p) => require(`${p}/package.json`).version;
 import esbuild from 'esbuild';
 import swc from '@swc/core';
 import { transformSync as babelTransform } from '@babel/core';
-import { transform as oxcTransform } from 'oxc-transform';
+import { transformSync as oxcTransform } from 'oxc-transform';
 
 const TRANSPILERS = [
   {
