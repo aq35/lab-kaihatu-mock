@@ -4,7 +4,11 @@
   "type": "module",
   "description": "フレームワーク非依存のフロントエンド・ツールチェーン実験。root に依存を残さない（ここで閉じる）。",
   "scripts": {
-    "exp1": "node measure.mjs --exp transpiler-orders"
+    "exp1": "node measure.mjs --exp transpiler-orders",
+    "exp2": "node measure.mjs --exp bundle-orders",
+    "exp3": "node measure.mjs --exp dependency-cost",
+    "exp4": "node measure.mjs --exp minify-orders",
+    "all": "npm run exp1 && npm run exp2 && npm run exp3 && npm run exp4"
   },
   "devDependencies": {
     "@babel/core": "8.0.5",
@@ -12,6 +16,9 @@
     "@babel/preset-typescript": "8.0.1",
     "@swc/core": "1.16.2",
     "esbuild": "0.28.2",
+    "lodash": "4.18.1",
+    "lodash-es": "4.18.1",
+    "oxc-minify": "0.149.0",
     "oxc-transform": "0.149.0"
   }
 }
