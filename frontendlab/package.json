@@ -1,0 +1,17 @@
+{
+  "name": "frontendlab",
+  "private": true,
+  "type": "module",
+  "description": "フレームワーク非依存のフロントエンド・ツールチェーン実験。root に依存を残さない（ここで閉じる）。",
+  "scripts": {
+    "exp1": "node measure.mjs --exp transpiler-orders"
+  },
+  "devDependencies": {
+    "@babel/core": "8.0.5",
+    "@babel/preset-react": "8.0.1",
+    "@babel/preset-typescript": "8.0.1",
+    "@swc/core": "1.16.2",
+    "esbuild": "0.28.2",
+    "oxc-transform": "0.149.0"
+  }
+}
