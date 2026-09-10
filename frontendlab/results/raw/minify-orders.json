@@ -1,0 +1,48 @@
+{
+  "experiment": "minify-orders",
+  "hypotheses_frozen": "frontendlab/docs/_hypotheses-exp2-3-4.md",
+  "measured_at": "2026-09-10T23:35:38.375Z",
+  "env": {
+    "node": "v22.22.2",
+    "platform": "linux 6.18.44-fc-v24",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+    "cpu_count": 4
+  },
+  "runs": 60,
+  "input": "fixtures/app.tsx を esbuild で型除去した JS（単一入力）",
+  "input_bytes": 2385,
+  "versions": {
+    "esbuild": "0.28.2",
+    "swc": "1.16.2",
+    "oxc-minify": "0.149.0"
+  },
+  "results": [
+    {
+      "id": "esbuild",
+      "bytes_min": 1490,
+      "bytes_min_gzip": 796,
+      "ms_median": 1.6057,
+      "ms_min": 1.2979,
+      "deterministic": true,
+      "output_sha256": "440d27d94710fc2a86f24d26a43eeebe3177b7d8b94ae79073a1206f1d39d65a"
+    },
+    {
+      "id": "swc",
+      "bytes_min": 1417,
+      "bytes_min_gzip": 800,
+      "ms_median": 0.7627,
+      "ms_min": 0.6657,
+      "deterministic": true,
+      "output_sha256": "11ee7385b8e1d11541a776d89a2ba30586017b766fa00aac883adeb3fd0fc15f"
+    },
+    {
+      "id": "oxc",
+      "bytes_min": 1421,
+      "bytes_min_gzip": 804,
+      "ms_median": 0.1315,
+      "ms_min": 0.1214,
+      "deterministic": true,
+      "output_sha256": "b22db2501357bb4af32b51b48c06ce09b274abfe4a4ff390f3e0fea90dc47aff"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "experiment": "bundle-orders",
+  "hypotheses_frozen": "frontendlab/docs/_hypotheses-exp2-3-4.md",
+  "measured_at": "2026-09-10T23:35:43.418Z",
+  "env": {
+    "node": "v22.22.2",
+    "platform": "linux 6.18.44-fc-v24",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+    "cpu_count": 4
+  },
+  "runs": 20,
+  "note": "per_file = median total ms / N。esbuild bundle は IPC 1回、transform×N は IPC N回。",
+  "versions": {
+    "esbuild": "0.28.2",
+    "oxc": "0.149.0",
+    "swc": "1.16.2"
+  },
+  "rows": [
+    {
+      "N": 5,
+      "esbuild_bundle_ms": 3.1639,
+      "esbuild_bundle_per_file": 0.6328,
+      "esbuild_transformN_ms": 5.8061,
+      "esbuild_transformN_per_file": 1.1612,
+      "oxc_transformN_ms": 0.0454,
+      "oxc_transformN_per_file": 0.0091,
+      "swc_transformN_ms": 0.186,
+      "swc_transformN_per_file": 0.0372
+    },
+    {
+      "N": 25,
+      "esbuild_bundle_ms": 4.4493,
+      "esbuild_bundle_per_file": 0.178,
+      "esbuild_transformN_ms": 28.9937,
+      "esbuild_transformN_per_file": 1.1597,
+      "oxc_transformN_ms": 0.2397,
+      "oxc_transformN_per_file": 0.0096,
+      "swc_transformN_ms": 0.9296,
+      "swc_transformN_per_file": 0.0372
+    },
+    {
+      "N": 100,
+      "esbuild_bundle_ms": 6.6122,
+      "esbuild_bundle_per_file": 0.0661,
+      "esbuild_transformN_ms": 107.0682,
+      "esbuild_transformN_per_file": 1.0707,
+      "oxc_transformN_ms": 0.9147,
+      "oxc_transformN_per_file": 0.0091,
+      "swc_transformN_ms": 3.7827,
+      "swc_transformN_per_file": 0.0378
+    }
+  ]
+}

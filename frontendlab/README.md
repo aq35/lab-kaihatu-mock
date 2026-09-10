@@ -40,12 +40,18 @@ AI にとって扱いやすい compiler の性質を、測れる軸に落とし�
 
 | ID | 問い | 状態 |
 |---|---|---|
-| EXP-1 | transpiler（Babel/SWC/esbuild/Oxc）の速度・出力サイズは「桁で」どう違うか | [第一報](docs/EXP-1-transpiler-orders.md) |
+| EXP-1 | transpiler（Babel/SWC/esbuild/Oxc）の速度・出力サイズは「桁で」どう違うか | [結果](docs/EXP-1-transpiler-orders.md) |
+| EXP-2 | 束ね変換（bundle）の桁。esbuild の IPC 床は bundle で消えるか | [結果](docs/EXP-2-3-4-results.md#exp-2-bundle-orders束ね変換の桁) |
+| EXP-3 | 依存 1 つの本当のコスト（梯子の実測） | [結果](docs/EXP-2-3-4-results.md#exp-3-dependency-cost依存-1-つの本当のコスト梯子の実測) |
+| EXP-4 | minify 込みサイズの桁 | [結果](docs/EXP-2-3-4-results.md#exp-4-minify-ordersminify-込みサイズの桁) |
 
-**EXP-1 の要点（実測）**: 速度は 61x 幅・出力サイズは 1.6x 幅。JS 実装(babel)は native より
-1〜2 桁遅い。決定論は 4 者すべて ✓。一番効いた発見は「同じ native でも **API 形態で桁が動く**」
-（esbuild の単発 transform は Go 子プロセスへの IPC が律速で 15x — エンジンでなく呼び出しコスト）。
-→ 「決定論・出力の軽さ」は既製 transpiler に既にある。足りないのは fail-closed・型付き入力・低 context 側。
+**→ [方針: 個人用途に閉じたプラグイン](docs/plugin-policy.md)**（実測から導いた、React/Vue/Vite を置き換えない道）
+
+**4 実験の芯（実測）**: 速度は道具で 1〜2 桁動く（EXP-1 61x, EXP-2 IPC 形態 16x）が、
+**出力サイズは道具ではほぼ動かない**（EXP-1 raw 1.6x / EXP-4 minify 1.05x）。
+**サイズを 2〜3 桁動かすのは「依存を足すか」だけ**（EXP-3 全体 lodash = 自作の 753x）。決定論は全道具・全段で ✓。
+→ 軽さのレバーは transpiler 選択でなく**依存の判断**。個人で書く価値があるのは「速い変換器」でなく
+**依存の判断を fail-closed で効かせる小さな build ステップ**（方針 doc 参照）。
 
 ## 動かす
 

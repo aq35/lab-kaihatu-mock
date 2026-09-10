@@ -1,0 +1,43 @@
+{
+  "experiment": "dependency-cost",
+  "hypotheses_frozen": "frontendlab/docs/_hypotheses-exp2-3-4.md",
+  "measured_at": "2026-09-10T23:35:38.922Z",
+  "env": {
+    "node": "v22.22.2",
+    "platform": "linux 6.18.44-fc-v24",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+    "cpu_count": 4
+  },
+  "runs": 40,
+  "deps": {
+    "lodash": "4.18.1",
+    "lodash-es": "4.18.1"
+  },
+  "note": "initial=初期ロードされる entry chunk / total=全 chunk 合計。全て minify 済み。",
+  "results": [
+    {
+      "rung": "1 足さない(自作)",
+      "initial_bytes": 98,
+      "total_bytes": 98,
+      "chunks": 1
+    },
+    {
+      "rung": "2 分割(tree-shake)",
+      "initial_bytes": 2912,
+      "total_bytes": 2912,
+      "chunks": 1
+    },
+    {
+      "rung": "3 全体依存",
+      "initial_bytes": 73828,
+      "total_bytes": 73828,
+      "chunks": 1
+    },
+    {
+      "rung": "4 遅延(dynamic)",
+      "initial_bytes": 89,
+      "total_bytes": 97486,
+      "chunks": 2
+    }
+  ]
+}
