@@ -19,7 +19,10 @@ import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
 const ROOT = 'fixtures';
 const BUDGET = { raw: 8192, gzip: 4096 }; // 入口ごとの既定予算
 // 入口ごとの上書き（リッチな画面は個別に予算を持つ）。
-const BUDGET_OVERRIDE = { 'app-ui/owner-main.js': { raw: 20000, gzip: 8000 } };
+const BUDGET_OVERRIDE = {
+  'app-ui/owner-main.js': { raw: 20000, gzip: 8000 },
+  'app-ui/deploy-main.js': { raw: 24000, gzip: 9000 },
+};
 const budgetFor = (entry) => BUDGET_OVERRIDE[entry] || BUDGET;
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 

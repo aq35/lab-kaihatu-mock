@@ -23,6 +23,14 @@ sunao の「型契約（props）」を *振る舞い* まで広げた形で、fa
 `decode` は通信（`resource`）の入口を fail-closed にし、`match` は enum/kind を網羅で守る。
 `provide/inject`・`produce`・`boundary` は実務の接着剤・安全網。
 
+## ショーケース（全部を 1 アプリに）
+
+**Deploy Console** — 公開: https://claude.ai/code/artifact/bc19a414-97f2-46b3-a600-c523feb4a72f
+
+`machine`(デプロイ状態機械)＋`store`+`produce`(操作ログ・時間旅行)＋`resource`+`decode`(最新ビルドを非同期取得＆検証)＋
+`provide/inject`(状態を子バッジへ prop 無しで)＋`match`(状態表示)＋`now`(経過秒)＋Recipe テーマ(palette 切替)を 1 つに。
+実機テスト green（デプロイ→終端遷移・ログ undo・context バッジ・resource 取得）。runtime 込み ~6.5KB gzip。
+
 ## 使用例（組み合わせ）
 
 ```js

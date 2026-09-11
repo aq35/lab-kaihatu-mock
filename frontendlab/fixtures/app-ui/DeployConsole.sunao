@@ -1,0 +1,128 @@
+<template>
+  <div class="k-root dc" :style="rootStyle()">
+    <div class="dc-bar">
+      <strong class="dc-h">Deploy Console</strong>
+      <StatusBadge />
+      <span class="dc-clock">{{ clock() }}</span>
+    </div>
+
+    <div class="k-card">
+      <span class="k-kind">最新ビルド</span>
+      <p class="dc-sync" v-if="build.loading()">取得中…</p>
+      <p class="dc-sync err" v-if="build.error()">取得に失敗しました</p>
+      <dl class="k-facts" v-if="ready()">
+        <div class="k-fact"><dt>commit</dt><dd>{{ b().commit }}</dd></div>
+        <div class="k-fact"><dt>branch</dt><dd>{{ b().branch }}</dd></div>
+        <div class="k-fact"><dt>author</dt><dd>{{ b().author }}</dd></div>
+        <div class="k-fact"><dt>変更</dt><dd>{{ b().filesChanged }} files</dd></div>
+      </dl>
+    </div>
+
+    <div class="k-card">
+      <span class="k-kind">状態 — {{ stateLabel() }}</span>
+      <p class="dc-elapsed" v-if="flow.matches('deploying')">経過 {{ elapsed() }} 秒…</p>
+      <div class="k-actions">
+        <button class="k-btn primary" v-if="flow.matches('idle')" @click="deploy">デプロイ</button>
+        <button class="k-btn" v-if="flow.matches('deploying')" @click="cancel">中止</button>
+        <button class="k-btn primary" v-if="flow.matches('failed')" @click="retry">再試行</button>
+        <button class="k-btn" v-if="flow.matches('succeeded') || flow.matches('failed')" @click="reset">リセット</button>
+      </div>
+    </div>
+
+    <div class="k-card">
+      <span class="k-kind">操作ログ（{{ log().length }}）— 時間旅行</span>
+      <ul class="dc-log">
+        <li class="dc-logi" v-for="e in log()">{{ e }}</li>
+      </ul>
+      <p class="dc-empty" v-if="!log().length">まだ操作していません。</p>
+      <div class="k-actions">
+        <button class="k-btn" @click="undo">← 元に戻す</button>
+        <button class="k-btn" @click="redo">やり直す →</button>
+      </div>
+    </div>
+
+    <div class="oc-switch">
+      <span class="oc-switch-label">Recipe.palette</span>
+      <button class="oc-chip" v-for="p in palettes" :key="p" :class="p === palette() ? 'on' : ''" @click="setP(p)">{{ p }}</button>
+    </div>
+  </div>
+</template>
+<script>
+import StatusBadge from './StatusBadge.sunao';
+import { themeCSS, recipeStyle } from 'sunao/theme';
+
+const SCHEMA = { commit: 'string', branch: 'string', author: 'string', filesChanged: 'number' };
+const STYLE_EXTRA = `
+.dc{gap:.8rem} .dc-bar{display:flex;align-items:center;gap:.6rem}
+.dc-h{font-size:1.15rem;font-weight:700;margin-inline-end:auto}
+.dc-clock{font-variant-numeric:tabular-nums;color:var(--k-quiet);font-size:.82rem}
+.dc-badge{font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:999px;border:1px solid var(--k-border);color:var(--k-on-accent);background:var(--k-quiet)}
+.dc-badge.s-idle{background:var(--k-quiet)} .dc-badge.s-deploying{background:var(--k-caution)}
+.dc-badge.s-succeeded{background:var(--k-positive)} .dc-badge.s-failed{background:var(--k-danger)}
+.dc-elapsed{margin:.1rem 0;font-variant-numeric:tabular-nums;color:var(--k-caution);font-size:.9rem}
+.dc-log{list-style:none;margin:.2rem 0;padding:0;display:flex;flex-direction:column;gap:.25rem}
+.dc-logi{font-size:.85rem;color:var(--k-ink2);border-inline-start:2px solid var(--k-border);padding-inline-start:.5rem}
+.dc-empty{color:var(--k-quiet);font-size:.85rem;margin:.2rem 0}
+.dc-sync{color:var(--k-quiet);font-size:.85rem;margin:.2rem 0} .dc-sync.err{color:var(--k-danger)}
+.oc-switch{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+.oc-switch-label{font-size:.72rem;color:var(--k-quiet)}
+.oc-chip{padding:.3rem .6rem;border-radius:999px;border:1px solid var(--k-border);background:var(--k-sunken);color:var(--k-ink);font:inherit;font-size:.76rem;cursor:pointer}
+.oc-chip.on{background:var(--k-accent);border-color:var(--k-accent);color:var(--k-on-accent)}
+body{margin:0}
+`;
+
+export default {
+  setup() {
+    if (typeof document !== 'undefined' && !document.getElementById('sunao-theme')) {
+      const s = document.createElement('style'); s.id = 'sunao-theme'; s.textContent = themeCSS + STYLE_EXTRA; document.head.appendChild(s);
+    }
+    const palettes = ['calm', 'editorial', 'command-center', 'conversational', 'high-contrast'];
+    const palette = signal('command-center');
+    const setP = (p) => palette.set(p);
+
+    // XState: 宣言した遷移だけ許す状態機械
+    const flow = machine({
+      initial: 'idle',
+      states: {
+        idle: { on: { DEPLOY: 'deploying' } },
+        deploying: { on: { SUCCEED: 'succeeded', FAIL: 'failed', CANCEL: 'idle' } },
+        succeeded: { on: { RESET: 'idle' } },
+        failed: { on: { RETRY: 'deploying', RESET: 'idle' } },
+      },
+    });
+    provide('deployState', flow); // context → 子 StatusBadge が prop 無しで読む
+
+    // Elm/Redux ストア: 操作ログ（produce で immutable 追記）＋ undo/redo（時間旅行）
+    const logStore = store([], (l, msg) => produce(l, (d) => d.push(msg)));
+    const log = () => logStore();
+    const push = (m) => logStore.dispatch(m);
+    const undo = () => logStore.undo();
+    const redo = () => logStore.redo();
+
+    const tick = now(250); // 実時計
+    const clock = () => new Date(tick()).toLocaleTimeString('ja-JP');
+    let startAt = 0;
+    const elapsed = () => ((tick() - startAt) / 1000).toFixed(1);
+
+    let pending = null;
+    const finish = () => { const ok = Math.random() > 0.35; flow.send(ok ? 'SUCCEED' : 'FAIL'); push(ok ? '✓ 成功' : '✗ 失敗'); };
+    const deploy = () => { flow.send('DEPLOY'); startAt = Date.now(); push('▶ デプロイ開始'); pending = timeout(1600, finish); };
+    const retry = () => { flow.send('RETRY'); startAt = Date.now(); push('↻ 再試行'); pending = timeout(1600, finish); };
+    const cancel = () => { pending?.(); flow.send('CANCEL'); push('■ 中止'); };
+    const reset = () => { flow.send('RESET'); push('⟲ リセット'); };
+
+    // 通信 + decode: 最新ビルドを非同期取得して宣言スキーマで検証（SWR キャッシュ）
+    const build = resource((sig) => new Promise((res, rej) => {
+      const id = setTimeout(() => { try { res(decode(SCHEMA, { commit: 'a1b2c3d', branch: 'main', author: 'nagare', filesChanged: 12 })); } catch (e) { rej(e); } }, 500);
+      sig?.addEventListener('abort', () => { clearTimeout(id); rej(new Error('aborted')); });
+    }), { key: 'build', swr: true });
+    const b = () => build() || {};
+    const ready = () => !build.loading() && !build.error();
+
+    const stateLabel = () => match(flow(), { idle: '待機中', deploying: 'デプロイ中', succeeded: '成功しました', failed: '失敗しました', _: '?' });
+    const rootStyle = () => recipeStyle({ palette: palette(), density: 'comfortable' });
+
+    return { palettes, palette, setP, flow, log, undo, redo, clock, elapsed, deploy, cancel, retry, reset, build, b, ready, stateLabel, rootStyle };
+  },
+};
+</script>

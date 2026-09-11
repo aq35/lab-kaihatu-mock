@@ -1,0 +1,16 @@
+<template>
+  <span class="dc-badge" :class="cls()">{{ label() }}</span>
+</template>
+<script>
+export default {
+  name: 'StatusBadge',
+  props: {},
+  setup() {
+    // context（provide/inject）で machine を受け取る＝prop drilling 無し。
+    const state = inject('deployState', () => 'idle');
+    const label = () => match(state(), { idle: '待機', deploying: 'デプロイ中', succeeded: '成功', failed: '失敗', _: '?' });
+    const cls = () => 'dc-badge s-' + state();
+    return { state, label, cls };
+  },
+};
+</script>

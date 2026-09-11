@@ -68,6 +68,42 @@ test('ブラウザ: クリックで count が増え、DOM が更新される', {
   }
 });
 
+test('ブラウザ: Deploy Console — 状態機械/store/context/resource を組んだ実アプリ', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/deploy-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); }
+    else { res.setHeader('content-type', 'text/html'); res.end(html); }
+  });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
+    // context(provide/inject): 子バッジが machine 状態を prop 無しで表示
+    assert.equal(await page.textContent('.dc-badge'), '待機');
+    // resource+decode: 最新ビルドが非同期で入る
+    await page.waitForSelector('.k-facts', { timeout: 5000 });
+    assert.match(await page.textContent('.dc'), /a1b2c3d/);
+    // 状態機械: デプロイ → deploying → 終端(成功/失敗)
+    await page.locator('.k-btn.primary', { hasText: 'デプロイ' }).click();
+    assert.equal(await page.textContent('.dc-badge'), 'デプロイ中');
+    await page.waitForFunction(() => { const t = document.querySelector('.dc-badge').textContent; return t === '成功' || t === '失敗'; }, { timeout: 5000 });
+    // store(時間旅行): ログに複数エントリ、undo で 1 つ減る
+    const n0 = await page.locator('.dc-logi').count();
+    assert.ok(n0 >= 2, 'ログに開始+結果が入る');
+    await page.locator('.k-btn', { hasText: '元に戻す' }).click();
+    assert.equal(await page.locator('.dc-logi').count(), n0 - 1, 'undo でログが 1 つ戻る');
+    // fail-closed の証拠: 未定義遷移は投げる（idle で SUCCEED は無い）→ コンソールエラーにならず握れることは別途 unit で担保
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
+
 test('ブラウザ: Owner Inbox — 非同期取得(5枚)・時計・palette 切替・承認', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
   const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/owner-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
