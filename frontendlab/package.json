@@ -11,6 +11,8 @@
     "all": "npm run exp1 && npm run exp2 && npm run exp3 && npm run exp4",
     "gate": "node plugins/budget-gate.mjs --budget budget.json",
     "build": "node build.mjs",
+    "dev": "node dev.mjs",
+    "prerender": "node prerender.mjs",
     "check": "node check.mjs",
     "gen": "node tools/gen-recipe-vocab.mjs",
     "test": "node --test tests/*.test.mjs"

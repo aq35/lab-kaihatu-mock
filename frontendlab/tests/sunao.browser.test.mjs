@@ -269,3 +269,52 @@ test('ブラウザ: Priority Board — scoped style 注入・FLIP アニメ・�
     server.close();
   }
 });
+
+test('ブラウザ: SEO ページを prerender→hydrate（中身入りHTML・骨格adopt・対話復帰）', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const { renderPage, assembleHTML } = await import('../prerender.mjs');
+  // 1) server prerender で中身入り HTML
+  const page = await renderPage('fixtures/seo/Landing.sunao');
+  assert.match(page.html, /AI が好きそうなコンパイラ/, 'SSR HTML に H1 の中身');
+  assert.match(page.html, /クローラは JavaScript を実行しなくても/, 'SEO 本文が SSR HTML に入る');
+  const doc = assembleHTML(page, { client: true });
+  assert.match(doc, /<title>sunao/, 'title tag');
+  assert.match(doc, /property="og:title"/, 'OG メタ');
+  // 2) client bundle
+  const r = await esbuild.build({ entryPoints: ['fixtures/seo/landing-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  // SSR 骨格ノードに印を付けてから hydrate（作り直しなら印が消える）
+  const stamped = doc.replace('<script type="module"', `<script>for (const n of document.querySelectorAll('main.lp,h1.h1,output.cval,.feat')) n.__ssr = true;</script><script type="module"`);
+
+  const server = http.createServer((req, res) => {
+    if (req.url.startsWith('/page.js')) { res.setHeader('content-type', 'text/javascript'); res.end(js); }
+    else { res.setHeader('content-type', 'text/html'); res.end(stamped); }
+  });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const p = await browser.newPage();
+    await p.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'load' });
+    await p.waitForTimeout(200);
+    // 骨格（main/h1/output/feat×4）は adopt されている＝サーバ印が残る
+    const adopted = await p.evaluate(() => ({
+      main: !!document.querySelector('main.lp')?.__ssr,
+      h1: !!document.querySelector('h1.h1')?.__ssr,
+      output: !!document.querySelector('output.cval')?.__ssr,
+      feats: [...document.querySelectorAll('.feat')].length === 4 && [...document.querySelectorAll('.feat')].every((n) => n.__ssr),
+    }));
+    assert.deepEqual(adopted, { main: true, h1: true, output: true, feats: true }, '静的骨格は作り直さず adopt');
+    // 対話が戻る: カウンタ + 別の島（<b>）も更新
+    assert.equal(await p.textContent('output.cval'), '0');
+    await p.click('.crow .btn.primary');
+    await p.click('.crow .btn.primary');
+    assert.equal(await p.textContent('output.cval'), '2', 'hydrate 後にボタンが効く');
+    assert.equal(await p.textContent('.ctext b'), '2', '同じ signal を読む別の島も更新される');
+    await p.click('.crow .btn:not(.primary)');
+    assert.equal(await p.textContent('output.cval'), '1');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});

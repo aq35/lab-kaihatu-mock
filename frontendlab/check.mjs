@@ -24,6 +24,7 @@ const BUDGET_OVERRIDE = {
   'app-ui/deploy-main.js': { raw: 24000, gzip: 9000 },
   'app-ui/board-main.js': { raw: 20000, gzip: 7000 },
   'app-ui/calendar-main.js': { raw: 10000, gzip: 4096 }, // 月グリッド全体（リッチ画面）
+  'seo/landing-main.js': { raw: 16000, gzip: 6000 }, // SEO ページ（hydrate runtime 込み）
 };
 const budgetFor = (entry) => BUDGET_OVERRIDE[entry] || BUDGET;
 const sha = (s) => createHash('sha256').update(s).digest('hex');

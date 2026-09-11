@@ -66,10 +66,14 @@ effect(() => console.log(n()));        // 副作用（依存が変わると再�
 onCleanup(() => …);                    // 現在の effect/scope 破棄時に実行
 ```
 
-### 描画・マウント
+### 描画・マウント / SSR / hydration
 ```js
-mount(Component, el)      // → { ctx, dispose }。dispose() で unmount（effect も片付く）
+mount(Component, el)      // → { ctx, dispose }。<style scoped> は head に 1 度注入
 component(Child, props)   // template の <Child/> が展開されるもの（手書き不要）
+prerender(Component)      // → { html, styles, meta }（server モード＝タイマー張らない・決定論）
+hydrate(Component, el)    // サーバ HTML を作り直さず既存 DOM に effect/イベントを乗せる
+renderComponentToString(Component)  // 文字列描画（テスト/簡易 SSR）
+isServer()                // server モードか（now/interval/resource が発火しない）
 ```
 
 ### ルーティング（hash・公開ホストで安全）
@@ -114,7 +118,7 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 
 | 罠 | 症状 | sunao の対応 |
 |---|---|---|
-| **`{{ count }}`（`()` 忘れ）** | signal オブジェクトが出て更新もされない | ⚠ **`SUNAO_CALL_FORGOTTEN` 警告**（他所で `count()` と呼んでいれば検出。`node check.mjs`／`warningsOf()`）。非致命 |
+| **`{{ count }}`（`()` 忘れ）** | signal オブジェクトが出て更新もされない | ⚠ **`SUNAO_CALL_FORGOTTEN` 警告**。`<script>` を走査して signal/computed/resource/now/useRoute/store/machine の束縛と props を把握し、**一度も呼んでいない裸参照でも**検出（`node check.mjs`／`warningsOf()`）。非致命 |
 | 未宣言の識別子 | 実行時 undefined | build で止まる（提案つき） |
 | 未知ディレクティブ | 黙って無視されがち | build で止まる |
 | 子に無い prop / 必須欠落 | props 不一致 | **build 時**にクロス検査（`check.mjs`） |
@@ -127,12 +131,24 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 
 ---
 
+## SSR / SSG / SEO / 開発
+
+- **`npm run dev [-- --entry X.js --port 8000]`** … esbuild watch + serve。**保存→自動リビルド→ブラウザ自動リロード**。sourcemap は inline（実行時エラーが .sunao の `<script>` 行へ戻る＝line-level）。
+- **`npm run prerender -- --entry page.sunao --out dist/x.html [--client main.js]`** … ページを **実 HTML へ prerender**（title/description/canonical/OG メタ＋scoped CSS を inline＋`#app` に中身を焼く）。`--client` があれば hydrate 用 bundle も出す。
+- **SEO の考え方**:
+  - 静的な中身（コンテンツ/LP/ドキュメント）は prerender で **初期 HTML に焼かれ**、クローラが JS 実行なしで読める。
+  - 対話は `hydrate()` が**既存 DOM を作り直さず**乗せる。骨格は adopt、動的な島（v-if / v-for over signal / 補間）だけ再構築。
+  - `now`/`interval`/`resource` は server モードで発火しない＝Node 描画が hang しない・決定論。
+- **限界（正直に）**: source map は **line-level**（`<script>` 行に対応。テンプレ由来行は script 先頭に寄る＝列単位ではない）。hydration は骨格 adopt＋動的島の再構築（完全な node 単位ハイドレーションではない。SEO 目的＝初期 HTML に中身、は満たす）。
+
 ## 決定論・予算（factory）
 
 - `node check.mjs` … 全部品の compile / 全入口の build（**2 回 sha 一致＝決定論** + **bytes 予算** + クロス契約 + ⚠警告表示）。1 つでも落ちれば exit 1。
 - `node build.mjs --entry …` … 決定論レシートを `results/raw/` に残す。
 - 動的もイベントも無い部品は **定数 HTML** にコンパイルされ runtime を import しない（tree-shake で反応性が落ちる）。
+- `v-for` が **裸の非 signal 識別子**（`const items = [...]`）なら thunk 化せず静的 map＝hydrate で adopt でき tree-shake にも効く。signal リスト（`items()`）は従来どおり reactive。
 
 ## 公開ショーケース
 - Priority Board（FLIP・keyed・enter/leave）: https://claude.ai/code/artifact/e8659c38-a848-48de-87cd-53d1d4ed4f10
+- SEO ページ（SSG prerender→hydrate）: https://claude.ai/code/artifact/d5d26d6f-9974-498e-ad01-cd9fb6e0fa9a
 - Deploy Console（machine/store/resource/context）: https://claude.ai/code/artifact/bc19a414-97f2-46b3-a600-c523feb4a72f

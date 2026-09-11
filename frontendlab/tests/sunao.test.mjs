@@ -160,6 +160,60 @@ test('B bridge: OwnerCard の閉じた語彙が repo の presentation-recipe.sch
   }
 });
 
+// SSG prerender を「そのバンドル自身の runtime」で実行して {html,styles,meta} を得る。
+async function prerenderSFC(sfcPath) {
+  const dir = mkdtempSync(join(tmpdir(), 'pr-'));
+  try {
+    const gen = join(dir, 'e.mjs');
+    writeFileSync(gen, `import { prerender } from 'sunao';\nimport C from ${JSON.stringify(resolve(sfcPath))};\nexport const page = prerender(C);\n`);
+    const r = await esbuild.build({ entryPoints: [gen], bundle: true, format: 'esm', platform: 'node', write: false, plugins: [sunao()], logLevel: 'silent' });
+    const out = join(dir, 'o.mjs');
+    writeFileSync(out, r.outputFiles[0].contents);
+    return (await import(pathToFileURL(out).href)).page;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('SSG: prerender が中身入り HTML・収集 CSS・meta を返す（SEO）', async () => {
+  const page = await prerenderSFC('fixtures/seo/Landing.sunao');
+  assert.match(page.html, /AI が好きそうなコンパイラ/, 'H1 の中身が HTML に焼かれる');
+  assert.match(page.html, /fail-closed コンパイラ/, '特徴リストの中身が入る（クローラが JS 無しで読める）');
+  assert.match(page.html, /<output[^>]*class="cval"[^>]*>0<\/output>/, '対話要素も初期値でサーバ描画');
+  assert.match(page.styles, /\.lp\[data-s[0-9a-z]+\]/, 'scoped CSS を収集（compound scope）');
+  assert.equal(page.meta.title, 'sunao — AI が好きそうなコンパイラ');
+  assert.match(page.meta.description, /決定論/);
+});
+
+test('SSG: server モードで now/interval を使う部品も hang せず描画（タイマー漏れ無し）', async () => {
+  // これ自体が「Node で prerender してもプロセスが固まらない」ことの回帰ガード。
+  const page = await prerenderSFC('fixtures/app-ui/DeployConsole.sunao');
+  assert.ok(page.html.length > 0, 'DeployConsole が文字列描画される');
+});
+
+test('④ source map: sourcemap:true で inline map が付き、script 行へ対応する', () => {
+  const src = `<template><b>{{ n() }}</b></template>\n<script>\nexport default {\n  setup() {\n    const n = signal(0);\n    return { n };\n  },\n};\n</script>\n`;
+  assert.doesNotMatch(compileSFC(src, { runtime: RUNTIME }), /sourceMappingURL/, '既定では map 無し（予算に載せない）');
+  const withMap = compileSFC(src, { runtime: RUNTIME, sourcemap: true, filename: 'X.sunao' });
+  const m = /sourceMappingURL=data:application\/json;charset=utf-8;base64,([A-Za-z0-9+/=]+)/.exec(withMap);
+  assert.ok(m, 'inline map が付く');
+  const map = JSON.parse(Buffer.from(m[1], 'base64').toString('utf8'));
+  assert.equal(map.version, 3);
+  assert.deepEqual(map.sources, ['X.sunao']);
+  assert.equal(map.sourcesContent[0], src, 'ソース本文を同梱（.sunao が無くても解決）');
+  assert.ok(map.mappings.length > 0);
+});
+
+test('① 静的 v-for 最適化: 裸の非 signal リストは thunk 化しない（hydrate で adopt 可）', () => {
+  // features は const 配列（非 signal）→ 依存が無く thunk は無意味 → 静的 map
+  const rStatic = compileTemplate('<li v-for="f in features">{{ f.title }}</li>', { signals: new Set() });
+  assert.doesNotMatch(rStatic.render, /\(\) => \(features\)\.map/, '非 signal リストは thunk 化しない');
+  assert.match(rStatic.render, /\(features\)\.map/);
+  // signal リスト（tasks()）は従来どおり reactive thunk
+  const rDyn = compileTemplate('<li v-for="t in tasks()" :key="t.id">{{ t.id }}</li>', { signals: new Set(['tasks']) });
+  assert.match(rDyn.render, /\(\) => keyed\(/, 'keyed は reactive thunk のまま');
+});
+
 test('time: interval は発火し stop で止まる / debounce は最後の一回に畳む', async () => {
   let ticks = 0;
   const stop = interval(20, () => ticks++);
@@ -443,6 +497,20 @@ test('① () 呼び忘れ警告: 値位置の裸 signal を別所で呼んでい
 test('① () 呼び忘れ警告: 正しく count() と書けば警告なし', () => {
   const r = compileTemplate('<button @click="count()">{{ count() }}</button>');
   assert.equal(r.warnings.length, 0, '両方 () なら警告なし');
+});
+
+test('① () 呼び忘れ穴埋め: 一度も呼んでいない裸 signal でも script 走査で警告', () => {
+  // {{ count }} だけ・どこでも count() と呼んでいない silent ケース（従来は見逃していた穴）
+  const src = `<template><b>{{ count }}</b></template>` +
+    `<script>export default { setup(){ const count = signal(0); return { count }; } }</script>`;
+  const ws = warningsOf(src);
+  assert.ok(ws.some((w) => w.ident === 'count' && w.code === 'SUNAO_CALL_FORGOTTEN'), 'signal 束縛の裸参照を検出');
+  // props も accessor＝裸参照は呼び忘れ
+  const src2 = `<template><b>{{ title }}</b></template>` +
+    `<script>export default { props:{ title:{type:'string'} }, setup(){ return {}; } }</script>`;
+  assert.ok(warningsOf(src2).some((w) => w.ident === 'title'), 'props の裸参照も検出');
+  // 正しく呼べば警告なし
+  assert.equal(warningsOf(`<template><b>{{ count() }}</b></template><script>export default { setup(){ const count = signal(0); return { count }; } }</script>`).length, 0);
 });
 
 test('① warningsOf: SFC 全体から警告を非致命で取り出す', () => {

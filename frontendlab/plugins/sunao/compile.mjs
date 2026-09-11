@@ -186,12 +186,39 @@ function noteCalled(expr, ctx) {
   for (const m of expr.matchAll(/([A-Za-z_$][\w$]*)\s*\(/g)) ctx.called.add(m[1]);
 }
 const isBareIdent = (e) => /^[A-Za-z_$][\w$]*$/.test(String(e).trim());
-// 値位置の裸の識別子を記録（他所で name() と呼ばれていれば () 呼び忘れ警告）。
+// 値位置の裸の識別子を記録（他所で name() と呼ばれ or signal 束縛なら () 呼び忘れ警告）。
 function noteBare(expr, bound, ctx) {
   const e = String(expr).trim();
   if (isBareIdent(e) && !bound.has(e) && !GLOBALS.has(e)) ctx.bare.push(e);
 }
+// <script> から「呼んで読む」束縛（signal を返すもの）と props を集める。
+// これらが値位置に裸で出れば、他所で呼ばれていなくても呼び忘れ濃厚（穴を塞ぐ）。
+const SIGNAL_FACTORIES = 'signal|computed|resource|now|useRoute|store|machine';
+export function scanSignals(script) {
+  const s = new Set();
+  const re = new RegExp(`\\b(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:${SIGNAL_FACTORIES})\\s*\\(`, 'g');
+  for (const m of script.matchAll(re)) s.add(m[1]);
+  // props は常に accessor（子は prop() で読む）＝値位置の裸参照は呼び忘れ。
+  const propsBody = balancedBlock(script, 'props');
+  if (propsBody) {
+    let depth = 0;
+    for (let i = 0; i < propsBody.length; i++) {
+      const ch = propsBody[i];
+      if (ch === '{') depth++; else if (ch === '}') depth--;
+      else if (depth === 0) { const mm = /^([A-Za-z_$][\w$]*)\s*:/.exec(propsBody.slice(i)); if (mm) { s.add(mm[1]); i += mm[0].length - 1; } }
+    }
+  }
+  return s;
+}
 const isLiteral = (expr) => /^(['"]).*\1$/s.test(expr.trim()) || /^-?\d+(\.\d+)?$/.test(expr.trim());
+// v-for のリスト式が reactive か。keyed は常に reactive。それ以外は ctx 参照があれば thunk 化するが、
+// **裸の非 signal 識別子**（例: const items = [...]）は依存を持たず thunk が二度と再発火しない＝静的扱いで
+// 安全（hydration で adopt でき、tree-shake にも効く）。判定を誤ると under-reactive になるので narrow に。
+function listReactive(listExpr, bound, ctx, keyExpr) {
+  if (keyExpr) return true;
+  const bareNonSignal = isBareIdent(listExpr) && !ctx.signals.has(listExpr);
+  return refsCtx(listExpr, bound) && !bareNonSignal;
+}
 
 // ---- codegen ----
 function genChildren(children, bound, ctx) {
@@ -271,7 +298,8 @@ function genNode(node, bound, ctx) {
       const inner = keyExpr
         ? `keyed((${forHead.listExpr}), (${forHead.item}) => (${keyExpr}), ${params} => ${expr})`
         : `(${forHead.listExpr}).map(${params} => ${expr})`;
-      expr = (refsCtx(forHead.listExpr, bound) || keyExpr) ? `() => ${inner}` : inner;
+      if (listReactive(forHead.listExpr, bound, ctx, keyExpr)) { ctx.hasDynamic = true; expr = `() => ${inner}`; }
+      else expr = inner;
     }
     return expr;
   }
@@ -339,7 +367,7 @@ function genNode(node, bound, ctx) {
     const inner = keyExpr
       ? `keyed((${forHead.listExpr}), (${forHead.item}) => (${keyExpr}), ${params} => ${expr}${flipOn ? ', true' : ''})`
       : `(${forHead.listExpr}).map(${params} => ${expr})`;
-    if (refsCtx(forHead.listExpr, bound) || keyExpr) { ctx.hasDynamic = true; expr = `() => ${inner}`; }
+    if (listReactive(forHead.listExpr, bound, ctx, keyExpr)) { ctx.hasDynamic = true; expr = `() => ${inner}`; }
     else expr = inner;
   }
   return expr;
@@ -375,16 +403,17 @@ function nearest(name, candidates) {
 }
 
 /** テンプレート → render ソース + メタ。 */
-export function compileTemplate(template, { scopeAttr = null, components = new Set() } = {}) {
+export function compileTemplate(template, { scopeAttr = null, components = new Set(), signals = new Set() } = {}) {
   const nodes = parseTemplate(template);
-  const ctx = { used: new Set(), hasDynamic: false, hasEvent: false, staticSerializable: true, scopeAttr, components, src: template, called: new Set(), bare: [] };
+  const ctx = { used: new Set(), hasDynamic: false, hasEvent: false, staticSerializable: true, scopeAttr, components, src: template, called: new Set(), bare: [], signals };
   const roots = genChildren(nodes, new Set(), ctx);
   const body = roots.length === 1 ? roots[0] : `[${roots.join(', ')}]`;
   const destructure = ctx.used.size ? `const { ${[...ctx.used].join(', ')} } = ctx;\n  ` : '';
   const render = `function render(ctx) {\n  ${destructure}return ${body};\n}`;
   const isStatic = !ctx.hasDynamic && !ctx.hasEvent && ctx.staticSerializable;
-  // () 呼び忘れ警告: 値位置に裸で出た識別子が、どこかで name() と関数呼びされている＝signal/関数の呼び忘れ濃厚。
-  const warnings = [...new Set(ctx.bare)].filter((n) => ctx.called.has(n)).map((n) => ({
+  // () 呼び忘れ警告: 値位置に裸で出た識別子が、どこかで name() と呼ばれている **または** signal 束縛/props
+  // （常に「呼んで読む」）なら、呼び忘れ濃厚。後者で「一度も呼んでいない」silent ケースの穴も塞ぐ。
+  const warnings = [...new Set(ctx.bare)].filter((n) => ctx.called.has(n) || signals.has(n)).map((n) => ({
     code: 'SUNAO_CALL_FORGOTTEN',
     message: `"${n}" は値位置で裸で使われていますが、別の箇所で ${n}() と呼ばれています。signal/関数なら ${n}() が要るかもしれません（意図的なら無視可）。`,
     ident: n,
@@ -408,7 +437,7 @@ export function warningsOf(source) {
     let scopeAttr = null;
     const sty = /<style[^>]*>([\s\S]*?)<\/style>/.exec(source);
     if (sty) scopeAttr = scopeStyles(sty[1], '').attr;
-    return compileTemplate(template, { scopeAttr, components }).warnings || [];
+    return compileTemplate(template, { scopeAttr, components, signals: scanSignals(script) }).warnings || [];
   } catch {
     return []; // コンパイルエラーは別系統（fail-closed）。警告はベストエフォート。
   }
@@ -510,8 +539,41 @@ export function analyze(source) {
   return { name: nameM ? nameM[1] : null, props, uses };
 }
 
-/** SFC → ES モジュール文字列。 */
-export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
+// ---- source map（line-level・<script> 用） ----
+// codegen は位置追跡しないが、compileSFC は <script> 本文をほぼ逐語で保持する（export default だけ置換）。
+// なので出力の script 領域を .sunao の script 行へ 1:1 対応させる line-level map を作れば、
+// **実行時エラー（ユーザの setup ロジック）が .sunao の正しい行へ戻る**（テンプレ由来行は script 先頭に寄せる）。
+const _B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function vlq(n) {
+  let v = n < 0 ? ((-n) << 1) | 1 : n << 1;
+  let s = '';
+  do { let d = v & 31; v >>>= 5; if (v > 0) d |= 32; s += _B64[d]; } while (v > 0);
+  return s;
+}
+function scriptSourceMap(source, out, scriptBody, importLines, filename) {
+  const tag = /<script>/.exec(source);
+  if (!tag) return '';
+  let p = tag.index + tag[0].length;
+  while (p < source.length && /\s/.test(source[p])) p++; // trim される先頭空白ぶんを飛ばす
+  const firstLine0 = source.slice(0, p).split('\n').length - 1; // script 本文の先頭ソース行（0 始まり）
+  const B = scriptBody.split('\n').length;
+  const genLines = out.split('\n').length;
+  let prevSrc = 0;
+  const segs = [];
+  for (let g = 0; g < genLines; g++) {
+    let src;
+    if (g < importLines) src = firstLine0;                       // import 行 → script 先頭
+    else if (g < importLines + B) src = firstLine0 + (g - importLines); // script 本文を 1:1
+    else src = firstLine0 + (B - 1);                             // 合成した render/export 行 → script 末尾
+    segs.push(vlq(0) + vlq(0) + vlq(src - prevSrc) + vlq(0));    // genCol0, srcIdx0, srcLineΔ, srcCol0
+    prevSrc = src;
+  }
+  const map = { version: 3, sources: [filename], sourcesContent: [source], names: [], mappings: segs.join(';') };
+  return `//# sourceMappingURL=data:application/json;charset=utf-8;base64,${Buffer.from(JSON.stringify(map)).toString('base64')}\n`;
+}
+
+/** SFC → ES モジュール文字列。sourcemap:true で inline line-level map を付ける（filename は .sunao 名）。 */
+export function compileSFC(source, { runtime = './runtime.mjs', sourcemap = false, filename = 'component.sunao' } = {}) {
   const { template, script, style } = extractBlocks(source);
 
   let scopeAttr = null, scopedCss = null;
@@ -521,7 +583,7 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   const components = new Set();
   for (const m of script.matchAll(/import\s+([A-Z]\w*)\s+from/g)) components.add(m[1]);
 
-  const compiled = compileTemplate(template, { scopeAttr, components });
+  const compiled = compileTemplate(template, { scopeAttr, components, signals: scanSignals(script) });
 
   // ④ 宣言必須（fail-closed）: 宣言集合が判れば、テンプレの未宣言参照を止める（診断つき）。
   //    宣言集合 = props のキー ∪ expose:[...] ∪ setup の `return { ... }` で返した名前。
@@ -571,11 +633,15 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   }
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
-  return (
-    `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n` +
+  const importLine = `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n`;
+  const out = (
+    importLine +
     `${scriptBody}\n` +
     `__component.${compiled.render.replace(/^function /, 'render = function ')};\n` +
     stylesLine +
     `export default __component;\n`
   );
+  if (!sourcemap) return out;
+  // import 行は 1 行（JSON.stringify(runtime) に改行は入らない）。
+  return out + scriptSourceMap(source, out, scriptBody, importLine.split('\n').length - 1, filename);
 }

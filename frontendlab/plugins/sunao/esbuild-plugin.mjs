@@ -5,7 +5,7 @@
  * これで「Vue 風プラグイン」を既製の native bundler(esbuild) に載せる = ビルドツール側の統合。
  */
 import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compileSFC } from './compile.mjs';
 
@@ -25,9 +25,11 @@ export function sunao() {
       // import { RECIPE_PROPS, RECIPE_KINDS } from 'sunao/recipe'（schema から自動生成された語彙）
       build.onResolve({ filter: /^sunao\/recipe$/ }, () => ({ path: VOCAB }));
       // *.sunao → コンパイル済み JS。runtime は 'sunao' として解決させる。
+      // build が sourcemap を出す時だけ inline line-level map を付ける（本番の予算計測には載せない）。
+      const wantMap = !!build.initialOptions.sourcemap;
       build.onLoad({ filter: /\.sunao$/ }, async (args) => {
         const src = await readFile(args.path, 'utf8');
-        const contents = compileSFC(src, { runtime: 'sunao' });
+        const contents = compileSFC(src, { runtime: 'sunao', sourcemap: wantMap, filename: basename(args.path) });
         return { contents, loader: 'js', resolveDir: dirname(args.path) };
       });
     },

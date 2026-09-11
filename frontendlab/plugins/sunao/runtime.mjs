@@ -176,6 +176,14 @@ export function validateProps(Comp, props) {
   }
 }
 
+// ---- SSR / prerender（サーバモード） ----
+// server モードでは now/interval/timeout が **実タイマーを張らない**（Node で event loop を
+// 生かし続けてプロセスが止まるのを防ぐ）。描画は初期状態で決定論的に文字列化する。
+let _server = false;
+export function isServer() { return _server; }
+// prerender 中に出会った部品の scoped CSS を集める（<head> に inline するため）。
+const _collectedStyles = new Set();
+
 // ---- Context（SwiftUI environment / React context 相当）: prop drilling を消す ----
 // 同期レンダの入れ子に沿って親→子へ伝播。provide/inject は setup 内で使う。
 let _provides = new Map();
@@ -186,7 +194,10 @@ export function inject(key, def) { return _provides.has(key) ? _provides.get(key
 // ctx は { ...props(accessor), ...setup(props) の戻り } を合成 → テンプレは宣言 prop を直接参照できる。
 export function component(Comp, props = {}) {
   validateProps(Comp, props);
-  if (Comp.styles && typeof document !== 'undefined') injectStyles(Comp, document); // 子の scoped CSS も 1 度だけ注入
+  if (Comp.styles) { // 子の scoped CSS: server では収集、client では 1 度だけ注入
+    if (_server) _collectedStyles.add(Comp.styles);
+    else if (typeof document !== 'undefined') injectStyles(Comp, document);
+  }
   const parent = _provides;
   _provides = new Map(parent); // 親の context を継承
   try {
@@ -199,9 +210,25 @@ export function component(Comp, props = {}) {
 
 export function renderComponentToString(component) {
   _provides = new Map();
-  if (component.static) return component.render();
-  const ctx = component.setup ? component.setup() : {};
-  return renderToString(component.render(ctx));
+  const prev = _server;
+  _server = true; // タイマーを張らない・子 style を収集
+  try {
+    if (component.styles) _collectedStyles.add(component.styles);
+    if (component.static) return component.render();
+    const ctx = component.setup ? component.setup() : {};
+    return renderToString(component.render(ctx));
+  } finally { _server = prev; }
+}
+
+/**
+ * SSG prerender: 部品を **実 HTML 文字列 + 収集した scoped CSS + meta** にする。
+ * 返り値を <head>(title/meta/style) と <div id="app">html</div> に流し込めば
+ * クローラが中身を読める（SEO）。client bundle を足せば hydrate で対話も戻る。
+ */
+export function prerender(component) {
+  _collectedStyles.clear();
+  const html = renderComponentToString(component); // server モードで描画＋style 収集
+  return { html, styles: [..._collectedStyles].join('\n'), meta: component.meta || {} };
 }
 // ---- DOM 構築（細粒度） ----
 function setProp(el, k, v) {
@@ -336,6 +363,60 @@ export function mount(component, el, doc = (typeof document !== 'undefined' ? do
   return { ctx, dispose: () => { root.dispose(); el.textContent = ''; } };
 }
 
+// ---- hydration（SSR/prerender した実 HTML を作り直さず対話を乗せる） ----
+// 方針（小さく・正直に）: **静的な骨格は既存 DOM を adopt** して props effect / イベントだけ張り、
+// **動的な島（v-if / v-for / 補間などの function 子）だけ** その場で作り直す。
+// これで SEO 用のサーバ HTML（＝クローラが見る中身）を保ったまま、対話が戻る。
+function flattenStatic(children) {
+  const out = [];
+  for (const c of children) { if (Array.isArray(c)) out.push(...flattenStatic(c)); else out.push(c); }
+  return out;
+}
+function hydrateChildren(parentDom, childVnodes, doc) {
+  const flat = flattenStatic(childVnodes);
+  // 動的な子（function）が混ざる親は「島」= この親の中身を作り直す（骨格＝親自身は保持）。
+  if (flat.some((c) => typeof c === 'function')) {
+    parentDom.textContent = '';
+    for (const child of flat) {
+      if (typeof child === 'function') insertExpression(parentDom, child, doc);
+      else parentDom.appendChild(createNode(child, doc));
+    }
+    return;
+  }
+  // 全部静的: 要素 vnode を既存の要素子へ位置対応で adopt（テキストは配線不要なので無視）。
+  const domEls = [...parentDom.children];
+  let ei = 0;
+  for (const v of flat) {
+    if (v && typeof v === 'object' && v.tag) {
+      const d = domEls[ei++];
+      if (d && d.tagName && d.tagName.toLowerCase() === v.tag.toLowerCase()) hydrateNode(v, d, doc);
+      else parentDom.appendChild(createNode(v, doc)); // ズレ/欠落は新規生成でフォールバック
+    }
+  }
+}
+function hydrateNode(vnode, dom, doc) {
+  for (const [k, val] of Object.entries(vnode.props)) {
+    if (k.startsWith('on') && typeof val === 'function') dom.addEventListener(k.slice(2).toLowerCase(), val);
+    else if (typeof val === 'function') effect(() => setProp(dom, k, val())); // 動的属性: この属性だけ更新
+    // 静的属性は既にサーバ HTML に載っている → 張り直さない
+  }
+  hydrateChildren(dom, vnode.children, doc);
+}
+export function hydrate(component, el, doc = (typeof document !== 'undefined' ? document : null)) {
+  if (!doc) throw new Error('hydrate() は DOM が必要です');
+  injectStyles(component, doc);
+  if (component.static) return { ctx: {}, dispose() {} }; // 完全な静的 HTML＝対話なし
+  _provides = new Map();
+  let ctx = {};
+  const root = createRoot(() => {
+    ctx = component.setup ? component.setup() : {};
+    const vnode = component.render(ctx);
+    if (el.children.length === 0) { el.appendChild(createNode(vnode, doc)); return; } // サーバ HTML 不在 → 通常 mount
+    hydrateChildren(el, Array.isArray(vnode) ? vnode : [vnode], doc);
+  });
+  return { ctx, dispose: () => { root.dispose(); el.textContent = ''; } };
+}
+
 // 静的コンポーネント専用の最小 mount（reactivity を一切参照しない → tree-shake で軽い）。
 export function mountStatic(component, el) {
   el.innerHTML = typeof component.render === 'function' ? component.render() : component.render;
@@ -395,21 +476,23 @@ export function matchRoute(pattern, path) {
 // 一定間隔で更新する時計 signal。読むと購読 → 時刻表示が自動更新。
 export function now(tickMs = 1000) {
   const s = signal(Date.now());
-  if (typeof setInterval !== 'undefined') {
+  if (typeof setInterval !== 'undefined' && !_server) { // server では時計を進めない（初期時刻で決定論的）
     const id = setInterval(() => s.set(Date.now()), tickMs);
     onCleanup(() => clearInterval(id));
   }
   return () => s();
 }
-// 反復。stop() で止まり、scope 破棄でも自動停止。
+// 反復。stop() で止まり、scope 破棄でも自動停止。server では張らない（noop）。
 export function interval(ms, fn) {
+  if (_server) return () => {};
   const id = setInterval(fn, ms);
   const stop = () => clearInterval(id);
   onCleanup(stop);
   return stop;
 }
-// 一回遅延。cancel() で取り消し、scope 破棄でも自動取消。
+// 一回遅延。cancel() で取り消し、scope 破棄でも自動取消。server では張らない（noop）。
 export function timeout(ms, fn) {
+  if (_server) return () => {};
   const id = setTimeout(fn, ms);
   const cancel = () => clearTimeout(id);
   onCleanup(cancel);
@@ -472,7 +555,8 @@ export function resource(fetcher, { initial = null, key = null, swr = false } = 
       .catch((e) => { if (!my.signal.aborted) { error.set(e); loading.set(false); } });
   };
   onCleanup(() => cur?.abort());
-  load();
+  if (!_server) load(); // server では取得を発火しない（初期/キャッシュ状態を決定論的に描画）
+  else loading.set(false);
   const read = () => data();
   read.loading = () => loading();
   read.error = () => error();

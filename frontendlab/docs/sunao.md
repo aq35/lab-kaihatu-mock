@@ -8,8 +8,9 @@
 
 ```
 再現: cd frontendlab && npm run build && npm run check && npm test
-実装: plugins/sunao/{runtime,compile,esbuild-plugin}.mjs / build.mjs / check.mjs
-デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング・スロット・FLIPボード）, fixtures/static-ui/（静的）
+開発: npm run dev（保存→自動リロード）/ npm run prerender -- --entry fixtures/seo/Landing.sunao --out dist/seo/index.html --client fixtures/seo/landing-main.js
+実装: plugins/sunao/{runtime,compile,esbuild-plugin}.mjs / build.mjs / dev.mjs / prerender.mjs / check.mjs
+デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング・スロット・FLIPボード）, fixtures/seo/（SSG→hydrate）, fixtures/static-ui/（静的）
 参照: docs/reference.md（AI 向け・低 context の API 表）
 受領書: results/raw/build-app-ui.json
 ```
@@ -76,6 +77,23 @@
 > （FLIP 並び替え・追加/削除アニメ・カードクリックで優先度巡回＝色も動く・palette 5 種切替を 1 SFC で）。
 > 「難しめデザイン（滑るアニメ・リッチな配色）」も宣言のまま書けることの実証。
 
+## v0.8 で実装した「使いやすさ深掘り・SSR/SEO・開発体験」
+
+「もっと使いやすく？ SEO に使える？」への回答。**呼び忘れの穴を塞ぎ**、**SSG prerender + hydration で SEO を実戦投入可能**にし、**dev server + source map で反復ループを速く**した。
+
+| 課題 | 実装 | テスト・実測 |
+|---|---|---|
+| **① `()` 警告の穴** | `<script>` を走査し signal/computed/resource/now/useRoute/store/machine の束縛＋props を把握。**一度も呼んでいない裸参照でも**警告（従来は「他所で呼ばれてる時だけ」だった穴を閉じる）。全 14 部品で誤検出 0 | 単体（silent ケース・props）green |
+| **② SSR server-mode** | server モードで `now`/`interval`/`timeout`/`resource` が**実タイマーを張らない**＝Node 描画が hang しない（DeployConsole を Node で prerender しても止まらない）・決定論 | prerender(DeployConsole) が hang せず描画 green |
+| **② SSG prerender** | `node prerender.mjs --entry x.sunao --out x.html [--client m.js]`。**中身入り HTML**（title/description/canonical/OG＋scoped CSS inline＋`#app` に描画済み）を吐く | Landing を prerender→中身/CSS/meta green |
+| **③ hydration** | `hydrate()` が**サーバ HTML を作り直さず** adopt。静的骨格は既存 DOM を再利用し props effect/イベントだけ張り、**動的な島だけ**再構築。裸の非 signal `v-for` を静的化して骨格に含めた | 実機: main/h1/output/feat×4 に SSR 印が残る（adopt）＋カウンタ hydrate green |
+| **④ dev server** | `npm run dev`。esbuild watch+serve で**保存→自動リビルド→自動リロード**（/esbuild SSE） | 起動→index/main.js/livereload 配信を確認 |
+| **④ source map** | codegen は位置追跡しないが script 本文は逐語保持 → **line-level map** を inline（実行時エラーが .sunao の `<script>` 行へ）。build が sourcemap を出す時だけ付与＝本番の予算に載せない | 実機: setup の throw が `Boom.sunao:5` に対応・単体 green |
+
+> **SEO ページ 公開（SSG→hydrate）**: https://claude.ai/code/artifact/d5d26d6f-9974-498e-ad01-cd9fb6e0fa9a
+> 見出し・本文・特徴リストは**初期 HTML に焼かれ**（クローラ可読）、カウンタだけ hydrate で対話が戻る。
+> **正直な限界**: source map は line-level（列単位でない）、hydration は骨格 adopt＋動的島の再構築（完全な node 単位でない）。SEO 目的＝初期 HTML に中身、は満たす。
+
 ## v0.2 の柱（維持）
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
@@ -133,7 +151,7 @@
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、43 件すべて green）
+## テスト（`npm test`、55 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/
