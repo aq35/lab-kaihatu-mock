@@ -54,6 +54,7 @@ AI にとって扱いやすい compiler の性質を、測れる軸に落とし�
 **→ [レバレッジ地図](docs/leverage-map.md)**（作りまくると複利で効く場所の ROI ランキング。最優先＝型付き契約×診断×量産ガードレール。作っても無駄な場所も明示）
 **→ [向かうべき道](docs/direction.md)**（目的地＝AI が型付き契約だけ書けば compiler が小さい・決定論・壊れない出力を保証。フェーズ A〜D＋戦略の推奨(b)＋最初の一歩）
 **→ [Recipe ブリッジ](docs/recipe-bridge.md)**（direction B 実装。sunao と repo の条件 E/F を接続。閉じた語彙 props(enum)・OwnerCard 連結・repo schema との drift 検査）
+**→ [他言語・FW からの借用](docs/borrowings.md)**（machine(XState)・store(Elm/Redux+時間旅行)・decode(Zod)・match(Rust)・produce(Immer)・boundary(Erlang)・provide/inject(SwiftUI context)・SWR。すべて fail-closed/決定論に寄せて再現）
 
 **4 実験の芯（実測）**: 速度は道具で 1〜2 桁動く（EXP-1 61x, EXP-2 IPC 形態 16x）が、
 **出力サイズは道具ではほぼ動かない**（EXP-1 raw 1.6x / EXP-4 minify 1.05x）。

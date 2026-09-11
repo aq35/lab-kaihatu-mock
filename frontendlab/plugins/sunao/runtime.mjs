@@ -175,20 +175,32 @@ export function validateProps(Comp, props) {
   }
 }
 
+// ---- Context（SwiftUI environment / React context 相当）: prop drilling を消す ----
+// 同期レンダの入れ子に沿って親→子へ伝播。provide/inject は setup 内で使う。
+let _provides = new Map();
+export function provide(key, value) { _provides.set(key, value); }
+export function inject(key, def) { return _provides.has(key) ? _provides.get(key) : def; }
+
 // 子コンポーネントを props つきで描画。props は declared 型に照らして検証（fail-closed）。
 // ctx は { ...props(accessor), ...setup(props) の戻り } を合成 → テンプレは宣言 prop を直接参照できる。
 export function component(Comp, props = {}) {
   validateProps(Comp, props);
-  const ctx = { ...props, ...(Comp.setup ? Comp.setup(props) : {}) };
-  return Comp.render(ctx);
+  const parent = _provides;
+  _provides = new Map(parent); // 親の context を継承
+  try {
+    const ctx = { ...props, ...(Comp.setup ? Comp.setup(props) : {}) };
+    return Comp.render(ctx);
+  } finally {
+    _provides = parent;
+  }
 }
 
 export function renderComponentToString(component) {
+  _provides = new Map();
   if (component.static) return component.render();
   const ctx = component.setup ? component.setup() : {};
   return renderToString(component.render(ctx));
 }
-
 // ---- DOM 構築（細粒度） ----
 function setProp(el, k, v) {
   if (k.startsWith('on') && typeof v === 'function') { el.addEventListener(k.slice(2).toLowerCase(), v); return; }
@@ -284,6 +296,7 @@ function normalize(value, doc) {
 export function mount(component, el, doc = (typeof document !== 'undefined' ? document : null)) {
   if (!doc) throw new Error('mount() は DOM が必要です（テストは renderComponentToString を使う）');
   if (component.static) { el.innerHTML = component.render(); return { ctx: {}, dispose() {} }; }
+  _provides = new Map();
   let ctx = {};
   const root = createRoot(() => {
     ctx = component.setup ? component.setup() : {};
@@ -409,18 +422,22 @@ export function go(fn) {
 //   const user = resource((signal) => fetch('/me', {signal}).then(r=>r.json()));
 //   テンプレ: user.loading() / user.error() / user() / user.refetch()
 // 前の取得は refetch/scope 破棄で abort（Go context のキャンセル伝播）。
-export function resource(fetcher, { initial = null } = {}) {
-  const data = signal(initial);
-  const loading = signal(true);
+const _rcache = new Map(); // key -> 直近の成功データ（SWR / React Query 相当）
+export function resource(fetcher, { initial = null, key = null, swr = false } = {}) {
+  const cached = key != null && _rcache.has(key) ? _rcache.get(key) : initial;
+  const hasCache = key != null && _rcache.has(key);
+  const data = signal(cached);
+  const loading = signal(!(swr && hasCache)); // swr: キャッシュを即出し（loading にしない）
   const error = signal(null);
   let cur = null;
   const load = () => {
     cur?.abort();
     cur = _ctrl();
     const my = cur;
-    loading.set(true); error.set(null);
+    if (!(swr && data.peek() != null)) loading.set(true);
+    error.set(null);
     Promise.resolve().then(() => fetcher(my.signal))
-      .then((v) => { if (!my.signal.aborted) { data.set(v); loading.set(false); } })
+      .then((v) => { if (!my.signal.aborted) { if (key != null) _rcache.set(key, v); data.set(v); loading.set(false); } })
       .catch((e) => { if (!my.signal.aborted) { error.set(e); loading.set(false); } });
   };
   onCleanup(() => cur?.abort());
@@ -430,4 +447,88 @@ export function resource(fetcher, { initial = null } = {}) {
   read.error = () => error();
   read.refetch = load;
   return read;
+}
+
+// ---- 他言語・フレームワークの良さ（すべて宣言的・fail-closed・決定論に寄せて再現） ----
+
+// 状態機械（XState / statechart）。宣言した状態・遷移だけ許す＝不正状態が作れない。
+//   const m = machine({ initial:'idle', states:{ idle:{on:{START:'run'}}, run:{on:{STOP:'idle'}} } });
+//   m() -> 現在状態 / m.send('START') / m.can('START') / m.matches('run')
+export function machine(def) {
+  const state = signal(def.initial);
+  const send = (event, payload) => {
+    const st = def.states[state.peek()];
+    const t = st && st.on && st.on[event];
+    if (!t) throw new Error(`machine: 状態 "${state.peek()}" で未定義のイベント "${event}"（許可: ${st && st.on ? Object.keys(st.on).join(', ') : 'なし'}）`);
+    const target = typeof t === 'string' ? t : t.target;
+    if (!def.states[target]) throw new Error(`machine: 未定義の遷移先 "${target}"`);
+    if (typeof t === 'object' && t.action) t.action(payload);
+    state.set(target);
+  };
+  const read = () => state();
+  read.send = send;
+  read.can = (event) => !!(def.states[state.peek()]?.on?.[event]);
+  read.matches = (s) => state() === s;
+  return read;
+}
+
+// Elm / Redux ストア（Model-Update-View）。update は純関数。タイムトラベル付き。
+//   const s = store(0, (n, msg) => msg==='inc' ? n+1 : n); s.dispatch('inc'); s.undo();
+export function store(init, update) {
+  const state = signal(init);
+  const history = [init];
+  let idx = 0;
+  const dispatch = (msg) => {
+    const next = update(state.peek(), msg);
+    history.length = idx + 1; history.push(next); idx++;
+    state.set(next);
+  };
+  const read = () => state();
+  read.dispatch = dispatch;
+  read.undo = () => { if (idx > 0) { idx--; state.set(history[idx]); } };
+  read.redo = () => { if (idx < history.length - 1) { idx++; state.set(history[idx]); } };
+  read.history = () => history.slice();
+  return read;
+}
+
+// Zod / Elm decoder: 外部データを宣言スキーマで検証（不正は path つきで fail-closed）。
+//   decode({ id:'number', name:'string', tags:['array','string'] }, json)
+export function decode(schema, value, path = '$') {
+  const t = (v) => (Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v);
+  if (typeof schema === 'string') {
+    if (t(value) !== schema) throw new Error(`decode: ${path} は ${schema} 期待、実際 ${t(value)}`);
+    return value;
+  }
+  if (Array.isArray(schema) && schema[0] === 'array') {
+    if (!Array.isArray(value)) throw new Error(`decode: ${path} は array 期待、実際 ${t(value)}`);
+    return value.map((v, i) => decode(schema[1], v, `${path}[${i}]`));
+  }
+  if (schema && typeof schema === 'object') {
+    if (t(value) !== 'object') throw new Error(`decode: ${path} は object 期待、実際 ${t(value)}`);
+    const out = {};
+    for (const k of Object.keys(schema)) out[k] = decode(schema[k], value[k], `${path}.${k}`);
+    return out;
+  }
+  throw new Error(`decode: 不正なスキーマ ${path}`);
+}
+
+// Rust の match（網羅）。`_` が無く未対応の値なら fail-closed。
+//   match(kind, { A:()=>1, B:2, _:()=>0 })
+export function match(value, cases) {
+  const c = (value in cases) ? cases[value] : cases._;
+  if (c === undefined) throw new Error(`match: 未対応の値 "${value}"（許可: ${Object.keys(cases).join(', ')}）`);
+  return typeof c === 'function' ? c(value) : c;
+}
+
+// Immer 風の immutable 更新。draft を書き換えて新オブジェクトを返す。
+export function produce(base, fn) {
+  const draft = typeof structuredClone === 'function' ? structuredClone(base) : JSON.parse(JSON.stringify(base));
+  fn(draft);
+  return draft;
+}
+
+// エラー境界（Erlang "let it crash" + 復帰 / React error boundary）。
+// 子の描画で例外が出たら fallback(err) を出す（同期描画エラーを捕捉）。
+export function boundary(fn, fallback) {
+  return () => { try { return fn(); } catch (e) { return typeof fallback === 'function' ? fallback(e) : fallback; } };
 }

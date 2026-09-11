@@ -500,7 +500,7 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
   return (
-    `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource } from ${JSON.stringify(runtime)};\n` +
+    `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n` +
     `${scriptBody}\n` +
     `__component.${compiled.render.replace(/^function /, 'render = function ')};\n` +
     stylesLine +

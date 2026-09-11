@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import esbuild from 'esbuild';
-import { signal, effect, computed, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { signal, effect, computed, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, renderComponentToString } from '../plugins/sunao/runtime.mjs';
 import { recipeStyle } from '../plugins/sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, CompileError } from '../plugins/sunao/compile.mjs';
@@ -183,6 +183,57 @@ test('CSS/Recipe: recipeStyle が閉じた語彙 → CSS トークンを返す /
   assert.match(s, /--k-ink:oklch/);
   assert.deepEqual(RECIPE_KINDS, ['OWNER_QUESTION', 'ACTION_APPROVAL', 'OUTCOME_UNKNOWN_REVIEW', 'RESULT_REVIEW', 'INFORMATION']);
   assert.ok(RECIPE_PROPS.palette.enum.includes('command-center'));
+});
+
+test('借用: machine（状態機械）宣言外の遷移は fail-closed', () => {
+  const m = machine({ initial: 'idle', states: { idle: { on: { START: 'run' } }, run: { on: { STOP: 'idle' } } } });
+  assert.equal(m(), 'idle');
+  m.send('START'); assert.equal(m(), 'run');
+  assert.equal(m.can('STOP'), true);
+  assert.throws(() => m.send('START'), /未定義のイベント/); // run 状態に START は無い
+  m.send('STOP'); assert.equal(m(), 'idle');
+});
+
+test('借用: store（Elm/Redux）純 update とタイムトラベル', () => {
+  const s = store(0, (n, msg) => (msg === 'inc' ? n + 1 : msg === 'dec' ? n - 1 : n));
+  s.dispatch('inc'); s.dispatch('inc'); assert.equal(s(), 2);
+  s.undo(); assert.equal(s(), 1);
+  s.redo(); assert.equal(s(), 2);
+  assert.deepEqual(s.history(), [0, 1, 2]);
+});
+
+test('借用: decode（Zod/Elm）不正データは path つきで fail-closed', () => {
+  const schema = { id: 'number', name: 'string', tags: ['array', 'string'] };
+  assert.deepEqual(decode(schema, { id: 1, name: 'a', tags: ['x'] }), { id: 1, name: 'a', tags: ['x'] });
+  assert.throws(() => decode(schema, { id: '1', name: 'a', tags: [] }), /\$\.id は number/);
+  assert.throws(() => decode(schema, { id: 1, name: 'a', tags: [3] }), /\$\.tags\[0\] は string/);
+});
+
+test('借用: match（Rust 網羅）未対応は fail-closed', () => {
+  assert.equal(match('A', { A: () => 1, B: 2 }), 1);
+  assert.equal(match('B', { A: 1, B: 2 }), 2);
+  assert.equal(match('Z', { A: 1, _: 9 }), 9);
+  assert.throws(() => match('Z', { A: 1, B: 2 }), /未対応の値/);
+});
+
+test('借用: produce（Immer）は元を壊さず新オブジェクトを返す', () => {
+  const base = { a: 1, nested: { b: 2 } };
+  const next = produce(base, (d) => { d.a = 9; d.nested.b = 3; });
+  assert.equal(base.a, 1); assert.equal(base.nested.b, 2);
+  assert.equal(next.a, 9); assert.equal(next.nested.b, 3);
+});
+
+test('借用: boundary（let it crash + 復帰）子の例外を fallback に置換', () => {
+  const ok = boundary(() => 'fine', (e) => 'err:' + e.message);
+  assert.equal(ok(), 'fine');
+  const bad = boundary(() => { throw new Error('boom'); }, (e) => 'err:' + e.message);
+  assert.equal(bad(), 'err:boom');
+});
+
+test('借用: provide/inject（context）親→子へ prop drilling 無しで伝播', () => {
+  const Child = { name: 'C', props: {}, setup: () => ({ got: inject('k', 'def') }), render: (ctx) => ctx.got };
+  const Parent = { name: 'P', props: {}, setup: () => { provide('k', 'V'); return {}; }, render: () => component(Child, {}) };
+  assert.equal(component(Parent, {}), 'V');
 });
 
 test('④ 合成: import されていないコンポーネント参照は止まる', () => {
