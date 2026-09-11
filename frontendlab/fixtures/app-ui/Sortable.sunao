@@ -1,0 +1,40 @@
+<template>
+  <div class="sortable">
+    <ul class="list">
+      <li class="row" v-for="t in items()" :key="t.id"
+          draggable="true"
+          :class="dragId() === t.id ? 'dragging' : ''"
+          @dragstart="drag(t.id)"
+          @dragover="$event.preventDefault()"
+          @drop="drop(t.id)">
+        <input type="checkbox" class="chk">
+        <span class="handle">⠿</span>
+        <span class="name">{{ t.name }}</span>
+      </li>
+    </ul>
+  </div>
+</template>
+<script>
+export default {
+  setup() {
+    const items = signal([
+      { id: 'a', name: '設計を凍結する' },
+      { id: 'b', name: '実測する' },
+      { id: 'c', name: '受領書を書く' },
+      { id: 'd', name: '公開する' },
+    ]);
+    const dragId = signal('');
+    const drag = (id) => dragId.set(id);
+    const drop = (overId) => {
+      const from = dragId();
+      if (!from || from === overId) { dragId.set(''); return; }
+      const arr = [...items()];
+      const [moved] = arr.splice(arr.findIndex((x) => x.id === from), 1);
+      arr.splice(arr.findIndex((x) => x.id === overId), 0, moved);
+      items.set(arr);
+      dragId.set('');
+    };
+    return { items, dragId, drag, drop };
+  },
+};
+</script>

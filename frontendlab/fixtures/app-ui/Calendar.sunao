@@ -1,34 +1,39 @@
 <template>
   <div class="cal">
-    <header class="cal-head">
-      <button class="nav" @click="prev" aria-label="前の月">‹</button>
-      <strong class="label">{{ label() }}</strong>
-      <button class="nav" @click="next" aria-label="次の月">›</button>
-      <button class="today-btn" @click="goToday">今日</button>
-    </header>
-
-    <div class="dow-row">
-      <span class="dow" v-for="d in dows">{{ d }}</span>
+    <!-- 月ビュー（#/） -->
+    <div class="month" v-if="!dayParam()">
+      <header class="cal-head">
+        <button class="nav" @click="prev" aria-label="前の月">‹</button>
+        <strong class="label">{{ label() }}</strong>
+        <button class="nav" @click="next" aria-label="次の月">›</button>
+        <button class="today-btn" @click="goToday">今日</button>
+      </header>
+      <div class="dow-row">
+        <span class="dow" v-for="d in dows">{{ d }}</span>
+      </div>
+      <div class="grid">
+        <button v-for="c in cells()" :key="c.key" class="cell" :class="cellClass(c)" @click="pick(c)">
+          <span class="dnum" v-if="!c.blank">{{ c.day }}</span>
+          <span class="dots" v-if="c.count">{{ dots(c.count) }}</span>
+        </button>
+      </div>
     </div>
 
-    <div class="grid">
-      <button v-for="c in cells()" class="cell" :class="cellClass(c)" @click="pick(c)">
-        <span class="dnum" v-if="!c.blank">{{ c.day }}</span>
-        <span class="dots" v-if="c.count">{{ dots(c.count) }}</span>
-      </button>
-    </div>
-
-    <section class="detail" v-if="selected()">
-      <h3 class="detail-h">{{ selected() }} の予定（{{ dayCount() }} 件）</h3>
+    <!-- 日の詳細ビュー（#/day/:date、フロントエンドルーティング） -->
+    <div class="day-view" v-if="dayParam()">
+      <header class="day-head">
+        <button class="back" @click="back">‹ 月へ</button>
+        <strong class="day-title">{{ dayParam() }}</strong>
+      </header>
       <ul class="ev-list">
-        <li class="ev" v-for="ev in dayEvents()">{{ ev }}</li>
+        <li class="ev" v-for="ev in dayEvents()" :key="ev">{{ ev }}</li>
       </ul>
       <p class="empty" v-if="!dayCount()">予定はありません。</p>
       <div class="add">
         <input class="inp" v-model="draft" placeholder="予定を追加（Enter）" @keydown="$event.key === 'Enter' && add()">
         <button class="add-btn" @click="add">追加</button>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 <script>
@@ -39,14 +44,16 @@ export default {
     const key = (yy, mm, dd) => yy + '-' + (mm + 1) + '-' + dd;
     const y = signal(now.getFullYear());
     const m = signal(now.getMonth());
-    const selected = signal('');
     const draft = signal('');
     const STORE = 'sunao-cal-v1';
     const seed = { [key(now.getFullYear(), now.getMonth(), Math.min(15, 28))]: ['サンプル会議 10:00'] };
     const load = () => { try { const s = JSON.parse(localStorage.getItem(STORE)); return s && Object.keys(s).length ? s : seed; } catch { return seed; } };
     const events = signal(typeof localStorage !== 'undefined' ? load() : seed);
-    effect(() => { try { localStorage.setItem(STORE, JSON.stringify(events())); } catch {} }); // 再読込しても残る
+    effect(() => { try { localStorage.setItem(STORE, JSON.stringify(events())); } catch {} });
     const dows = ['日', '月', '火', '水', '木', '金', '土'];
+
+    const route = useRoute();
+    const dayParam = computed(() => { const mt = matchRoute('/day/:date', route()); return mt ? mt.date : ''; });
 
     const label = computed(() => y() + '年 ' + (m() + 1) + '月');
     const todayKey = key(now.getFullYear(), now.getMonth(), now.getDate());
@@ -62,32 +69,33 @@ export default {
       }
       return arr;
     });
-    const dayEvents = computed(() => events()[selected()] || []);
+    const dayEvents = computed(() => events()[dayParam()] || []);
     const dayCount = computed(() => dayEvents().length);
 
     const dots = (n) => '•'.repeat(Math.min(n, 3));
     const cellClass = (c) => {
       if (c.blank) return 'blank';
       const parts = [];
-      if (selected() === c.key) parts.push('on');
+      if (dayParam() === c.key) parts.push('on');
       else if (c.isToday) parts.push('today');
       if (c.dow === 0) parts.push('sun');
       if (c.dow === 6) parts.push('sat');
       return parts.join(' ');
     };
-    const pick = (c) => { if (!c.blank) selected.set(c.key); };
+    const pick = (c) => { if (!c.blank) navigate('/day/' + c.key); };
+    const back = () => navigate('/');
     const add = () => {
       const t = draft().trim();
-      if (!t || !selected()) return;
+      if (!t || !dayParam()) return;
       const ev = events();
-      events.set({ ...ev, [selected()]: [...(ev[selected()] || []), t] });
+      events.set({ ...ev, [dayParam()]: [...(ev[dayParam()] || []), t] });
       draft.set('');
     };
-    const goToday = () => { y.set(now.getFullYear()); m.set(now.getMonth()); selected.set(todayKey); };
+    const goToday = () => { y.set(now.getFullYear()); m.set(now.getMonth()); };
     const prev = () => { if (m() === 0) { y.update((v) => v - 1); m.set(11); } else m.update((v) => v - 1); };
     const next = () => { if (m() === 11) { y.update((v) => v + 1); m.set(0); } else m.update((v) => v + 1); };
 
-    return { y, m, selected, draft, events, dows, label, cells, dayEvents, dayCount, dots, cellClass, pick, add, goToday, prev, next };
+    return { y, m, draft, events, dows, dayParam, label, cells, dayEvents, dayCount, dots, cellClass, pick, back, add, goToday, prev, next };
   },
 };
 </script>

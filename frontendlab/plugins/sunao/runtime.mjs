@@ -64,6 +64,21 @@ export function effect(fn) {
   return sub;
 }
 
+// 独立した reactive スコープで fn を実行し、{value, dispose} を返す（Solid createRoot 相当）。
+// keyed リストの各アイテムを「親 effect の再実行で壊されない独立スコープ」に置くために使う。
+export function createRoot(fn) {
+  const sub = makeSub(() => {});
+  const prevOwner = activeOwner, prevSub = activeSub;
+  activeOwner = sub; activeSub = null; // 追跡を切り、内部 effect は sub を親にする
+  try { return { value: fn(), dispose: () => sub.dispose() }; }
+  finally { activeOwner = prevOwner; activeSub = prevSub; }
+}
+
+// keyed v-for マーカ。insertExpression が検出して「キーでノードを再利用・移動」する。
+export function keyed(list, keyFn, renderFn) {
+  return { __keyed: true, list, keyFn, renderFn };
+}
+
 // 派生値（Svelte $derived / Vue computed / Solid createMemo 相当）。読むと購読。
 export function computed(fn) {
   const s = signal(undefined);
@@ -89,6 +104,7 @@ const escText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').re
 export function renderToString(vnode) {
   if (vnode == null || vnode === false || vnode === true) return '';
   if (typeof vnode === 'function') return renderToString(vnode());
+  if (vnode.__keyed) return vnode.list.map((it) => renderToString(vnode.renderFn(it))).join('');
   if (typeof vnode === 'string' || typeof vnode === 'number') return escText(vnode);
   if (Array.isArray(vnode)) return vnode.map(renderToString).join('');
   const { tag, props, children } = vnode;
@@ -179,6 +195,21 @@ function createNode(vnode, doc) {
   return el;
 }
 
+// キー付きリストの再利用・移動・削除（並び替え / DnD で node 同一性と in-item 状態を保つ）。
+function reconcileKeyed(parent, end, prev, desc, doc) {
+  const next = new Map();
+  const order = [];
+  for (const item of desc.list) {
+    const k = desc.keyFn(item);
+    order.push(k);
+    if (prev && prev.has(k)) next.set(k, prev.get(k)); // 既存ノードを再利用（effect も保持）
+    else { const root = createRoot(() => createNode(desc.renderFn(item), doc)); next.set(k, { node: root.value, dispose: root.dispose }); }
+  }
+  if (prev) for (const [k, rec] of prev) { if (!next.has(k)) { rec.dispose(); rec.node.remove?.(); } } // 消えたキーを破棄
+  for (const k of order) parent.insertBefore(next.get(k).node, end); // 順序どおり挿入＝既存ノードは移動
+  return next;
+}
+
 // 動的な子（補間 / v-if / v-for）を start..end マーカ間で管理し、変化時にその区間だけ差し替える。
 function insertExpression(parent, fn, doc) {
   const start = doc.createComment('');
@@ -186,8 +217,16 @@ function insertExpression(parent, fn, doc) {
   parent.appendChild(start);
   parent.appendChild(end);
   let current = [];
+  let keyState = null;
   effect(() => {
     const value = fn();
+    // keyed v-for: キー差分で再利用・移動
+    if (value && value.__keyed) {
+      for (const n of current) n.remove(); current = [];
+      keyState = reconcileKeyed(parent, end, keyState, value, doc);
+      return;
+    }
+    if (keyState) { for (const rec of keyState.values()) { rec.dispose(); rec.node.remove?.(); } keyState = null; }
     // テキスト→テキストの単純ケースは in-place 更新（node 同一性を保つ）
     if ((typeof value === 'string' || typeof value === 'number') &&
         current.length === 1 && current[0].nodeType === 3) {
@@ -223,4 +262,35 @@ export function mount(component, el, doc = (typeof document !== 'undefined' ? do
 // 静的コンポーネント専用の最小 mount（reactivity を一切参照しない → tree-shake で軽い）。
 export function mountStatic(component, el) {
   el.innerHTML = typeof component.render === 'function' ? component.render() : component.render;
+}
+
+// ---- フロントエンドルーティング（最小・hash ベース = 公開ホストでリロードしても安全） ----
+// これらは使われなければ tree-shake で落ちる（ルーティングしないアプリは runtime に載らない）。
+let _route = null;
+const _hash = () => (typeof location !== 'undefined' ? location.hash.slice(1) || '/' : '/');
+function _ensureRoute() {
+  if (!_route) {
+    _route = signal(_hash());
+    if (typeof window !== 'undefined') window.addEventListener('hashchange', () => _route.set(_hash()));
+  }
+  return _route;
+}
+// 現在のパスを表す signal（読むと購読 → route で画面が更新される）。
+export function useRoute() { return _ensureRoute(); }
+// 画面遷移。hash を変え、戻る/進む（履歴）も効く。
+export function navigate(to) {
+  if (typeof location !== 'undefined') location.hash = to;
+  _ensureRoute().set(to);
+}
+// '/day/:date' 等のパターン照合。一致で params（{date}）、不一致で null。
+export function matchRoute(pattern, path) {
+  const pp = pattern.split('/');
+  const sp = path.split('?')[0].split('/');
+  if (pp.length !== sp.length) return null;
+  const params = {};
+  for (let i = 0; i < pp.length; i++) {
+    if (pp[i].startsWith(':')) params[pp[i].slice(1)] = decodeURIComponent(sp[i]);
+    else if (pp[i] !== sp[i]) return null;
+  }
+  return params;
 }

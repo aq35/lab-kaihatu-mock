@@ -9,7 +9,7 @@
 ```
 再現: cd frontendlab && npm run build && npm run check && npm test
 実装: plugins/sunao/{runtime,compile,esbuild-plugin}.mjs / build.mjs / check.mjs
-デモ: fixtures/app-ui/（対話・合成）, fixtures/static-ui/（静的）
+デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング）, fixtures/static-ui/（静的）
 受領書: results/raw/build-app-ui.json
 ```
 
@@ -22,6 +22,16 @@
 | **③ 量産ガードレール（factory）** | `npm run check`: 全 `*.sunao` を compile-check ＋ 全 `main.js` を build して **決定論(2回sha)・予算** を一括検査。1 つ落ちれば exit 1 | 4 部品 compile / 3 入口 build すべて green |
 | **④ コンポーネント合成** | 大文字タグ＝子。`<Greeting name="Alice" :count="n()"/>`。**import 必須（fail-closed）**、props は accessor で渡し reactive。宣言必須は props∪`return{}`∪expose で判定 | 親が 2 つの子を型付き props で描画（e2e テスト green） |
 
+## v0.4 で実装した「並び替え・DnD・ルーティング」
+
+| 課題 | 実装 | 実測・テスト |
+|---|---|---|
+| **keyed `v-for`**（並び替え・DnD の本体） | `:key` で **キー差分**（再利用・移動・削除）。`createRoot` で各アイテムを独立スコープに置き、再利用時は effect も保持 | **実機: 行をドラッグ移動しても `<li>` は同一ノード・チェックボックス状態も保持**（作り直しでない） |
+| **ドラッグ&ドロップ** | 任意 DOM イベント（`@dragstart`/`@dragover`/`@drop`）＋ `$event.preventDefault()`。drop で配列を並び替え | `Sortable.sunao` 実機で DnD 並び替え green |
+| **フロントエンドルーティング** | `useRoute()`（hash ベース signal）/ `navigate()` / `matchRoute('/day/:date', path)`。未使用なら tree-shake | `matchRoute` 単体＋**実機カレンダーで URL hash 同期・ブラウザ戻る** green |
+
+> ルーターは **hash ベース**（公開ホストでリロードしても 404 にならない）。使わないアプリには load されない。
+
 ## v0.2 の柱（維持）
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
@@ -31,10 +41,10 @@
 
 **公開URL**: https://claude.ai/code/artifact/20e0f784-a1fd-4e38-b5c9-002675c9e15e （self-contained HTML に runtime 込みで inline）
 
-月カレンダー（前後の月移動・**今日**ボタン・日付選択・**予定の追加/表示**・イベントドット・週末色分け・
-**localStorage 保存**）を sunao で実装。**実機ブラウザで全操作が動く**（テスト green）。バンドル **5,249 B /
-2,309 B gzip**（runtime 込み）・決定論・予算内。再生成: esbuild + `sunao()` プラグインで
-`fixtures/app-ui/calendar-main.js` を bundle し HTML に inline（scratchpad の生成手順）。
+月カレンダー（月移動・**今日**・**日クリックで `#/day/:date` の詳細画面へ（ブラウザ戻る対応）**・
+**予定の追加/表示**・イベントドット・週末色分け・**keyed セル**・**localStorage 保存**）を sunao で実装。
+**実機ブラウザで全操作＋ルーティングが動く**（テスト green）。バンドル **6,553 B / 2,872 B gzip**
+（runtime＋ルーター込み）・決定論・予算内。再生成: esbuild + `sunao()` で `calendar-main.js` を bundle し HTML に inline。
 
 **正直な到達点**: これは実用的な「月ビュー＋予定」カレンダー（date-planner 相当）。Google Calendar 級の
 週/日ビュー・ドラッグ・繰り返し予定・同期は範囲外（sunao の限界でなく機能量の問題）。
@@ -79,7 +89,7 @@
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、20 件すべて green）
+## テスト（`npm test`、23 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/
@@ -106,10 +116,10 @@ reactivity / computed / 決定論（compile・render）/ fail-closed（未知デ
 
 ## 限界・次（正直に）
 
-- **v-for の keyed diff 未実装**: リスト変更時はその区間を作り直す（`:key` によるノード再利用は次段）。カレンダー月ビューでは不要だった。
 - **prop の型検査は runtime 境界**（mount/component 時）。コンパイル時に式の型まで推論はしない（名前・必須はコンパイル時）。
-- **スロット（子要素の受け渡し）未対応**。コンポーネントへは props のみ（`@event` も未対応）。
-- **v-for に key が無い**: リスト変更時はその区間を作り直す（keyed diff は未実装）。`:key` 必須化が次段。
+- **スロット未対応**（コンポーネントへは props のみ）。
+- **ルーターは最小**: hash ベース・ネスト/ガード/遅延ルートは未対応。keyed item の content 変更はキー変更かアイテム内 signal で（参照一致のキーは再利用）。
+- keyed item スコープはキー削除時に破棄するが、**コンポーネント全体の unmount 時の一括破棄は未実装**（mount 一回の個人用途では問題にならない）。
 - **`count()` / `prop()` 呼び忘れ**が静かに関数を返す（Solid と同じ footgun）。値位置の関数参照を compiler で警告する案。
 - **scoped styles は最小**（descendant 限定）。複雑セレクタの正確な scoping は未対応。
 - テンプレ式は正規表現ベースの識別子抽出。将来は本式パーサで検証し fail-closed を厚くする。

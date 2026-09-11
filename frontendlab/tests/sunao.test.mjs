@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import esbuild from 'esbuild';
-import { signal, effect, computed, component, validateProps, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { signal, effect, computed, component, validateProps, matchRoute, renderComponentToString } from '../plugins/sunao/runtime.mjs';
 import { compileSFC, compileTemplate, CompileError } from '../plugins/sunao/compile.mjs';
 import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
@@ -136,6 +136,18 @@ test('④ 合成(e2e): 親が子を型付き props で描画する', async () =>
   }
 });
 
+test('① keyed v-for: :key は keyed() を生成する', () => {
+  const r = compileTemplate('<ul><li v-for="t in xs()" :key="t.id">{{ t.id }}</li></ul>');
+  assert.match(r.render, /keyed\(/);
+  assert.doesNotMatch(r.render, /"key":/); // :key は DOM 属性として出さない
+});
+
+test('② router: matchRoute がパターンとパスを照合する', () => {
+  assert.deepEqual(matchRoute('/day/:date', '/day/2026-9-15'), { date: '2026-9-15' });
+  assert.deepEqual(matchRoute('/', '/'), {});
+  assert.equal(matchRoute('/day/:date', '/other'), null);
+});
+
 test('③ factory: node check.mjs が全部品で通る（exit 0）', () => {
   // 失敗なら execFileSync が throw する
   execFileSync('node', ['check.mjs'], { stdio: 'pipe' });
@@ -155,17 +167,19 @@ test('実例: カレンダーが作れる（コンパイル・描画・月移動
     const html = renderComponentToString(Cal);
     assert.match(html, /class="dow"/); // 曜日ヘッダ
     assert.equal((html.match(/class="cell/g) || []).length >= 28, true); // 日セル
-    // ロジック: 月移動 / 日付選択 / 予定追加
+    // ロジック: 月移動 / ルーティングで日詳細へ / 予定追加
     const ctx = Cal.setup();
     const before = ctx.label();
     ctx.next();
     assert.notEqual(ctx.label(), before, '次の月へ');
     const someDay = ctx.cells().find((c) => !c.blank);
-    ctx.pick(someDay);
-    assert.match(ctx.selected(), /\d+-\d+-\d+/, '日付が選択される');
+    ctx.pick(someDay); // navigate('/day/...') → route が変わる
+    assert.match(ctx.dayParam(), /\d+-\d+-\d+/, 'ルーティングで日詳細パラメータが立つ');
     ctx.draft.set('打合せ 14:00');
     ctx.add();
     assert.deepEqual(ctx.dayEvents(), ['打合せ 14:00'], '予定が追加される');
+    ctx.back(); // navigate('/')
+    assert.equal(ctx.dayParam(), '', '月ビューへ戻る');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

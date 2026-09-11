@@ -203,12 +203,15 @@ function genNode(node, bound, ctx) {
   const vModel = node.attrs.find((a) => a.name === 'v-model');
   let innerBound = bound;
   let forHead = null;
+  let keyExpr = null;
   if (vFor) {
     const mm = /^\s*([A-Za-z_$][\w$]*)\s+in\s+([\s\S]+)$/.exec(vFor.value);
     if (!mm) fail('SUNAO_VFOR_FORM', `v-for は "x in expr" の形で書いてください: "${vFor.value}"`, { src: ctx.src, index: node.start, suggestions: ['item in items()'] });
     collectIdents(mm[2], bound, ctx.used);
     innerBound = new Set([...bound, mm[1]]);
     forHead = { item: mm[1], listExpr: mm[2] };
+    const keyAttr = node.attrs.find((a) => a.name === ':key' || a.name === 'key');
+    if (keyAttr) { keyExpr = keyAttr.value; collectIdents(keyExpr, innerBound, ctx.used); }
   }
 
   if (isComponent) {
@@ -246,6 +249,7 @@ function genNode(node, bound, ctx) {
   let staticClass = null, dynClass = null; // class マージ用
   for (const a of node.attrs) {
     if (a.name === 'v-if' || a.name === 'v-for' || a.name === 'v-model') continue;
+    if (a.name === ':key' || (a.name === 'key' && keyExpr)) continue; // v-for の :key は keyed() が消費
     if (a.name === 'class') { staticClass = a.value; continue; }
     if (a.name === ':class') { collectIdents(a.value, innerBound, ctx.used); dynClass = a.value; continue; }
     if (a.name.startsWith(':')) {
@@ -294,8 +298,10 @@ function genNode(node, bound, ctx) {
     else expr = `((${vIf.value}) ? ${expr} : null)`;
   }
   if (forHead) {
-    const inner = `(${forHead.listExpr}).map((${forHead.item}) => ${expr})`;
-    if (refsCtx(forHead.listExpr, bound)) { ctx.hasDynamic = true; expr = `() => ${inner}`; }
+    const inner = keyExpr
+      ? `keyed((${forHead.listExpr}), (${forHead.item}) => (${keyExpr}), (${forHead.item}) => ${expr})`
+      : `(${forHead.listExpr}).map((${forHead.item}) => ${expr})`;
+    if (refsCtx(forHead.listExpr, bound) || keyExpr) { ctx.hasDynamic = true; expr = `() => ${inner}`; }
     else expr = inner;
   }
   return expr;
@@ -408,7 +414,7 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
   return (
-    `import { h, signal, effect, computed, component } from ${JSON.stringify(runtime)};\n` +
+    `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute } from ${JSON.stringify(runtime)};\n` +
     `${scriptBody}\n` +
     `__component.${compiled.render.replace(/^function /, 'render = function ')};\n` +
     stylesLine +
