@@ -1,0 +1,17 @@
+<template>
+  <section class="parent">
+    <button class="bump" @click="bump">bump</button>
+    <Greeting name="Alice" emoji="👋" :count="n()" />
+    <Greeting name="Bob" emoji="🙂" :count="n()" />
+  </section>
+</template>
+<script>
+import Greeting from './Greeting.sunao';
+export default {
+  setup() {
+    const n = signal(1);
+    const bump = () => n.update((v) => v + 1);
+    return { n, bump };
+  },
+};
+</script>

@@ -5,8 +5,11 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { signal, effect, computed, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { execFileSync } from 'node:child_process';
+import esbuild from 'esbuild';
+import { signal, effect, computed, component, validateProps, renderComponentToString } from '../plugins/sunao/runtime.mjs';
 import { compileSFC, compileTemplate, CompileError } from '../plugins/sunao/compile.mjs';
+import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const RUNTIME = resolve('plugins/sunao/runtime.mjs');
@@ -70,6 +73,48 @@ test('④ 宣言必須(fail-closed): expose に無い識別子の参照は止ま
   assert.throws(() => compileSFC(bad, { runtime: RUNTIME }), CompileError);
   const good = `<template><b>{{ count() }}</b></template><script>export default { expose: ['count'], setup(){ const count = signal(0); return { count }; } }</script>`;
   assert.doesNotThrow(() => compileSFC(good, { runtime: RUNTIME }));
+});
+
+test('② 診断: 未宣言参照は「もしかして」提案つきで止まる', () => {
+  const src = `<template><b>{{ cont() }}</b></template><script>export default { setup(){ const count = signal(0); return { count }; } }</script>`;
+  assert.throws(() => compileSFC(src, { runtime: RUNTIME }), /もしかして.*count/);
+});
+
+test('④ 型付き props: 必須欠落・未知・型不一致は fail-closed', () => {
+  const Greeting = { name: 'Greeting', props: { name: { type: 'string', required: true }, count: 'number' }, setup: () => ({}), render: () => null };
+  assert.throws(() => validateProps(Greeting, { count: () => 1 }), /必須 prop "name"/);
+  assert.throws(() => validateProps(Greeting, { name: () => 'a', count: () => 1, extra: () => 9 }), /未知の prop "extra"/);
+  assert.throws(() => validateProps(Greeting, { name: () => 'a', count: () => 'NaN' }), /prop "count" は number 期待/);
+  assert.doesNotThrow(() => validateProps(Greeting, { name: () => 'a', count: () => 1 }));
+});
+
+test('④ 合成: import されていないコンポーネント参照は止まる', () => {
+  const src = `<template><div><Foo :x="1"/></div></template><script>export default { setup(){ return {}; } }</script>`;
+  assert.throws(() => compileSFC(src, { runtime: RUNTIME }), /import されていません/);
+});
+
+test('④ 合成(e2e): 親が子を型付き props で描画する', async () => {
+  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/Parent.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  const dir = mkdtempSync(join(tmpdir(), 'cx-'));
+  try {
+    const f = join(dir, 'Parent.mjs');
+    writeFileSync(f, r.outputFiles[0].contents);
+    const Parent = (await import(pathToFileURL(f).href)).default;
+    const html = renderComponentToString(Parent);
+    assert.match(html, /こんにちは、Alice さん（1 回目）/);
+    assert.match(html, /こんにちは、Bob さん（1 回目）/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('③ factory: node check.mjs が全部品で通る（exit 0）', () => {
+  // 失敗なら execFileSync が throw する
+  execFileSync('node', ['check.mjs'], { stdio: 'pipe' });
 });
 
 test('compile: 許可された文法は通る', () => {

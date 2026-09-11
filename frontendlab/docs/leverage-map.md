@@ -67,8 +67,11 @@ EXP-1〜4 の実測が「作っても無駄な場所」も教えてくれてい�
 > 量産の価値は、速い部品でも多機能でもなく、**大量に作っても壊れない・直せる**ことから出る。
 > これは同時に north-star（決定論・fail-closed・低 context・型付き）をそのまま厚くする方向。
 
-## 次の一手（この地図の最短ルート）
-1. **型付き `.sunao`（契約 + 型検査, fail-closed）** を設計（repo の Recipe schema と接続）。
-2. 同時に **診断を構造化**（位置・コード片・修正候補）。
-3. **factory**（全部品に決定論・予算・契約を CI 常設）を P1/P2 から組む。
-4. その上で **コンポーネント合成（typed props）**。
+## 次の一手 → **sunao v0.3 で実装済み**（[sunao.md](sunao.md)）
+1. ✅ **型付き props（契約, fail-closed）**: 未知 prop・型不一致・必須欠落を throw（精密メッセージ）。
+2. ✅ **診断**: 未宣言参照を「もしかして: X？」提案つきで停止。
+3. ✅ **factory** `npm run check`: 全部品 compile ＋ 全入口 build（決定論・予算）を一括、落ちれば exit 1。
+4. ✅ **コンポーネント合成（typed props）**: 大文字タグ＝子、import 必須、props は reactive accessor。
+
+> 残り: prop の**コンパイル時型推論**（今は runtime 境界）／スロット／v-for keyed diff。次に見返りが大きいのは
+> 「診断のさらなる構造化（位置・コード片）」と「Recipe schema との接続（repo 条件 E/F）」。

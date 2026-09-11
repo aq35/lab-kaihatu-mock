@@ -142,7 +142,8 @@ function genNode(node, bound, ctx) {
     if (!isLiteral(node.expr)) ctx.staticSerializable = false;
     return `String(${node.expr})`;
   }
-  // element
+  // element or component（大文字始まり = コンポーネント）
+  const isComponent = /^[A-Z]/.test(node.tag);
   const vIf = node.attrs.find((a) => a.name === 'v-if');
   const vFor = node.attrs.find((a) => a.name === 'v-for');
   const vModel = node.attrs.find((a) => a.name === 'v-model');
@@ -154,6 +155,36 @@ function genNode(node, bound, ctx) {
     collectIdents(mm[2], bound, ctx.used);
     innerBound = new Set([...bound, mm[1]]);
     forHead = { item: mm[1], listExpr: mm[2] };
+  }
+
+  if (isComponent) {
+    // ④ コンポーネント合成: <Child :prop="expr"/>。import 必須（fail-closed）。
+    if (!ctx.components.has(node.tag)) {
+      throw new CompileError(`<${node.tag}> は import されていません。<script> に import ${node.tag} from './${node.tag}.sunao' を書いてください（大文字始まり = コンポーネント）。`);
+    }
+    if (node.children.some((c) => c.type !== 'text' || c.value.trim())) {
+      throw new CompileError(`<${node.tag}>: スロット（子要素）は未対応です（v0.3）。props で渡してください。`);
+    }
+    ctx.hasDynamic = true; // 子は reactive になりうる
+    const cprops = [];
+    for (const a of node.attrs) {
+      if (a.name === 'v-if' || a.name === 'v-for') continue;
+      if (a.name === 'v-model' || a.name.startsWith('@')) {
+        throw new CompileError(`<${node.tag}>: コンポーネントへの ${a.name} は未対応です（v0.3, props のみ）。`);
+      }
+      if (a.name.startsWith(':')) {
+        const key = a.name.slice(1);
+        collectIdents(a.value, innerBound, ctx.used);
+        cprops.push(`${JSON.stringify(key)}: () => (${a.value})`); // accessor で渡す（reactive）
+      } else {
+        // 静的属性も accessor に揃える（子は常に prop() で読む）。
+        cprops.push(`${JSON.stringify(a.name)}: () => (${JSON.stringify(a.value)})`);
+      }
+    }
+    let expr = `component(${node.tag}, {${cprops.join(', ')}})`;
+    if (vIf) { collectIdents(vIf.value, innerBound, ctx.used); expr = refsCtx(vIf.value, innerBound) && !vFor ? `() => (${vIf.value}) ? ${expr} : null` : `((${vIf.value}) ? ${expr} : null)`; }
+    if (forHead) { const inner = `(${forHead.listExpr}).map((${forHead.item}) => ${expr})`; expr = refsCtx(forHead.listExpr, bound) ? `() => ${inner}` : inner; }
+    return expr;
   }
 
   const props = [];
@@ -214,10 +245,24 @@ function serializeStatic(nodes, scopeAttr) {
   return nodes.map(one).join('');
 }
 
+// 診断用: 近い宣言名を提案（Levenshtein）。
+function nearest(name, candidates) {
+  const lev = (a, b) => {
+    const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    for (let j = 0; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[a.length][b.length];
+  };
+  let best = null, bestD = Infinity;
+  for (const c of candidates) { const d = lev(name, c); if (d < bestD) { bestD = d; best = c; } }
+  return best && bestD <= Math.max(2, Math.ceil(name.length / 3)) ? best : null;
+}
+
 /** テンプレート → render ソース + メタ。 */
-export function compileTemplate(template, { scopeAttr = null } = {}) {
+export function compileTemplate(template, { scopeAttr = null, components = new Set() } = {}) {
   const nodes = parseTemplate(template);
-  const ctx = { used: new Set(), hasDynamic: false, hasEvent: false, staticSerializable: true, scopeAttr };
+  const ctx = { used: new Set(), hasDynamic: false, hasEvent: false, staticSerializable: true, scopeAttr, components };
   const roots = genChildren(nodes, new Set(), ctx);
   const body = roots.length === 1 ? roots[0] : `[${roots.join(', ')}]`;
   const destructure = ctx.used.size ? `const { ${[...ctx.used].join(', ')} } = ctx;\n  ` : '';
@@ -249,15 +294,27 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   let scopeAttr = null, scopedCss = null;
   if (style) { const s = scopeStyles(style, ''); scopeAttr = s.attr; scopedCss = s.scoped; }
 
-  const compiled = compileTemplate(template, { scopeAttr });
+  // ④ import されたコンポーネント（大文字始まり）を把握。
+  const components = new Set();
+  for (const m of script.matchAll(/import\s+([A-Z]\w*)\s+from/g)) components.add(m[1]);
 
-  // ④ 宣言必須（fail-closed）: expose:[...] があれば未宣言参照を止める。
+  const compiled = compileTemplate(template, { scopeAttr, components });
+
+  // ④ 宣言必須（fail-closed）: 宣言集合が判れば、テンプレの未宣言参照を止める（診断つき）。
+  //    宣言集合 = props のキー ∪ expose:[...] ∪ setup の `return { ... }` で返した名前。
+  const declared = new Set();
   const exposeM = /expose\s*:\s*\[([^\]]*)\]/.exec(script);
-  if (exposeM) {
-    const declared = new Set(exposeM[1].split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean));
+  if (exposeM) exposeM[1].split(',').forEach((s) => { const n = s.trim().replace(/^['"]|['"]$/g, ''); if (n) declared.add(n); });
+  const propsM = /props\s*:\s*\{([\s\S]*?)\}/.exec(script);
+  if (propsM) for (const m of propsM[1].matchAll(/([A-Za-z_$][\w$]*)\s*:/g)) declared.add(m[1]);
+  const returnM = /return\s*\{([^{}]*)\}/.exec(script);
+  if (returnM) for (const m of returnM[1].matchAll(/([A-Za-z_$][\w$]*)/g)) declared.add(m[1]);
+
+  if (declared.size) {
     const unknown = compiled.used.filter((u) => !declared.has(u));
     if (unknown.length) {
-      throw new CompileError(`テンプレが未宣言の識別子を参照: ${unknown.join(', ')}。expose に宣言してください（declared: ${[...declared].join(', ') || 'なし'}）。`);
+      const hints = unknown.map((u) => { const s = nearest(u, [...declared]); return s ? `${u}（もしかして: ${s}？）` : u; });
+      throw new CompileError(`テンプレが未宣言の識別子を参照: ${hints.join(', ')}。setup の return / props / expose に宣言してください（declared: ${[...declared].join(', ')}）。`);
     }
   }
 
@@ -277,7 +334,7 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
   return (
-    `import { h, signal, effect, computed } from ${JSON.stringify(runtime)};\n` +
+    `import { h, signal, effect, computed, component } from ${JSON.stringify(runtime)};\n` +
     `${scriptBody}\n` +
     `__component.${compiled.render.replace(/^function /, 'render = function ')};\n` +
     stylesLine +

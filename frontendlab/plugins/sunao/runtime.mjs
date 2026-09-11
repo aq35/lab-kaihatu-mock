@@ -105,6 +105,43 @@ export function renderToString(vnode) {
   return `<${tag}${attrs}>${children.map(renderToString).join('')}</${tag}>`;
 }
 
+// ---- コンポーネント合成 + 型付き props（fail-closed） ----
+const typeOf = (v) => (Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v);
+
+// 型付き props 検証。Comp.props = { key: 'type' | { type, required } }。
+// 未宣言 prop・型不一致・必須欠落は **その場で throw**（精密メッセージ）。props 値は accessor でも可。
+export function validateProps(Comp, props) {
+  const schema = Comp.props;
+  const name = Comp.name || 'Component';
+  if (!schema) {
+    const passed = Object.keys(props);
+    if (passed.length) throw new Error(`${name}: props を宣言していないのに ${passed.join(', ')} が渡されました。export default に props:{...} を宣言してください。`);
+    return;
+  }
+  for (const key of Object.keys(schema)) {
+    const spec = typeof schema[key] === 'string' ? { type: schema[key] } : schema[key];
+    const has = key in props;
+    if (spec.required && !has) throw new Error(`${name}: 必須 prop "${key}"（${spec.type}）が渡されていません。`);
+    if (has && spec.type) {
+      const raw = props[key];
+      const val = typeof raw === 'function' ? raw() : raw;
+      const t = typeOf(val);
+      if (t !== spec.type) throw new Error(`${name}: prop "${key}" は ${spec.type} 期待、実際は ${t}（値: ${String(JSON.stringify(val)).slice(0, 40)}）。`);
+    }
+  }
+  for (const key of Object.keys(props)) {
+    if (!(key in schema)) throw new Error(`${name}: 未知の prop "${key}"。許可: ${Object.keys(schema).join(', ')}。`);
+  }
+}
+
+// 子コンポーネントを props つきで描画。props は declared 型に照らして検証（fail-closed）。
+// ctx は { ...props(accessor), ...setup(props) の戻り } を合成 → テンプレは宣言 prop を直接参照できる。
+export function component(Comp, props = {}) {
+  validateProps(Comp, props);
+  const ctx = { ...props, ...(Comp.setup ? Comp.setup(props) : {}) };
+  return Comp.render(ctx);
+}
+
 export function renderComponentToString(component) {
   if (component.static) return component.render();
   const ctx = component.setup ? component.setup() : {};

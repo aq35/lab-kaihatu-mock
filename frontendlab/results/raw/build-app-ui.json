@@ -1,7 +1,7 @@
 {
   "tool": "sunao build",
   "entry": "fixtures/app-ui/main.js",
-  "measured_at": "2026-09-11T10:51:54.096Z",
+  "measured_at": "2026-09-11T11:05:10.104Z",
   "env": {
     "node": "v22.22.2",
     "platform": "linux 6.18.44-fc-v24",
@@ -12,8 +12,8 @@
     "sunao": "0.1.0-exp"
   },
   "bytes_raw": 2802,
-  "bytes_gzip": 1318,
-  "output_sha256": "f3a10261b66aff0ec32a8bc96711c74bd935065501ad4d06d02bebf5e9ab8cc0",
+  "bytes_gzip": 1319,
+  "output_sha256": "b6cc7ed040c8a3a539b99be5351cc7907b90618d8b212cfad8f063180ac7f24a",
   "deterministic": true,
   "budget": {
     "initial_bytes": 4096,
