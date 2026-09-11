@@ -123,6 +123,11 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
 
 ### 捨てる（north-star か個人利用に反する）
 - **VDOM 差分（React）**: 細粒度 signals があれば不要。runtime を重くするだけ。
+  - **注（誤読防止）**: これは *sunao の文脈判断* であって「VDOM＝アンチパターン」という普遍的断罪ではない。
+    VDOM は命令的 DOM 同期地獄を宣言的 UI に変えた優れた解で、SSR・並行レンダリング（React Fiber）・
+    大量差分では今も妥当。sunao が捨てるのは、**compiler が使えて bytes/決定論/予測可能性を重視する**この文脈で
+    「再 render＋diff を runtime に積み、手 memo で塞ぐ」運用が north-star に反するから。アンチパターンなのは
+    VDOM そのものでなく *compiler があるのに VDOM を runtime に積む* こと。
 - **Proxy 自動追跡（Vue reactive）**: 暗黙で追いにくい。sunao の明示 `count()` を貫く。
 - **resumability / 関数単位 auto lazy（Qwik）**: 複雑さが個人小規模に見合わず、EXP-3 が遅延の限界を示した。
 - **DI・AOT の重装（Angular）**: 個人利用に過剰。

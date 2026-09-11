@@ -51,6 +51,7 @@ AI にとって扱いやすい compiler の性質を、測れる軸に落とし�
 **→ [フレームワークのいいところ取り洗い出し](docs/framework-cherrypick.md)**（React/Vue/Svelte/Solid/Angular/Qwik/Astro を north-star で採否判定。収束した勝ち筋4つ＋各社固有＋sunao への採る/捨てる/条件付き）
 **→ [フレームワークのダメなところ洗い出し](docs/framework-pitfalls.md)**（各社の失敗・地雷を guardrail 化。横断アンチパターン6つ＋sunao 自身の弱点も正直に＋禁止リスト）
 **→ [レバレッジ地図](docs/leverage-map.md)**（作りまくると複利で効く場所の ROI ランキング。最優先＝型付き契約×診断×量産ガードレール。作っても無駄な場所も明示）
+**→ [向かうべき道](docs/direction.md)**（目的地＝AI が型付き契約だけ書けば compiler が小さい・決定論・壊れない出力を保証。フェーズ A〜D＋戦略の推奨(b)＋最初の一歩）
 
 **4 実験の芯（実測）**: 速度は道具で 1〜2 桁動く（EXP-1 61x, EXP-2 IPC 形態 16x）が、
 **出力サイズは道具ではほぼ動かない**（EXP-1 raw 1.6x / EXP-4 minify 1.05x）。
