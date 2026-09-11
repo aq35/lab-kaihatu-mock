@@ -1,75 +1,76 @@
-# sunao — 個人用途の「Vue 風プラグイン」＋ビルドツール（P3 の試作）
+# sunao — 個人用途の「Vue 風プラグイン」＋ビルドツール（P3）
 
 方針 [`plugin-policy.md`](plugin-policy.md) の P3「Recipe → 決定論出力」を、
-**Vue の形（SFC コンパイラ ＋ 極小リアクティブ runtime）**で試作したもの。EXP-1〜4 の結論に沿って
+**Vue の形（SFC コンパイラ ＋ 極小リアクティブ runtime）**で実装。EXP-1〜4 の結論に沿って
 **変換器・bundler は native(esbuild) に任せ**、自作するのは「入力の型・fail-closed・決定論・低 context」だけ。
+**v0.2** で [いいところ取り洗い出し](framework-cherrypick.md) のロードマップを一通り実装した。
 
 ```
 再現: cd frontendlab && npm run build && npm test
 実装: plugins/sunao/{runtime,compile,esbuild-plugin}.mjs / build.mjs
-デモ: fixtures/app-ui/{Counter.ui,main.js}
+デモ: fixtures/app-ui/（対話）, fixtures/static-ui/（静的）
 受領書: results/raw/build-app-ui.json
 ```
 
 ## これは何か（2 つ）
 
 ### 1. Vue 風プラグイン = コンパイラ ＋ 極小 runtime
-- **runtime**（`runtime.mjs`）: `signal` / `effect` / `h` / `renderToString` / `mount` だけ。
-  Vue の reactivity + render の芯。隠れた unref をしない（テンプレで値が要る所は自分で `count()` を呼ぶ）。
-- **compiler**（`compile.mjs`）: SFC(`.ui`) の `<template>` を **build 時に** render 関数へコンパイル。
-  対応文法: `{{ }}` 補間 / `:bind` / `@event` / `v-if` / `v-for`。**それ以外の `v-*` は CompileError で止める。**
+- **runtime**（`runtime.mjs`）: `signal` / `effect` / `computed` / `h` / `renderToString` / `mount` / `mountStatic`。
+  Vue の reactivity + render の芯。隠れた unref をしない（値が要る所は自分で `count()` を呼ぶ）。
+- **compiler**（`compile.mjs`）: SFC(`.sunao`) の `<template>` を **build 時に** render へコンパイル。
+  対応: `{{ }}` / `:bind` / `@event` / `v-if` / `v-for` / `v-model` / `<style>`(scoped)。**それ以外の `v-*` は CompileError。**
 
 ### 2. ビルドツール = プラグインを native bundler に載せる薄い束ね
-- `esbuild-plugin.mjs`: `import 'sunao'` を runtime に解決し、`*.ui` を onLoad でコンパイル
-  （vite-plugin-vue と同じ発想）。
-- `build.mjs`: esbuild で bundle+minify → **決定論チェック**（2 回ビルドの sha256 一致）→
-  **予算ゲート**（超過で exit 1）→ **レシート**（bytes/gzip/sha/バージョン/環境）を書く。
+- `esbuild-plugin.mjs`: `import 'sunao'` を runtime に解決し、`*.sunao` を onLoad でコンパイル（vite-plugin-vue と同発想）。
+- `build.mjs`: esbuild で bundle+minify → **決定論チェック**（2 回ビルドの sha256 一致）→ **予算ゲート**（超過で exit 1）→ **レシート**。
+
+## v0.2 で実装した「いいところ取り」（ロードマップ全部）
+
+| # | idea（出自） | sunao での実装 | 実測・テスト |
+|---|---|---|---|
+| ① | **細粒度更新**（Solid × Vue patch flags） | 動的な式を **thunk** で出力 → runtime が箇所ごとに effect。render は 1 回だけ。所有権つき effect で消えたサブツリーを破棄 | ブラウザ実機: 更新しても `<output>` は**同一ノード**のまま、値は text の in-place 更新（characterData） |
+| ② | **既定 static**（Astro islands） | 動的もイベントも無いコンポーネントは **定数 HTML 文字列**へ。runtime を import しない | **静的アプリ 352B vs 対話アプリ 2,802B = 8.0x raw / 5.0x gzip 小**（reactivity が tree-shake で落ちる） |
+| ③ | **computed**（Svelte $derived / Vue） | `computed()` を runtime に追加 | 依存変化で派生値が更新されるテスト green |
+| ④ | **宣言必須・fail-closed**（型付き入力の第一歩） | `<script>` に `expose:[...]` があれば、テンプレの未宣言参照（typo 等）を **CompileError** | 未宣言参照で throw、宣言済みは通るテスト green |
+| ⑤ | **v-model 糖衣 / scoped styles** | `v-model` → `:value + @input` に**純粋 desugar**（魔法を runtime に持ち込まない）。`<style>` は scope 属性＋`[scope]` 限定 CSS（最小） | desugar 形・scope 限定をテストで確認 |
 
 ## 実測（この環境）
 
-`npm run build` の受領書 `results/raw/build-app-ui.json`:
-
 | 対象 | raw | gzip | 決定論 |
 |---|--:|--:|:--:|
-| アプリ全体（runtime + compiler 生成の Counter + main） | **1,885 B** | **1,018 B** | ✓ |
-| runtime 単体（bundle+minify） | 2,023 B | 1,008 B | ✓ |
+| 対話アプリ（Counter + 細粒度 runtime） | 2,802 B | 1,318 B | ✓ |
+| 静的アプリ（Hello + `mountStatic`） | **352 B** | **264 B** | ✓ |
 
-- **アプリ全体が runtime 単体より小さい** = tree-shaking が未使用の runtime export（`renderToString` 等）を落とした。
-  「使った分だけ」が bytes で見える（EXP-3 の梯子と同じ観測）。
-- **リアクティブなアプリ一式で ~1KB gzip。** 予算 4,096 B / gzip 2,048 B に対し十分内側。
+- v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
+- **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、7 件すべて green）
+## テスト（`npm test`、12 件すべて green）
 
-- **reactivity**: `effect` が signal 変化で再実行、同値は通知しない。
-- **決定論**: 同じ `.ui` → 同じコンパイル出力（sha 一致）／同じ状態 → 同じ HTML。
-- **fail-closed**: `v-model` `v-show`・空補間 `{{ }}`・タグ不整合は CompileError で停止。
-- **render 正当性**: `v-if` / `v-for` / 補間 / イベントが期待通り。
-- **ブラウザ（Chromium 実機）**: `.inc`×3 → 表示 `3`、`.dec` → `2`、`v-for` ログ 4 件、`v-if` 表示。
-  **コンパイル→バンドル→実機で本当にリアクティブに動く**ことを確認済み。
+reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・未宣言参照）/
+render 正当性（v-if・v-for・補間・イベント）/ 既定 static（import 無し）/ v-model desugar / scoped styles /
+**ブラウザ実機**（クリック→DOM 更新・**要素は再生成されない＝細粒度**）。
 
-## 「AIが好きそうなコンパイラ」の性質をどれだけ満たすか
+## 「AIが好きそうなコンパイラ」の性質
 
-| 性質 | sunao での状態 |
+| 性質 | v0.2 の状態 |
 |---|---|
-| 決定論（同入力→同 hash） | ✓ コンパイル・レンダ・ビルドすべてで確認 |
-| 出力の予測可能性・軽さ | ✓ ~1KB gzip、tree-shake で使った分だけ、予算で監視 |
-| **fail-closed（未知→エラー）** | ✓ 未知ディレクティブ・壊れたテンプレで停止 |
-| **低マジック / 低 context** | ✓ 式は verbatim、自動 unref 無し、エラーは許可集合を明示 |
-| 型付き入力（Recipe 的） | △ 未（`.ui` は型検査していない。次段） |
+| 決定論（同入力→同 hash） | ✓ コンパイル・レンダ・ビルドすべて |
+| 出力の予測可能性・軽さ | ✓ 予算ゲートで監視。静的は 8x 小 |
+| **fail-closed（未知→エラー）** | ✓ 未知ディレクティブ＋**未宣言参照**（expose） |
+| **低マジック / 低 context** | ✓ 式 verbatim・自動 unref 無し・明示 signal・エラーは許可集合を明示 |
+| **型付き・宣言的入力** | △→○ 第一歩（expose の宣言必須）。本格的な型検査は次段 |
 
 ## 方針との整合（正直に）
 
-`plugin-policy.md` は「自作 runtime は作らない（公開フレームワークとして React/Vue と競わない）」とした。
-sunao は **runtime を持つ**のでこの線に触れる。区別はこう:
+`plugin-policy.md` の「自作 runtime は作らない（公開競合しない）」に、sunao は runtime を持つ点で触れる。区別:
+- **公開競合でなく個人利用・実験**。依存はここだけ（root に出さない）。
+- runtime は出力に残る唯一の依存 → **極小に保ち budget で監視**。**対話しない画面は 0 runtime**（②）。
+- 変換エンジンは native 委譲。自作は契約層（fail-closed・決定論・低 context・宣言）だけ。
 
-- **公開して競うためではない**。個人利用・実験に閉じ、依存はここだけ（root に出さない）。
-- runtime は**出力に残る唯一の依存**なので、**極小に保ち budget で監視**する（~1KB gzip）。
-- 変換エンジンは自作していない（native に委譲）。自作は契約層（fail-closed・決定論・低 context）だけ。
+## 限界・次（正直に）
 
-→ 「Vue の代替を配る」ではなく「**AI 向けの性質を持つ最小の UI コンパイラを、自分の道具として持つ**」。
-
-## 限界・次
-
-- テンプレ parser は小さな部分集合。属性値中の文字列に識別子が混じる等の端は未対応（文法を意図的に狭くして回避）。
-- `mount` は状態変化で**サブツリー全体を作り直す**素朴版（fine-grained diff は未実装）。小規模個人用途には十分。
-- 型付き `.ui`（props/state のスキーマ検査＝Recipe 化）が次段。これで P3 の「型付き入力」も ✓ になる。
+- **v-for に key が無い**: リスト変更時はその区間を作り直す（要素単位の keyed diff は未実装）。`:key` 必須化が次段。
+- **`count()` 呼び忘れ**が静かに関数を返す（Solid と同じ footgun）。値位置の関数参照を compiler で警告する案。
+- **expose は名前レベルの宣言**。型そのものの検査（number/string…）は未実装＝「型付き」はまだ第一歩。
+- **scoped styles は最小**（descendant 限定）。複雑なセレクタの正確な scoping は未対応。
+- テンプレ式は正規表現ベースの識別子抽出。将来は本式パーサで検証し fail-closed を厚くする。

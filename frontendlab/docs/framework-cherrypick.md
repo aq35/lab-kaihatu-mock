@@ -42,7 +42,7 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
 - Suspense / 並行レンダリング / Server Components（JS を減らす）。
 
 ### Vue
-- **SFC**: template/script/style を 1 ファイルに（sunao の `.ui` の元）。
+- **SFC**: template/script/style を 1 ファイルに（sunao の `.sunao` の元）。
 - **compiler が dynamic を印付け（patch flags・static hoisting）→ runtime が静的部を飛ばす**。②の具体形。
 - **`v-model`（双方向バインドの糖衣）** と豊富なディレクティブ＝**宣言的 ergonomics**。
 - computed / watch。**Vapor Mode（2026）**で VDOM を捨て直接 DOM へ（Solid 化）。
@@ -112,7 +112,7 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
    → 対話しないページは bytes ≈ 0 runtime。EXP-3 の「使った分だけ」を構造で保証。measurable。
 3. **`computed()`（Svelte $derived / Vue computed）**
    派生値のプリミティブを足す。安く、宣言性が上がる。決定論・低マジックを保てる。
-4. **型付き `.ui`（P3 次段・Recipe 化）**
+4. **型付き `.sunao`（P3 次段・Recipe 化）**
    props/state をスキーマ宣言 → コンパイル時に検査（未知 prop・型不一致は fail-closed）。
    → north-star 唯一の欠け「型付き入力」が ○ になる。
 
@@ -132,14 +132,16 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
 
 ---
 
-## 5. ロードマップ（コスト順・次の一手）
+## 5. ロードマップ → **v0.2 で全部実装済み**（[sunao.md](sunao.md)）
 
-1. **静的/動的の分離コンパイル**（採用①②の基盤）。今の「全再構築 mount」を、
-   コンパイラが dynamic 箇所にだけ effect を張る形へ。**before/after を DOM 更新数と bytes で実測**（lab の作法）。
-2. **既定 static**（signals 無し → runtime 非 import）。**bytes を before/after で実測**。効果が一番はっきり出る。
-3. **`computed()`** を runtime に追加（小）。
-4. **型付き `.ui`**（P3 の "型付き入力" を ○ に）。
-5. 余力で `v-model` 糖衣 / scoped styles。
+1. ✅ **静的/動的の分離コンパイル**（細粒度更新）。動的な式を thunk 化し箇所ごとに effect。
+   実機で「更新しても `<output>` は同一ノード＝再生成なし」を確認。
+2. ✅ **既定 static**（signals 無し → runtime 非 import）。**静的アプリ 352B vs 対話 2,802B = 8x 小**を実測。
+3. ✅ **`computed()`** を runtime に追加。
+4. ✅ **宣言必須・fail-closed**（`expose` の未宣言参照を CompileError）＝型付き入力の第一歩。
+5. ✅ **`v-model` 糖衣 / scoped styles**（最小）。
+
+> 実装の詳細・実測・限界は [sunao.md](sunao.md)。次段は v-for の keyed diff と、expose の「名前」から「型」への格上げ。
 
 > 「いいところ取り」の実体は **収束した 4 つ（signals・compiler-first・制約×最適化・明示）を土台に、
 > Solid の細粒度・Vue の patch flags・Astro の islands・Svelte の runes 明示・Recipe の型**を選んで足すこと。

@@ -1,0 +1,6 @@
+<template>
+  <footer class="site-foot">
+    <p>sunao lab — フロントエンド・ツールチェーン実験</p>
+    <small>© 2026 research use only</small>
+  </footer>
+</template>

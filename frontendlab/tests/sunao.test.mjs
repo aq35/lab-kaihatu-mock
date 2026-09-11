@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { signal, effect, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { signal, effect, computed, renderComponentToString } from '../plugins/sunao/runtime.mjs';
 import { compileSFC, compileTemplate, CompileError } from '../plugins/sunao/compile.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -22,17 +22,54 @@ test('reactivity: effect re-runs on signal change', () => {
 });
 
 test('compile はテンプレートを決定論的に出力する（同入力→同 hash）', () => {
-  const src = readFileSync('fixtures/app-ui/Counter.ui', 'utf8');
+  const src = readFileSync('fixtures/app-ui/Counter.sunao', 'utf8');
   const a = compileSFC(src, { runtime: RUNTIME });
   const b = compileSFC(src, { runtime: RUNTIME });
   assert.equal(sha(a), sha(b));
 });
 
 test('compile: 未知ディレクティブは fail-closed で止まる', () => {
-  assert.throws(() => compileTemplate('<div v-model="x"></div>'), CompileError);
   assert.throws(() => compileTemplate('<div v-show="x"></div>'), CompileError);
+  assert.throws(() => compileTemplate('<div v-html="x"></div>'), CompileError);
   assert.throws(() => compileTemplate('<div>{{ }}</div>'), CompileError); // 空補間
   assert.throws(() => compileTemplate('<div><span></div>'), CompileError); // タグ不整合
+});
+
+test('③ computed: 依存が変わると派生値が更新される', () => {
+  const n = signal(2);
+  const double = computed(() => n() * 2);
+  const seen = [];
+  effect(() => seen.push(double()));
+  n.set(3);
+  n.set(5);
+  assert.deepEqual(seen, [4, 6, 10]);
+});
+
+test('② 既定 static: 動的もイベントも無い → 定数 HTML・runtime を import しない', () => {
+  const mod = compileSFC('<template><footer class="f"><small>© 2026</small></footer></template>', { runtime: RUNTIME });
+  assert.doesNotMatch(mod, /\bimport\b/, '静的コンポーネントは import を持たない（tree-shake で reactivity が落ちる）');
+  assert.match(mod, /static: true/);
+  assert.match(mod, /© 2026/);
+});
+
+test('⑤ v-model: :value + @input へ純粋 desugar される', () => {
+  const r = compileTemplate('<input v-model="name">');
+  assert.match(r.render, /"value": \(\) => \(name\)\(\)/);
+  assert.match(r.render, /"onInput": \(e\) => \(name\)\.set\(e\.target\.value\)/);
+  assert.ok(r.used.includes('name'));
+});
+
+test('⑤ scoped styles: 要素に scope 属性、CSS が scope 限定される（最小）', () => {
+  const mod = compileSFC('<template><p class="x">hi</p></template><style>.x { color: red }</style>', { runtime: RUNTIME });
+  assert.match(mod, /data-s[0-9a-z]+/, 'scope 属性が付く');
+  assert.match(mod, /\[data-s[0-9a-z]+\] \.x/, 'CSS が [scope] で限定される');
+});
+
+test('④ 宣言必須(fail-closed): expose に無い識別子の参照は止まる', () => {
+  const bad = `<template><b>{{ taipo() }}</b></template><script>export default { expose: ['count'], setup(){ const count = signal(0); return { count }; } }</script>`;
+  assert.throws(() => compileSFC(bad, { runtime: RUNTIME }), CompileError);
+  const good = `<template><b>{{ count() }}</b></template><script>export default { expose: ['count'], setup(){ const count = signal(0); return { count }; } }</script>`;
+  assert.doesNotThrow(() => compileSFC(good, { runtime: RUNTIME }));
 });
 
 test('compile: 許可された文法は通る', () => {
@@ -43,7 +80,7 @@ test('compile: 許可された文法は通る', () => {
 
 test('renderToString: 状態スナップショットで正しい HTML（決定論）', async () => {
   // コンパイル済みモジュールを一時ファイルに書いて import して描画
-  const src = readFileSync('fixtures/app-ui/Counter.ui', 'utf8');
+  const src = readFileSync('fixtures/app-ui/Counter.sunao', 'utf8');
   const mod = compileSFC(src, { runtime: RUNTIME });
   const dir = mkdtempSync(join(tmpdir(), 'mv-'));
   try {
@@ -63,7 +100,7 @@ test('renderToString: 状態スナップショットで正しい HTML（決定�
 });
 
 test('reactivity + render: setup 経由で状態を進めると HTML が変わる', async () => {
-  const src = readFileSync('fixtures/app-ui/Counter.ui', 'utf8');
+  const src = readFileSync('fixtures/app-ui/Counter.sunao', 'utf8');
   const mod = compileSFC(src, { runtime: RUNTIME });
   const dir = mkdtempSync(join(tmpdir(), 'mv-'));
   try {

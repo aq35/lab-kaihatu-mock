@@ -1,56 +1,83 @@
 /**
- * sunao runtime — 極小のリアクティブ runtime（Vue の reactivity + render の芯だけ）。
+ * sunao runtime v0.2 — 細粒度リアクティビティ（Solid 系）+ 極小。
  *
- * 設計方針（AIが好きそうなコンパイラの性質）:
- *   - 小さい: signal / effect / h / renderToString / mount だけ。隠れた魔法なし。
- *   - 低 context・低マジック: signal は「読むと購読・set で通知」の関数。テンプレートでは
- *     値が欲しい所で明示的に count() と呼ぶ（Vue の自動 unref はしない = 書いた通りに動く）。
- *   - 決定論: renderToString は同じ状態 → 同じ HTML 文字列。
+ * 変更（v0.1 → v0.2）:
+ *   - v0.1: 状態変化で render を再実行しサブツリー全再構築（粗い）。
+ *   - v0.2: render は **1 回だけ**実行して DOM を組み、**動的な箇所ごとに effect を張る**。
+ *     変わった値に対応する DOM だけが更新される（テキストは in-place で node 同一性も保つ）。
+ *   - 所有権つき effect: 動的サブツリー（v-if/v-for）が消えるとき、その内部 effect も破棄（leak 防止）。
+ *   - computed() を追加。renderToString は thunk を呼んで評価（決定論・SSR/テスト用）。
  *
- * この runtime は「出力に残る唯一の依存」。だから小さく保ち、budget-gate で bytes を監視する。
+ * 設計方針は不変: 明示 signal（読むとき呼ぶ）・低マジック・決定論・小ささ。
  */
 
-// ---- reactivity ----
-let activeEffect = null;
-const effectStack = [];
+// ---- reactivity core（所有権つき） ----
+let activeSub = null;   // 依存収集中の effect
+let activeOwner = null; // 現在の親（子 effect を所有し、破棄を伝播）
 
 export function signal(initial) {
   let value = initial;
   const subs = new Set();
   const read = () => {
-    if (activeEffect) subs.add(activeEffect);
+    if (activeSub) {
+      subs.add(activeSub);
+      activeSub.deps.add(subs);
+    }
     return value;
   };
   read.__signal = true;
   read.set = (next) => {
     if (Object.is(next, value)) return;
     value = next;
-    for (const e of [...subs]) e();
+    for (const s of [...subs]) s.run();
   };
   read.update = (fn) => read.set(fn(value));
   read.peek = () => value;
   return read;
 }
 
-export function effect(fn) {
-  const run = () => {
-    effectStack.push(run);
-    activeEffect = run;
-    try {
-      fn();
-    } finally {
-      effectStack.pop();
-      activeEffect = effectStack[effectStack.length - 1] ?? null;
-    }
+function makeSub(fn) {
+  const sub = {
+    deps: new Set(),      // このeffectが購読しているsignalのsubs集合
+    children: new Set(),  // このeffectの実行中に作られた子effect
+    run() {
+      sub.cleanup();
+      const prevSub = activeSub, prevOwner = activeOwner;
+      activeSub = sub; activeOwner = sub;
+      try { fn(); } finally { activeSub = prevSub; activeOwner = prevOwner; }
+    },
+    cleanup() {
+      for (const c of sub.children) c.dispose();
+      sub.children.clear();
+      for (const set of sub.deps) set.delete(sub);
+      sub.deps.clear();
+    },
+    dispose() { sub.cleanup(); },
   };
-  run();
-  return run;
+  return sub;
+}
+
+export function effect(fn) {
+  const sub = makeSub(fn);
+  if (activeOwner) activeOwner.children.add(sub);
+  sub.run();
+  return sub;
+}
+
+// 派生値（Svelte $derived / Vue computed / Solid createMemo 相当）。読むと購読。
+export function computed(fn) {
+  const s = signal(undefined);
+  effect(() => s.set(fn()));
+  const read = () => s();
+  read.__signal = true;
+  read.peek = () => s.peek();
+  return read;
 }
 
 // ---- virtual node ----
-// h(tag, props, children) — props: 属性 + on<Event> 関数。children: (vnode|string|number|array)[]
+// props/children の値が **関数(thunk)** なら動的、そうでなければ静的。
 export function h(tag, props, children) {
-  const kids = (Array.isArray(children) ? children : children == null ? [] : [children]).flat(Infinity);
+  const kids = (Array.isArray(children) ? children : children == null ? [] : [children]);
   return { tag, props: props || {}, children: kids };
 }
 
@@ -58,53 +85,105 @@ const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input'
 const escAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 const escText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// ---- render to string（決定論・テスト・計測用。ブラウザ不要） ----
+// ---- render to string（決定論・SSR・テスト。thunk は呼んで評価） ----
 export function renderToString(vnode) {
   if (vnode == null || vnode === false || vnode === true) return '';
+  if (typeof vnode === 'function') return renderToString(vnode());
   if (typeof vnode === 'string' || typeof vnode === 'number') return escText(vnode);
   if (Array.isArray(vnode)) return vnode.map(renderToString).join('');
   const { tag, props, children } = vnode;
   const attrs = Object.entries(props)
-    .filter(([k, v]) => !k.startsWith('on') && v != null && v !== false)
-    .map(([k, v]) => (v === true ? ` ${k}` : ` ${k}="${escAttr(v)}"`))
+    .filter(([k]) => !k.startsWith('on'))
+    .map(([k, v]) => {
+      const val = typeof v === 'function' ? v() : v;
+      if (val == null || val === false) return '';
+      if (val === true) return ` ${k}`;
+      return ` ${k}="${escAttr(val)}"`;
+    })
     .join('');
   if (VOID.has(tag)) return `<${tag}${attrs}>`;
   return `<${tag}${attrs}>${children.map(renderToString).join('')}</${tag}>`;
 }
 
-/** コンポーネント（{ setup?, render }）を状態 1 スナップショットで HTML 文字列にする。 */
 export function renderComponentToString(component) {
+  if (component.static) return component.render();
   const ctx = component.setup ? component.setup() : {};
   return renderToString(component.render(ctx));
 }
 
-// ---- mount to real DOM（ブラウザ用。状態変化で該当コンポーネントを再構築する素朴版） ----
-function toDom(vnode, doc) {
+// ---- DOM 構築（細粒度） ----
+function setProp(el, k, v) {
+  if (k.startsWith('on') && typeof v === 'function') { el.addEventListener(k.slice(2).toLowerCase(), v); return; }
+  if (v == null || v === false) el.removeAttribute(k);
+  else if (v === true) el.setAttribute(k, '');
+  else el.setAttribute(k, String(v));
+}
+
+function createNode(vnode, doc) {
   if (vnode == null || vnode === false || vnode === true) return doc.createComment('');
   if (typeof vnode === 'string' || typeof vnode === 'number') return doc.createTextNode(String(vnode));
   if (Array.isArray(vnode)) {
     const frag = doc.createDocumentFragment();
-    for (const k of vnode) frag.appendChild(toDom(k, doc));
+    for (const c of vnode) frag.appendChild(createNode(c, doc));
     return frag;
   }
   const el = doc.createElement(vnode.tag);
-  for (const [k, v] of Object.entries(vnode.props)) {
-    if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
-    else if (v === true) el.setAttribute(k, '');
-    else if (v != null && v !== false) el.setAttribute(k, String(v));
+  for (const [k, val] of Object.entries(vnode.props)) {
+    if (typeof val === 'function' && !k.startsWith('on')) {
+      effect(() => setProp(el, k, val())); // 動的属性: この属性だけ更新
+    } else {
+      setProp(el, k, val);
+    }
   }
-  for (const c of vnode.children) el.appendChild(toDom(c, doc));
+  for (const child of vnode.children) {
+    if (typeof child === 'function') insertExpression(el, child, doc); // 動的子: 該当箇所だけ更新
+    else el.appendChild(createNode(child, doc));
+  }
   return el;
 }
 
+// 動的な子（補間 / v-if / v-for）を start..end マーカ間で管理し、変化時にその区間だけ差し替える。
+function insertExpression(parent, fn, doc) {
+  const start = doc.createComment('');
+  const end = doc.createComment('');
+  parent.appendChild(start);
+  parent.appendChild(end);
+  let current = [];
+  effect(() => {
+    const value = fn();
+    // テキスト→テキストの単純ケースは in-place 更新（node 同一性を保つ）
+    if ((typeof value === 'string' || typeof value === 'number') &&
+        current.length === 1 && current[0].nodeType === 3) {
+      current[0].data = String(value);
+      return;
+    }
+    for (const n of current) n.remove();
+    current = [];
+    for (const n of normalize(value, doc)) {
+      parent.insertBefore(n, end);
+      current.push(n);
+    }
+  });
+}
+
+function normalize(value, doc) {
+  if (value == null || value === false || value === true) return [];
+  if (typeof value === 'function') return normalize(value(), doc);
+  if (Array.isArray(value)) return value.flatMap((v) => normalize(v, doc));
+  if (typeof value === 'string' || typeof value === 'number') return [doc.createTextNode(String(value))];
+  return [createNode(value, doc)];
+}
+
+// 対話コンポーネント: render を 1 回実行して DOM を組む（以降は細粒度 effect が更新）。
 export function mount(component, el, doc = (typeof document !== 'undefined' ? document : null)) {
   if (!doc) throw new Error('mount() は DOM が必要です（テストは renderComponentToString を使う）');
+  if (component.static) { el.innerHTML = component.render(); return {}; }
   const ctx = component.setup ? component.setup() : {};
-  effect(() => {
-    // 素朴: 状態が変わるたび当該コンポーネントを作り直す。fine-grained diff は将来。
-    const vnode = component.render(ctx);
-    el.textContent = '';
-    el.appendChild(toDom(vnode, doc));
-  });
+  el.appendChild(createNode(component.render(ctx), doc));
   return ctx;
+}
+
+// 静的コンポーネント専用の最小 mount（reactivity を一切参照しない → tree-shake で軽い）。
+export function mountStatic(component, el) {
+  el.innerHTML = typeof component.render === 'function' ? component.render() : component.render;
 }

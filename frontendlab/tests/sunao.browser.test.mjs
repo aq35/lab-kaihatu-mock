@@ -33,10 +33,29 @@ test('ブラウザ: クリックで count が増え、DOM が更新される', {
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
     assert.equal(await page.textContent('output.value'), '0');
+
+    // ① 細粒度更新の証拠: 更新しても <output> 要素は作り直されず同一ノードのまま。
+    //   MutationObserver で「count 更新時に出る変化」を記録する。
+    await page.evaluate(() => {
+      const out = document.querySelector('output.value');
+      out.__marked = true; // 同一ノードなら再構築後も残る
+      window.__mutations = [];
+      new MutationObserver((recs) => {
+        for (const r of recs) window.__mutations.push(r.type + ':' + (r.target.nodeName || ''));
+      }).observe(document.querySelector('.counter'), { childList: true, characterData: true, subtree: true });
+    });
+
     await page.click('button.inc');
     await page.click('button.inc');
     await page.click('button.inc');
     assert.equal(await page.textContent('output.value'), '3', 'inc×3 で 3 になる');
+    // <output> は同一ノード（render は 1 回・要素は再生成されない）
+    assert.equal(await page.evaluate(() => !!document.querySelector('output.value').__marked), true,
+      '細粒度: <output> 要素は作り直されていない');
+    // 起きた変化は characterData 中心で、要素全再構築(childList で .counter 直下が総入れ替え)ではない
+    const mut = await page.evaluate(() => window.__mutations);
+    assert.ok(mut.some((m) => m.startsWith('characterData')), '値はテキストの in-place 更新で反映される');
+
     await page.click('button.dec');
     assert.equal(await page.textContent('output.value'), '2', 'dec で 2 に戻る');
     // v-for のログが 4 要素（1,2,3,2）

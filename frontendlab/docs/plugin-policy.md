@@ -46,9 +46,9 @@ EXP-1〜4 の実測から、個人で持つプラグインの方針を決める�
 - P3 は両者を繋ぐ: **宣言的入力（Recipe 的）→ 既製 native transpiler で決定論的に出力**する薄い層。
   変換エンジンは自作しない（EXP で native が十分速い・決定論的と確認済み）。自作するのは
   **入力の型付けと fail-closed と低 context の契約**だけ。
-- **試作 = sunao**: Vue 風 SFC(`.ui`) を esbuild プラグインで build 時コンパイル ＋ 極小 runtime。
+- **試作 = sunao**: Vue 風 SFC(`.sunao`) を esbuild プラグインで build 時コンパイル ＋ 極小 runtime。
   アプリ一式 ~1KB gzip・決定論的・未知ディレクティブは fail-closed・実機ブラウザで動作確認済み。
-  詳細と「自作 runtime を持つことの方針整合」は [sunao.md](sunao.md)。次段は `.ui` の型付け（Recipe 化）。
+  詳細と「自作 runtime を持つことの方針整合」は [sunao.md](sunao.md)。次段は `.sunao` の型付け（Recipe 化）。
 
 ## 受け入れ基準 = 「AIが好きそうなコンパイラ」の性質（north-star）
 

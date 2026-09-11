@@ -61,7 +61,7 @@
 |---|---|---|---|---|
 | A | **追えない魔法リアクティビティ** | Vue Proxy / Svelte `$:` / Angular Zone.js | 決定論・低マジック | **明示 signal を貫く**（`count()`）。Proxy 自動追跡・暗黙代入は入れない |
 | B | **最適化を人にやらせる** | React 手 memo | 予測可能性 | **コンパイラが最適化**（静的/動的分離＝roadmap①）。手 memo API を作らない |
-| C | **テンプレ/props が runtime で落ちる** | React JSX typo / Vue テンプレ式 | fail-closed | **コンパイル時に検査**。未知ディレクティブは既に停止。次は型付き `.ui` で prop も |
+| C | **テンプレ/props が runtime で落ちる** | React JSX typo / Vue テンプレ式 | fail-closed | **コンパイル時に検査**。未知ディレクティブは既に停止。次は型付き `.sunao` で prop も |
 | D | **隠れた制約（runtime/lint 頼み）** | Rules of Hooks / Solid props 分割 | fail-closed・低 context | **制約はコンパイル時に明示エラー**（許可集合を必ず提示）。lint 頼みにしない |
 | E | **重い runtime baseline** | React / Angular | 軽さ | **runtime を極小に保ち budget-gate で監視**。既定 static で 0 runtime も狙う |
 | F | **フレームワーク churn / lock-in** | Svelte 3→5 / Vue 2→3 / Angular | 個人利用 | **build 層に置き framework 非依存**。runtime は自前の極小・置換可能に保つ |
@@ -76,14 +76,14 @@
 
 他人の失敗だけ挙げて自分を棚上げしない。現状の弱点と、上の guardrail に沿った対処:
 
-| sunao の弱点 | どの罠に近い | 対処 |
+| sunao の弱点 | どの罠に近い | 状態（v0.2） |
 |---|---|---|
-| **状態変化でサブツリー全再構築**（mount） | React の再レンダー伝播（B/E） | roadmap① 静的/動的分離で**細粒度更新**へ。before/after を DOM 更新数で実測 |
-| **`v-for` に key が無い**→ リスト更新で全作り直し・DOM 状態喪失 | Solid が `<For>` で解いた問題 | keyed 差分 or `:key` 必須化（fail-closed）を導入 |
-| **値は自分で `count()` を呼ぶ必要** | Solid の `()` 呼び忘れ footgun（A の裏返し） | 明示は方針だが、**呼び忘れは静かに関数が出る**。compiler で「値位置の関数参照」を警告/停止を検討 |
-| **テンプレ parser が識別子を正規表現で抽出** | 端で誤解析しうる（C を自分で作り込む危険） | 文法を意図的に狭く（現状）。将来は式を本式パーサで検証し fail-closed に |
-| **型付き入力がまだ無い** | React JSX の prop 無検査（C） | roadmap④ 型付き `.ui`（未知 prop・型不一致で停止） |
-| **runtime baseline は極小だが 0 ではない** | E の軽量版 | 既定 static（signals 無し→runtime 非 import, roadmap②）で対話しない画面は 0 に |
+| ~~状態変化でサブツリー全再構築~~ | React の再レンダー伝播（B/E） | **✅ 解消**: 細粒度更新へ。実機で「更新しても要素は同一ノード」を確認 |
+| ~~runtime が 0 でない画面がある~~ | E の軽量版 | **✅ 緩和**: 既定 static で対話しない画面は runtime 0（静的アプリ 8x 小を実測） |
+| **`v-for` に key が無い**→ リスト更新でその区間を作り直し | Solid が `<For>` で解いた問題 | ⏳ 残: keyed 差分 or `:key` 必須化（fail-closed）が次段 |
+| **値は自分で `count()` を呼ぶ必要** | Solid の `()` 呼び忘れ footgun（A の裏返し） | ⏳ 残: 呼び忘れは静かに関数が出る。値位置の関数参照を compiler で警告する案 |
+| **expose は名前レベルの宣言**（型そのものは未検査） | React JSX の prop 無検査（C） | 🔶 第一歩: 未宣言参照は fail-closed。型検査は次段 |
+| **テンプレ parser が正規表現ベース** | 端で誤解析しうる（C を自分で作り込む危険） | ⏳ 残: 文法を狭くして回避中。将来は本式パーサで検証 |
 
 ---
 

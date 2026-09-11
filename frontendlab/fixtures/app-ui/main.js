@@ -1,4 +1,4 @@
 import { mount } from 'sunao';
-import Counter from './Counter.ui';
+import Counter from './Counter.sunao';
 
 mount(Counter, document.getElementById('app'));
