@@ -1,5 +1,5 @@
 /**
- * mini-vue compiler — SFC(.ui) を build 時に決定論的な JS モジュールへコンパイルする。
+ * sunao compiler — SFC(.ui) を build 時に決定論的な JS モジュールへコンパイルする。
  *
  * サポートするテンプレート文法（意図的に小さく・fail-closed）:
  *   {{ expr }}          テキスト補間

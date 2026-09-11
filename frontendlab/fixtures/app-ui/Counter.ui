@@ -15,7 +15,7 @@ export default {
   setup() {
     const count = signal(0);
     const history = signal([]);
-    const title = 'mini-vue カウンタ';
+    const title = 'sunao カウンタ';
     const push = (v) => history.set([...history.peek(), v]);
     const inc = () => { count.update((n) => n + 1); push(count.peek()); };
     const dec = () => { count.update((n) => n - 1); push(count.peek()); };

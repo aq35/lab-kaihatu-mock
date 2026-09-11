@@ -1,5 +1,5 @@
 /**
- * mini-vue runtime — 極小のリアクティブ runtime（Vue の reactivity + render の芯だけ）。
+ * sunao runtime — 極小のリアクティブ runtime（Vue の reactivity + render の芯だけ）。
  *
  * 設計方針（AIが好きそうなコンパイラの性質）:
  *   - 小さい: signal / effect / h / renderToString / mount だけ。隠れた魔法なし。

@@ -1,7 +1,7 @@
 {
-  "tool": "mini-vue build",
+  "tool": "sunao build",
   "entry": "fixtures/app-ui/main.js",
-  "measured_at": "2026-09-11T07:55:28.482Z",
+  "measured_at": "2026-09-11T10:39:56.170Z",
   "env": {
     "node": "v22.22.2",
     "platform": "linux 6.18.44-fc-v24",
@@ -9,11 +9,11 @@
   },
   "versions": {
     "esbuild": "0.28.2",
-    "mini-vue": "0.1.0-exp"
+    "sunao": "0.1.0-exp"
   },
-  "bytes_raw": 1885,
-  "bytes_gzip": 1018,
-  "output_sha256": "a16c6536e236dfe25e349f8457331320ac8a8c6629cd5d82234bb5df06d3a361",
+  "bytes_raw": 1882,
+  "bytes_gzip": 1015,
+  "output_sha256": "31deacc189825d2bfe11d76a160512cb794dfeeb02ca660f1c5ec49bc5729173",
   "deterministic": true,
   "budget": {
     "initial_bytes": 4096,

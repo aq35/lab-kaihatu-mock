@@ -1,4 +1,4 @@
-# フレームワークの「いいところ」洗い出しと、mini-vue への採否
+# フレームワークの「いいところ」洗い出しと、sunao への採否
 
 React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い ideas を洗い出し**、
 この lab の基準で **採る / 条件付き / 捨てる** を判定する。基準は 3 つ:
@@ -14,14 +14,14 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
 
 「いいところ取り」の核は、実はもう業界が収束させている。バラバラの機能ではなく、次の 4 つ。
 
-| 収束した idea | 誰が牽引 / 追随 | なぜ良い（north-star 視点） | mini-vue |
+| 収束した idea | 誰が牽引 / 追随 | なぜ良い（north-star 視点） | sunao |
 |---|---|---|---|
 | **① signals（細粒度リアクティビティ）** | Solid が基準 → Vue ref / Svelte 5 runes / Angular v17 / Preact。React だけ Compiler で代替 | 依存を式単位で追い、**変わった DOM だけ**更新。予測可能・小さい・VDOM 不要 | **保有(粗い)** |
 | **② compiler-first / compiler-informed runtime** | Svelte(ほぼ無 runtime) / Vue(patch flags・Vapor) / Solid(JSX→DOM) / React Compiler(自動 memo) | build 時に仕事を移す＝**出力が軽く予測可能**、runtime が薄い。まさに north-star | **保有** |
 | **③ 制約が最適化を可能にする** | React(Rules of Hooks) / Svelte(runes の明示) / Solid(component は 1 回だけ実行) | 制約 → 静的解析可能 → コンパイラが自動最適化。**fail-closed と同じ思想** | **保有(fail-closed)** |
 | **④ 明示的リアクティブ > 暗黙の魔法** | Svelte runes・Solid signals（明示） vs Vue の Proxy 自動追跡（暗黙） | 明示は決定論・低マジック・AI が追いやすい | **保有(count() 明示)** |
 
-> つまり mini-vue は既に「収束した 4 つ」の骨格を持っている。**足りないのは①の"細粒度"の質**（今は状態変化で
+> つまり sunao は既に「収束した 4 つ」の骨格を持っている。**足りないのは①の"細粒度"の質**（今は状態変化で
 > サブツリー全再構築）と、各社固有の**ergonomic な良さ**。以下でそこを洗い出す。
 
 出典: [Signals Won the Framework War Except in React (jsmanifest)](https://jsmanifest.com/signals-runes-fine-grained-reactivity) /
@@ -42,7 +42,7 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
 - Suspense / 並行レンダリング / Server Components（JS を減らす）。
 
 ### Vue
-- **SFC**: template/script/style を 1 ファイルに（mini-vue の `.ui` の元）。
+- **SFC**: template/script/style を 1 ファイルに（sunao の `.ui` の元）。
 - **compiler が dynamic を印付け（patch flags・static hoisting）→ runtime が静的部を飛ばす**。②の具体形。
 - **`v-model`（双方向バインドの糖衣）** と豊富なディレクティブ＝**宣言的 ergonomics**。
 - computed / watch。**Vapor Mode（2026）**で VDOM を捨て直接 DOM へ（Solid 化）。
@@ -78,7 +78,7 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
 
 ## 3. north-star スコアカード（idea 別の採否判断）
 
-各 idea を 5 性質への寄与・実装コスト・個人利用価値で評価し、mini-vue への採否を出す。
+各 idea を 5 性質への寄与・実装コスト・個人利用価値で評価し、sunao への採否を出す。
 
 | idea（出自） | 決定論 | 軽さ | fail-closed | 低マジック | 型付き | 実装コスト | 個人価値 | **採否** |
 |---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
@@ -100,11 +100,11 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
 
 ---
 
-## 4. mini-vue への「いいところ取り」設計（採る理由つき）
+## 4. sunao への「いいところ取り」設計（採る理由つき）
 
 ### 採る（north-star と強く整合・コスト見合う）
 1. **細粒度更新 ＋ static/dynamic 印付け**（Solid × Vue patch flags）
-   今の mini-vue は状態変化でサブツリー全再構築。コンパイラは既に「どの式が dynamic か」を知っている
+   今の sunao は状態変化でサブツリー全再構築。コンパイラは既に「どの式が dynamic か」を知っている
    （`{{}}`・`:bind`・`v-if/for`）。だから **dynamic な箇所ごとに effect を張り、静的部は一度だけ生成**へ変える。
    → 更新が最小 DOM に限定され、出力も「静的は静的」と分かって軽くなる。**①の質**を埋める本命。
 2. **既定 static（Astro islands）**
@@ -123,7 +123,7 @@ React / Vue / Svelte / Solid / Angular / Qwik / Astro / Lit を見て、**良い
 
 ### 捨てる（north-star か個人利用に反する）
 - **VDOM 差分（React）**: 細粒度 signals があれば不要。runtime を重くするだけ。
-- **Proxy 自動追跡（Vue reactive）**: 暗黙で追いにくい。mini-vue の明示 `count()` を貫く。
+- **Proxy 自動追跡（Vue reactive）**: 暗黙で追いにくい。sunao の明示 `count()` を貫く。
 - **resumability / 関数単位 auto lazy（Qwik）**: 複雑さが個人小規模に見合わず、EXP-3 が遅延の限界を示した。
 - **DI・AOT の重装（Angular）**: 個人利用に過剰。
 

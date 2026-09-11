@@ -1,9 +1,9 @@
 /**
- * mini-vue ビルドツール — 既製 native bundler を「作り直さず束ねる」オーケストレータ。
+ * sunao ビルドツール — 既製 native bundler を「作り直さず束ねる」オーケストレータ。
  *   node build.mjs [--entry fixtures/app-ui/main.js] [--out dist/app-ui]
  *
  * やること（EXP の結論どおり: transpiler/bundler は native に任せ、fail-closed とレシートを足す）:
- *   1. esbuild + miniVue プラグインで .ui をコンパイルしつつ bundle+minify
+ *   1. esbuild + sunao プラグインで .ui をコンパイルしつつ bundle+minify
  *   2. 決定論チェック: 2 回ビルドして出力 sha256 が一致するか
  *   3. 予算ゲート(P1): 出力 bytes/gzip が予算超過なら exit 1（fail-closed）
  *   4. 決定論レシート(P2): bytes/gzip/sha256 + 道具バージョン + 環境 を results/raw に残す
@@ -15,7 +15,7 @@ import { createHash } from 'node:crypto';
 import os from 'node:os';
 import { createRequire } from 'node:module';
 import esbuild from 'esbuild';
-import { miniVue } from './plugins/mini-vue/esbuild-plugin.mjs';
+import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
 
 const require = createRequire(import.meta.url);
 const args = process.argv.slice(2);
@@ -23,11 +23,11 @@ const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
 const ENTRY = opt('--entry', 'fixtures/app-ui/main.js');
 const OUT = opt('--out', 'dist/app-ui');
 
-// アプリの初期ロード予算（fail-closed の閾値）。mini-vue runtime を含めても小さく保つ。
+// アプリの初期ロード予算（fail-closed の閾値）。sunao runtime を含めても小さく保つ。
 const BUDGET = { initial_bytes: 4096, initial_gzip: 2048 };
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
-const MINIVUE_VERSION = '0.1.0-exp';
+const SUNAO_VERSION = '0.1.0-exp';
 
 async function buildOnce() {
   const r = await esbuild.build({
@@ -37,7 +37,7 @@ async function buildOnce() {
     format: 'esm',
     write: false,
     metafile: true,
-    plugins: [miniVue()],
+    plugins: [sunao()],
     logLevel: 'silent',
   });
   return Buffer.from(r.outputFiles[0].contents);
@@ -57,16 +57,16 @@ mkdirSync(OUT, { recursive: true });
 writeFileSync(`${OUT}/main.js`, out1);
 writeFileSync(
   `${OUT}/index.html`,
-  `<!doctype html><meta charset="utf-8"><title>mini-vue app</title>\n<div id="app"></div>\n<script type="module" src="./main.js"></script>\n`,
+  `<!doctype html><meta charset="utf-8"><title>sunao app</title>\n<div id="app"></div>\n<script type="module" src="./main.js"></script>\n`,
 );
 
 // レシート(P2)
 const receipt = {
-  tool: 'mini-vue build',
+  tool: 'sunao build',
   entry: ENTRY,
   measured_at: new Date().toISOString(),
   env: { node: process.version, platform: `${os.platform()} ${os.release()}`, cpu: os.cpus()[0]?.model ?? 'unknown' },
-  versions: { esbuild: require('esbuild/package.json').version, 'mini-vue': MINIVUE_VERSION },
+  versions: { esbuild: require('esbuild/package.json').version, 'sunao': SUNAO_VERSION },
   bytes_raw,
   bytes_gzip,
   output_sha256: sha(out1),
@@ -78,7 +78,7 @@ writeFileSync('results/raw/build-app-ui.json', JSON.stringify(receipt, null, 2) 
 
 // 表示
 const padL = (s, n) => String(s).padStart(n);
-console.log(`\nmini-vue build  entry=${ENTRY}`);
+console.log(`\nsunao build  entry=${ENTRY}`);
 console.log('─'.repeat(56));
 console.log(`${padL('raw B', 12)}${padL('gzip B', 10)}${padL('予算(raw)', 12)}${padL('決定論', 10)}`);
 console.log('─'.repeat(56));

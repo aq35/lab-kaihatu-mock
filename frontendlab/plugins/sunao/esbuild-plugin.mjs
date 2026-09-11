@@ -1,6 +1,6 @@
 /**
- * mini-vue の esbuild プラグイン。vite-plugin-vue と同じ発想:
- *   - bare import 'mini-vue' を runtime.mjs に解決する
+ * sunao の esbuild プラグイン。vite-plugin-vue と同じ発想:
+ *   - bare import 'sunao' を runtime.mjs に解決する
  *   - *.ui ファイルを onLoad で compileSFC して JS として渡す
  * これで「Vue 風プラグイン」を既製の native bundler(esbuild) に載せる = ビルドツール側の統合。
  */
@@ -12,16 +12,16 @@ import { compileSFC } from './compile.mjs';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const RUNTIME = resolve(HERE, 'runtime.mjs');
 
-export function miniVue() {
+export function sunao() {
   return {
-    name: 'mini-vue',
+    name: 'sunao',
     setup(build) {
-      // import { mount, signal } from 'mini-vue'
-      build.onResolve({ filter: /^mini-vue$/ }, () => ({ path: RUNTIME }));
-      // *.ui → コンパイル済み JS。runtime は 'mini-vue' として解決させる。
+      // import { mount, signal } from 'sunao'
+      build.onResolve({ filter: /^sunao$/ }, () => ({ path: RUNTIME }));
+      // *.ui → コンパイル済み JS。runtime は 'sunao' として解決させる。
       build.onLoad({ filter: /\.ui$/ }, async (args) => {
         const src = await readFile(args.path, 'utf8');
-        const contents = compileSFC(src, { runtime: 'mini-vue' });
+        const contents = compileSFC(src, { runtime: 'sunao' });
         return { contents, loader: 'js', resolveDir: dirname(args.path) };
       });
     },

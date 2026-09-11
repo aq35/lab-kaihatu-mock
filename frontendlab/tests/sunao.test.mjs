@@ -5,11 +5,11 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { signal, effect, renderComponentToString } from '../plugins/mini-vue/runtime.mjs';
-import { compileSFC, compileTemplate, CompileError } from '../plugins/mini-vue/compile.mjs';
+import { signal, effect, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { compileSFC, compileTemplate, CompileError } from '../plugins/sunao/compile.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
-const RUNTIME = resolve('plugins/mini-vue/runtime.mjs');
+const RUNTIME = resolve('plugins/sunao/runtime.mjs');
 
 test('reactivity: effect re-runs on signal change', () => {
   const n = signal(1);
@@ -53,7 +53,7 @@ test('renderToString: 状態スナップショットで正しい HTML（決定�
     const html1 = renderComponentToString(comp);
     const html2 = renderComponentToString(comp);
     assert.equal(html1, html2, '同状態→同 HTML');
-    assert.match(html1, /<h1>mini-vue カウンタ<\/h1>/);
+    assert.match(html1, /<h1>sunao カウンタ<\/h1>/);
     assert.match(html1, /<output class="value">0<\/output>/);
     // count()===0 なので v-if は描画されない
     assert.doesNotMatch(html1, /現在値は/);
@@ -73,7 +73,7 @@ test('reactivity + render: setup 経由で状態を進めると HTML が変わ�
     const ctx = comp.setup();
     ctx.inc();
     ctx.inc();
-    const { renderToString } = await import('../plugins/mini-vue/runtime.mjs');
+    const { renderToString } = await import('../plugins/sunao/runtime.mjs');
     const html = renderToString(comp.render(ctx));
     assert.match(html, /<output class="value">2<\/output>/);
     assert.match(html, /現在値は 2 です/); // v-if 真

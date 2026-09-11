@@ -1,5 +1,5 @@
 /**
- * ブラウザで mini-vue アプリが本当にリアクティブに動くかを確認する（Chromium）。
+ * ブラウザで sunao アプリが本当にリアクティブに動くかを確認する（Chromium）。
  * 自己完結: その場でバンドルして小さな http で配信し、クリックで DOM が更新されるか見る。
  */
 import { test } from 'node:test';
@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { existsSync } from 'node:fs';
 import esbuild from 'esbuild';
-import { miniVue } from '../plugins/mini-vue/esbuild-plugin.mjs';
+import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
 const EXE = process.env.PW_CHROMIUM ?? '/opt/pw-browsers/chromium';
 // 環境のブラウザは Playwright パッケージのリビジョンと異なるので実体を明示する。無ければ skip。
@@ -16,7 +16,7 @@ test('ブラウザ: クリックで count が増え、DOM が更新される', {
   const r = await esbuild.build({
     entryPoints: ['fixtures/app-ui/main.js'],
     bundle: true, minify: true, format: 'esm', write: false,
-    plugins: [miniVue()], logLevel: 'silent',
+    plugins: [sunao()], logLevel: 'silent',
   });
   const js = Buffer.from(r.outputFiles[0].contents);
   const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;

@@ -1,4 +1,4 @@
-# mini-vue — 個人用途の「Vue 風プラグイン」＋ビルドツール（P3 の試作）
+# sunao — 個人用途の「Vue 風プラグイン」＋ビルドツール（P3 の試作）
 
 方針 [`plugin-policy.md`](plugin-policy.md) の P3「Recipe → 決定論出力」を、
 **Vue の形（SFC コンパイラ ＋ 極小リアクティブ runtime）**で試作したもの。EXP-1〜4 の結論に沿って
@@ -6,7 +6,7 @@
 
 ```
 再現: cd frontendlab && npm run build && npm test
-実装: plugins/mini-vue/{runtime,compile,esbuild-plugin}.mjs / build.mjs
+実装: plugins/sunao/{runtime,compile,esbuild-plugin}.mjs / build.mjs
 デモ: fixtures/app-ui/{Counter.ui,main.js}
 受領書: results/raw/build-app-ui.json
 ```
@@ -20,7 +20,7 @@
   対応文法: `{{ }}` 補間 / `:bind` / `@event` / `v-if` / `v-for`。**それ以外の `v-*` は CompileError で止める。**
 
 ### 2. ビルドツール = プラグインを native bundler に載せる薄い束ね
-- `esbuild-plugin.mjs`: `import 'mini-vue'` を runtime に解決し、`*.ui` を onLoad でコンパイル
+- `esbuild-plugin.mjs`: `import 'sunao'` を runtime に解決し、`*.ui` を onLoad でコンパイル
   （vite-plugin-vue と同じ発想）。
 - `build.mjs`: esbuild で bundle+minify → **決定論チェック**（2 回ビルドの sha256 一致）→
   **予算ゲート**（超過で exit 1）→ **レシート**（bytes/gzip/sha/バージョン/環境）を書く。
@@ -49,7 +49,7 @@
 
 ## 「AIが好きそうなコンパイラ」の性質をどれだけ満たすか
 
-| 性質 | mini-vue での状態 |
+| 性質 | sunao での状態 |
 |---|---|
 | 決定論（同入力→同 hash） | ✓ コンパイル・レンダ・ビルドすべてで確認 |
 | 出力の予測可能性・軽さ | ✓ ~1KB gzip、tree-shake で使った分だけ、予算で監視 |
@@ -60,7 +60,7 @@
 ## 方針との整合（正直に）
 
 `plugin-policy.md` は「自作 runtime は作らない（公開フレームワークとして React/Vue と競わない）」とした。
-mini-vue は **runtime を持つ**のでこの線に触れる。区別はこう:
+sunao は **runtime を持つ**のでこの線に触れる。区別はこう:
 
 - **公開して競うためではない**。個人利用・実験に閉じ、依存はここだけ（root に出さない）。
 - runtime は**出力に残る唯一の依存**なので、**極小に保ち budget で監視**する（~1KB gzip）。

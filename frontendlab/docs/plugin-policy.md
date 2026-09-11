@@ -40,15 +40,15 @@ EXP-1〜4 の実測から、個人で持つプラグインの方針を決める�
 - 同入力 → 同 hash を CI で検査（EXP-1/4 で全道具が決定論的と確認済みなので、破れたら回帰）。
 - **AI 向けの意味**: 「同じ指示 → 同じ出力」を hash で保証。AI の変更の before/after を桁で見せる土台。
 
-### P3. Recipe → 決定論出力の compiler（north-star の到達点）— repo の条件 E/F と接続 ／ **試作済み: [mini-vue](mini-vue.md)**
+### P3. Recipe → 決定論出力の compiler（north-star の到達点）— repo の条件 E/F と接続 ／ **試作済み: [sunao](sunao.md)**
 - この repo は既に上位層で「型付き PresentationRecipe → 決定論的 HTML/CSS（fail-closed・低 context）」を
   実験している（root README の条件 E/F）。frontendlab はその**汎用ツールチェーン版の土台**を測った。
 - P3 は両者を繋ぐ: **宣言的入力（Recipe 的）→ 既製 native transpiler で決定論的に出力**する薄い層。
   変換エンジンは自作しない（EXP で native が十分速い・決定論的と確認済み）。自作するのは
   **入力の型付けと fail-closed と低 context の契約**だけ。
-- **試作 = mini-vue**: Vue 風 SFC(`.ui`) を esbuild プラグインで build 時コンパイル ＋ 極小 runtime。
+- **試作 = sunao**: Vue 風 SFC(`.ui`) を esbuild プラグインで build 時コンパイル ＋ 極小 runtime。
   アプリ一式 ~1KB gzip・決定論的・未知ディレクティブは fail-closed・実機ブラウザで動作確認済み。
-  詳細と「自作 runtime を持つことの方針整合」は [mini-vue.md](mini-vue.md)。次段は `.ui` の型付け（Recipe 化）。
+  詳細と「自作 runtime を持つことの方針整合」は [sunao.md](sunao.md)。次段は `.ui` の型付け（Recipe 化）。
 
 ## 受け入れ基準 = 「AIが好きそうなコンパイラ」の性質（north-star）
 
