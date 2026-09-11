@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -120,6 +120,30 @@ test('④ build時の契約: analyze で子の props と親の渡し prop を取
   assert.deepEqual(host.uses, [{ tag: 'X', props: ['name', 'bad'] }]);
   const declared = Object.keys(child.props);
   assert.deepEqual(host.uses[0].props.filter((p) => !declared.includes(p)), ['bad'], '子に無い prop を検出');
+});
+
+test('B bridge: 閉じた語彙 prop（enum）は Recipe 同様 fail-closed', () => {
+  const Comp = { name: 'X', props: { palette: { enum: ['calm', 'editorial'] } }, setup: () => ({}), render: () => null };
+  assert.throws(() => validateProps(Comp, { palette: () => 'neon' }), /閉じた語彙/);
+  assert.doesNotThrow(() => validateProps(Comp, { palette: () => 'calm' }));
+});
+
+test('B bridge: OwnerCard の閉じた語彙が repo の presentation-recipe.schema と一致（drift 検査）', async () => {
+  const SCHEMA = '../contracts/presentation-recipe.schema.json';
+  if (!existsSync(SCHEMA)) { return; } // repo 外では skip（接続は repo 内でのみ意味を持つ）
+  const schema = JSON.parse(readFileSync(SCHEMA, 'utf8'));
+  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/OwnerCard.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const dir = mkdtempSync(join(tmpdir(), 'oc-'));
+  try {
+    const f = join(dir, 'OC.mjs');
+    writeFileSync(f, r.outputFiles[0].contents);
+    const OC = (await import(pathToFileURL(f).href)).default;
+    for (const key of ['palette', 'density', 'cardShape']) {
+      assert.deepEqual(OC.props[key].enum, schema.properties[key].enum, `${key} の語彙が repo schema と一致`);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('④ 合成: import されていないコンポーネント参照は止まる', () => {

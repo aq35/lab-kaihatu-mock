@@ -146,11 +146,17 @@ export function validateProps(Comp, props) {
     const spec = typeof schema[key] === 'string' ? { type: schema[key] } : schema[key];
     const has = key in props;
     if (spec.required && !has) throw new Error(`${name}: 必須 prop "${key}"（${spec.type}）が渡されていません。`);
-    if (has && spec.type) {
+    if (has && (spec.type || spec.enum)) {
       const raw = props[key];
       const val = typeof raw === 'function' ? raw() : raw;
-      const t = typeOf(val);
-      if (t !== spec.type) throw new Error(`${name}: prop "${key}" は ${spec.type} 期待、実際は ${t}（値: ${String(JSON.stringify(val)).slice(0, 40)}）。`);
+      if (spec.type) {
+        const t = typeOf(val);
+        if (t !== spec.type) throw new Error(`${name}: prop "${key}" は ${spec.type} 期待、実際は ${t}（値: ${String(JSON.stringify(val)).slice(0, 40)}）。`);
+      }
+      // 閉じた語彙（PresentationRecipe と同じ思想）: enum 外は fail-closed。
+      if (spec.enum && !spec.enum.includes(val)) {
+        throw new Error(`${name}: prop "${key}" は閉じた語彙 [${spec.enum.join(', ')}] のみ。実際: ${JSON.stringify(val)}。`);
+      }
     }
   }
   for (const key of Object.keys(props)) {

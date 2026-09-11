@@ -1,0 +1,47 @@
+<template>
+  <article class="oc" :class="klass()">
+    <header class="oc-head">
+      <span class="oc-kind">承認依頼</span>
+      <h3 class="oc-title">{{ title() }}</h3>
+    </header>
+    <dl class="oc-facts">
+      <div class="oc-fact"><dt>実行内容</dt><dd>{{ effect() }}</dd></div>
+      <div class="oc-fact" v-if="scope()"><dt>影響範囲</dt><dd>{{ scope() }}</dd></div>
+      <div class="oc-fact" v-if="risk()"><dt>リスク</dt><dd>{{ risk() }}</dd></div>
+    </dl>
+    <div class="oc-actions" v-if="!decided()">
+      <button class="oc-approve" @click="approve">承認する</button>
+      <button class="oc-reject" @click="reject">却下する</button>
+    </div>
+    <p class="oc-decided" v-if="decided()">→ {{ decidedLabel() }}</p>
+  </article>
+</template>
+<script>
+export default {
+  name: 'OwnerCard',
+  // props = PresentationRecipe の部分（閉じた語彙）＋ カードのデータ。
+  // 語彙は contracts/presentation-recipe.schema.json と一致（drift はテストで検査）。
+  props: {
+    title: { type: 'string', required: true },
+    effect: { type: 'string', required: true },
+    scope: { type: 'string' },
+    risk: { type: 'string' },
+    palette: { enum: ['calm', 'editorial', 'command-center', 'conversational', 'high-contrast'] },
+    density: { enum: ['comfortable', 'compact', 'dense'] },
+    cardShape: { enum: ['rounded', 'square', 'left-rule', 'top-rule'] },
+  },
+  setup(props) {
+    const decided = signal('');
+    const approve = () => decided.set('approved');
+    const reject = () => decided.set('rejected');
+    const decidedLabel = () => (decided() === 'approved' ? '承認しました' : '却下しました');
+    const pick = (fn, def) => (fn ? fn() || def : def);
+    const klass = () => [
+      'oc--' + pick(props.palette, 'calm'),
+      'oc--' + pick(props.density, 'comfortable'),
+      'oc--' + pick(props.cardShape, 'rounded'),
+    ].join(' ');
+    return { decided, approve, reject, decidedLabel, klass };
+  },
+};
+</script>

@@ -437,8 +437,20 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   const declared = new Set();
   const exposeM = /expose\s*:\s*\[([^\]]*)\]/.exec(script);
   if (exposeM) exposeM[1].split(',').forEach((s) => { const n = s.trim().replace(/^['"]|['"]$/g, ''); if (n) declared.add(n); });
-  const propsM = /props\s*:\s*\{([\s\S]*?)\}/.exec(script);
-  if (propsM) for (const m of propsM[1].matchAll(/([A-Za-z_$][\w$]*)\s*:/g)) declared.add(m[1]);
+  const propsBody = balancedBlock(script, 'props');
+  if (propsBody) {
+    // トップレベルのキーだけ（ネストした { type, required } の中は見ない）。
+    let depth = 0;
+    for (let i = 0; i < propsBody.length; i++) {
+      const ch = propsBody[i];
+      if (ch === '{') depth++;
+      else if (ch === '}') depth--;
+      else if (depth === 0) {
+        const mm = /^([A-Za-z_$][\w$]*)\s*:/.exec(propsBody.slice(i));
+        if (mm) { declared.add(mm[1]); i += mm[0].length - 1; }
+      }
+    }
+  }
   const returnM = /return\s*\{([^{}]*)\}/.exec(script);
   if (returnM) for (const m of returnM[1].matchAll(/([A-Za-z_$][\w$]*)/g)) declared.add(m[1]);
 

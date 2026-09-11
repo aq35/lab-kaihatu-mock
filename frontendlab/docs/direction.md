@@ -32,10 +32,13 @@ compiler のエラーは AI のフィードバックループそのもの。こ�
 > 進捗（v0.4）: 「並び替え・DnD（keyed v-for）」「詳細画面のフロントエンドルーティング（hash ルーター）」も実装済み。
 > [sunao.md](sunao.md) 参照。残る壁は「コンパイル時 prop 型」「スロット」「ネスト/ガード付きルート」。
 
-### B. repo の Recipe（条件 E/F）と接続する ← “なぜ存在するか”の橋
+### B. repo の Recipe（条件 E/F）と接続する ← “なぜ存在するか”の橋 ／ **着手済み: [recipe-bridge.md](recipe-bridge.md)**
 sunao の **型付き `.sunao`** と、KAS の **PresentationRecipe → 決定論的 HTML/CSS（条件 E/F）** は、
 *同じ思想の二層*（toolchain 層と UI 生成言語層）。ここを繋ぐと sunao は「トイ」から
 **repo の中心命題の toolchain 実装**になる。＝これまでの全実装が複利になる。
+- **実装済み**: sunao props に **閉じた語彙(enum)** を追加（Recipe と同じ fail-closed）。`OwnerCard.sunao` が
+  Recipe を閉じた語彙 props で受けて対話カードを描画。テストが **repo schema との語彙一致（drift）を機械検査**。
+- 次段: Recipe→sunao props のコード生成 / `compile()` 出力 × sunao hydration / 5 カード型へ拡大。
 
 ### C. AI ループを閉じる ← 目的地の完成形
 ```

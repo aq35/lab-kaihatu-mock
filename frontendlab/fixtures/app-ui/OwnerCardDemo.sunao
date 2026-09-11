@@ -1,0 +1,25 @@
+<template>
+  <div class="oc-demo">
+    <div class="oc-switch">
+      <span class="oc-switch-label">Recipe.palette</span>
+      <button class="oc-chip" v-for="p in palettes" :key="p" :class="p === palette() ? 'on' : ''" @click="setP(p)">{{ p }}</button>
+    </div>
+    <OwnerCard
+      :palette="palette()" density="comfortable" cardShape="left-rule"
+      title="本番DBに migration を適用"
+      effect="orders テーブルに index を追加（推定 8 分・書き込みロックあり）"
+      scope="orders / order_items（約 240 万行）"
+      risk="適用中は注文の書き込みが遅延。ロールバックは別 migration が必要。" />
+  </div>
+</template>
+<script>
+import OwnerCard from './OwnerCard.sunao';
+export default {
+  setup() {
+    const palettes = ['calm', 'editorial', 'command-center', 'conversational', 'high-contrast'];
+    const palette = signal('command-center');
+    const setP = (p) => palette.set(p);
+    return { palettes, palette, setP };
+  },
+};
+</script>
