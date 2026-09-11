@@ -11,3 +11,4 @@ experiments/**/_shot-*.png
 # frontendlab の実験用一時ファイル
 frontendlab/.exp2-*/
 frontendlab/.exp3-*/
+frontendlab/dist/

@@ -47,6 +47,7 @@ AI にとって扱いやすい compiler の性質を、測れる軸に落とし�
 
 **→ [方針: 個人用途に閉じたプラグイン](docs/plugin-policy.md)**（実測から導いた、React/Vue/Vite を置き換えない道）
 **→ [P1 依存予算ゲート](docs/P1-budget-gate.md)**（方針の最初の実装。`npm run gate`。EXP-3 の 753x 事故を fail-closed で止める）
+**→ [mini-vue（Vue 風プラグイン＋ビルドツール）](docs/mini-vue.md)**（P3 試作。`npm run build && npm test`。SFC を esbuild プラグインで build 時コンパイル、極小 runtime、アプリ一式 ~1KB gzip、決定論・fail-closed・実機ブラウザ確認済み）
 
 **4 実験の芯（実測）**: 速度は道具で 1〜2 桁動く（EXP-1 61x, EXP-2 IPC 形態 16x）が、
 **出力サイズは道具ではほぼ動かない**（EXP-1 raw 1.6x / EXP-4 minify 1.05x）。

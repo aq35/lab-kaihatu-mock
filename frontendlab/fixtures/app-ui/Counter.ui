@@ -1,0 +1,25 @@
+<template>
+  <div class="counter">
+    <h1>{{ title }}</h1>
+    <button class="dec" @click="dec">-</button>
+    <output class="value">{{ count() }}</output>
+    <button class="inc" @click="inc">+</button>
+    <p v-if="count()">現在値は {{ count() }} です</p>
+    <ul class="log">
+      <li v-for="n in history()">{{ n }}</li>
+    </ul>
+  </div>
+</template>
+<script>
+export default {
+  setup() {
+    const count = signal(0);
+    const history = signal([]);
+    const title = 'mini-vue カウンタ';
+    const push = (v) => history.set([...history.peek(), v]);
+    const inc = () => { count.update((n) => n + 1); push(count.peek()); };
+    const dec = () => { count.update((n) => n - 1); push(count.peek()); };
+    return { count, history, title, inc, dec };
+  },
+};
+</script>
