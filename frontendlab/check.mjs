@@ -12,7 +12,8 @@ import { join, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import esbuild from 'esbuild';
-import { compileSFC, CompileError } from './plugins/sunao/compile.mjs';
+import { compileSFC, analyze, CompileError } from './plugins/sunao/compile.mjs';
+import { basename } from 'node:path';
 import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
 
 const ROOT = 'fixtures';
@@ -39,10 +40,18 @@ const padL = (s, n) => String(s).padStart(n);
 console.log(`\nsunao factory check  (${sfcs.length} components, ${entries.length} entries)`);
 console.log('─'.repeat(66));
 
-// 1. compile-check
+// 1. compile-check（＋ クロスコンポーネント契約用メタを収集）
+const registry = new Map(); // tag(=basename or name) -> props schema
+const usages = []; // { parent, tag, props }
 for (const f of sfcs) {
   try {
-    compileSFC(readFileSync(f, 'utf8'), { runtime: 'sunao' });
+    const src = readFileSync(f, 'utf8');
+    compileSFC(src, { runtime: 'sunao' });
+    const meta = analyze(src);
+    const bn = basename(f).replace(/\.sunao$/, '');
+    registry.set(bn, meta.props);
+    if (meta.name) registry.set(meta.name, meta.props);
+    for (const u of meta.uses) usages.push({ parent: relative(ROOT, f), ...u });
     console.log(`  compile  ${pad(relative(ROOT, f), 40)} ok`);
   } catch (e) {
     const kind = e instanceof CompileError ? 'CompileError' : 'Error';
@@ -50,6 +59,17 @@ for (const f of sfcs) {
     failures.push(`${f}: ${e.message}`);
   }
 }
+
+// 1b. 契約チェック（ビルド時）: 子に無い prop / 必須 prop 欠落を止める（型そのものは runtime 境界）。
+for (const u of usages) {
+  const schema = registry.get(u.tag);
+  if (!schema) continue; // 未知コンポーネントは import-check（compile 時）が担当
+  const declared = Object.keys(schema);
+  if (declared.length === 0) continue; // props 宣言なしの子はスキップ
+  for (const p of u.props) if (!declared.includes(p)) failures.push(`${u.parent}: <${u.tag}> に無い prop "${p}"（許可: ${declared.join(', ') || 'なし'}）`);
+  for (const [k, spec] of Object.entries(schema)) if (spec.required && !u.props.includes(k)) failures.push(`${u.parent}: <${u.tag}> 必須 prop "${k}" が渡されていません`);
+}
+console.log(`  contract ${pad('cross-component props', 40)} ${usages.length} 箇所検査`);
 
 // 2. build-check（決定論 + 予算）
 for (const entry of entries) {

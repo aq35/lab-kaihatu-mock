@@ -47,7 +47,7 @@ AI にとって扱いやすい compiler の性質を、測れる軸に落とし�
 
 **→ [方針: 個人用途に閉じたプラグイン](docs/plugin-policy.md)**（実測から導いた、React/Vue/Vite を置き換えない道）
 **→ [P1 依存予算ゲート](docs/P1-budget-gate.md)**（方針の最初の実装。`npm run gate`。EXP-3 の 753x 事故を fail-closed で止める）
-**→ [sunao（Vue 風プラグイン＋ビルドツール）](docs/sunao.md)**（P3, **v0.3**。`npm run build && npm run check && npm test`。細粒度更新・既定static(8x小)・computed・v-model・scoped・型付き props(fail-closed)・**構造化診断(code/loc/frame/suggestions)**・量産ガードレール check・コンポーネント合成。**keyed v-for（並び替え・DnD）・hash ルーター**も実装。**実例カレンダー（月移動・予定追加・日詳細のルーティング・localStorage・公開済み）が実機で動く**。23/23 test green）
+**→ [sunao（Vue 風プラグイン＋ビルドツール）](docs/sunao.md)**（P3, **v0.3**。`npm run build && npm run check && npm test`。細粒度更新・既定static(8x小)・computed・v-model・scoped・型付き props(fail-closed)・**構造化診断(code/loc/frame/suggestions)**・量産ガードレール check・コンポーネント合成。**keyed v-for（並び替え・DnD）・hash ルーター（ガード/ネスト）・スロット・keyed の unmount 破棄・ビルド時のクロス component prop 契約検査**も実装。**実例カレンダー（月移動・予定追加・日詳細のルーティング・localStorage・公開済み）が実機で動く**。27/27 test green）
 **→ [フレームワークのいいところ取り洗い出し](docs/framework-cherrypick.md)**（React/Vue/Svelte/Solid/Angular/Qwik/Astro を north-star で採否判定。収束した勝ち筋4つ＋各社固有＋sunao への採る/捨てる/条件付き）
 **→ [フレームワークのダメなところ洗い出し](docs/framework-pitfalls.md)**（各社の失敗・地雷を guardrail 化。横断アンチパターン6つ＋sunao 自身の弱点も正直に＋禁止リスト）
 **→ [レバレッジ地図](docs/leverage-map.md)**（作りまくると複利で効く場所の ROI ランキング。最優先＝型付き契約×診断×量産ガードレール。作っても無駄な場所も明示）

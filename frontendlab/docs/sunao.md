@@ -9,7 +9,7 @@
 ```
 再現: cd frontendlab && npm run build && npm run check && npm test
 実装: plugins/sunao/{runtime,compile,esbuild-plugin}.mjs / build.mjs / check.mjs
-デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング）, fixtures/static-ui/（静的）
+デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング・スロット）, fixtures/static-ui/（静的）
 受領書: results/raw/build-app-ui.json
 ```
 
@@ -31,6 +31,17 @@
 | **フロントエンドルーティング** | `useRoute()`（hash ベース signal）/ `navigate()` / `matchRoute('/day/:date', path)`。未使用なら tree-shake | `matchRoute` 単体＋**実機カレンダーで URL hash 同期・ブラウザ戻る** green |
 
 > ルーターは **hash ベース**（公開ホストでリロードしても 404 にならない）。使わないアプリには load されない。
+
+## v0.5 で実装した「残りの問題点」
+
+| 問題点 | 実装 | テスト |
+|---|---|---|
+| **スロット** | 子 `<slot>`（デフォルト内容可）＋ 親 `<Card>…</Card>` の子を `$slot` で渡す（親スコープで評価） | 親の子要素が子の `<slot>` に差し込まれる e2e green |
+| **ルートガード / ネスト** | `setRouteGuard((to,from)=>false|'/redirect'|true)` で遷移中止・リダイレクト。`matchRoute` 末尾 `*` で前方一致（ネスト） | ガードの中止/リダイレクト・`*` 前方一致 green |
+| **keyed の unmount 破棄** | `createRoot(fn, owner)` ＋ 安定スコープ。v-if 解除や `mount().dispose()` で keyed アイテムの effect も一括破棄 | `createRoot` dispose 後は effect 再実行しない green |
+| **ビルド時の契約検査**（コンパイル時 prop の実現可能な部分） | `analyze()` で全 `.sunao` の props 宣言と `<Child/>` 使用を集め、**子に無い prop・必須欠落を `npm run check` で停止**（型そのものは runtime 境界のまま） | analyze 抽出＋不一致検出 green、factory に常設 |
+
+> **正直な非対応**: 式の *値の型* のコンパイル時推論（TS 相当の型システムが要る）と、**遅延ルート**（= `import()`＋esbuild splitting で可能だが専用 API は無し）。
 
 ## v0.2 の柱（維持）
 
@@ -89,7 +100,7 @@
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、23 件すべて green）
+## テスト（`npm test`、27 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/
@@ -116,10 +127,9 @@ reactivity / computed / 決定論（compile・render）/ fail-closed（未知デ
 
 ## 限界・次（正直に）
 
-- **prop の型検査は runtime 境界**（mount/component 時）。コンパイル時に式の型まで推論はしない（名前・必須はコンパイル時）。
-- **スロット未対応**（コンポーネントへは props のみ）。
-- **ルーターは最小**: hash ベース・ネスト/ガード/遅延ルートは未対応。keyed item の content 変更はキー変更かアイテム内 signal で（参照一致のキーは再利用）。
-- keyed item スコープはキー削除時に破棄するが、**コンポーネント全体の unmount 時の一括破棄は未実装**（mount 一回の個人用途では問題にならない）。
+- **prop 値の型のコンパイル時推論は非対応**（名前・必須はビルド時 `check` で検査、値の型は runtime 境界）。TS 相当の型システムが要る。
+- **遅延ルート**は専用 API なし（`import()`＋esbuild splitting で実現可能）。
+- **名前付きスロット**は未対応（デフォルトスロットのみ）。ルーターは hash ベース。
 - **`count()` / `prop()` 呼び忘れ**が静かに関数を返す（Solid と同じ footgun）。値位置の関数参照を compiler で警告する案。
 - **scoped styles は最小**（descendant 限定）。複雑セレクタの正確な scoping は未対応。
 - テンプレ式は正規表現ベースの識別子抽出。将来は本式パーサで検証し fail-closed を厚くする。

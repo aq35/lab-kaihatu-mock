@@ -196,6 +196,12 @@ function genNode(node, bound, ctx) {
     if (!isLiteral(node.expr)) ctx.staticSerializable = false;
     return `String(${node.expr})`;
   }
+  // <slot>: 親から渡された子（$slot）を描画、無ければデフォルト内容。
+  if (node.tag === 'slot') {
+    ctx.hasDynamic = true;
+    const def = genChildren(node.children, bound, ctx);
+    return `(typeof ctx.$slot === 'function' ? ctx.$slot() : ${def.length ? `[${def.join(', ')}]` : 'null'})`;
+  }
   // element or component（大文字始まり = コンポーネント）
   const isComponent = /^[A-Z]/.test(node.tag);
   const vIf = node.attrs.find((a) => a.name === 'v-if');
@@ -219,11 +225,13 @@ function genNode(node, bound, ctx) {
     if (!ctx.components.has(node.tag)) {
       fail('SUNAO_COMPONENT_NOT_IMPORTED', `<${node.tag}> は import されていません。<script> に import ${node.tag} from './${node.tag}.sunao' を書いてください（大文字始まり = コンポーネント）。`, { src: ctx.src, index: node.start, suggestions: [...ctx.components] });
     }
-    if (node.children.some((c) => c.type !== 'text' || c.value.trim())) {
-      fail('SUNAO_COMPONENT_SLOT', `<${node.tag}>: スロット（子要素）は未対応です（v0.3）。props で渡してください。`, { src: ctx.src, index: node.start });
-    }
     ctx.hasDynamic = true; // 子は reactive になりうる
     const cprops = [];
+    // スロット: 子要素を $slot（vnode を返す関数）として渡す。
+    if (node.children.length) {
+      const sk = genChildren(node.children, innerBound, ctx);
+      if (sk.length) cprops.push(`"$slot": () => [${sk.join(', ')}]`);
+    }
     for (const a of node.attrs) {
       if (a.name === 'v-if' || a.name === 'v-for') continue;
       if (a.name === 'v-model' || a.name.startsWith('@')) {
@@ -364,6 +372,53 @@ function scopeStyles(css, scopeAttr) {
   return { attr, scoped };
 }
 
+/**
+ * ビルド時のクロスコンポーネント検査用メタを抽出:
+ *   { name, props:{key:{required,type}}, uses:[{tag, props:[names]}] }
+ * 全プロジェクト解析して「子に無い prop / 必須 prop 欠落」を build 時に止める（型そのものは runtime 境界）。
+ */
+// `key:{...}` の釣り合った波括弧の中身を取り出す（ネストした prop spec 用）。
+function balancedBlock(script, keyword) {
+  const m = new RegExp(keyword + '\\s*:\\s*\\{').exec(script);
+  if (!m) return null;
+  let depth = 0;
+  const start = m.index + m[0].length - 1;
+  for (let i = start; i < script.length; i++) {
+    if (script[i] === '{') depth++;
+    else if (script[i] === '}' && --depth === 0) return script.slice(start + 1, i);
+  }
+  return null;
+}
+
+export function analyze(source) {
+  const { template, script } = extractBlocks(source);
+  const nameM = /name\s*:\s*['"]([A-Za-z0-9_$]+)['"]/.exec(script);
+  const props = {};
+  const propsBody = balancedBlock(script, 'props');
+  if (propsBody) {
+    for (const m of propsBody.matchAll(/([A-Za-z_$][\w$]*)\s*:\s*(\{[^}]*\}|'[^']*'|"[^"]*")/g)) {
+      const spec = m[2];
+      const type = (/['"](\w+)['"]/.exec(spec) || [])[1] || null;
+      props[m[1]] = { required: /required\s*:\s*true/.test(spec), type };
+    }
+  }
+  const uses = [];
+  const walk = (nodes) => {
+    for (const n of nodes) {
+      if (n.type !== 'el') continue;
+      if (/^[A-Z]/.test(n.tag)) {
+        const pn = n.attrs
+          .filter((a) => !['v-if', 'v-for', 'v-model', ':key', 'key'].includes(a.name))
+          .map((a) => a.name.replace(/^[:@]/, ''));
+        uses.push({ tag: n.tag, props: pn });
+      }
+      walk(n.children);
+    }
+  };
+  walk(parseTemplate(template));
+  return { name: nameM ? nameM[1] : null, props, uses };
+}
+
 /** SFC → ES モジュール文字列。 */
 export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   const { template, script, style } = extractBlocks(source);
@@ -414,7 +469,7 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
   return (
-    `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute } from ${JSON.stringify(runtime)};\n` +
+    `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute, setRouteGuard } from ${JSON.stringify(runtime)};\n` +
     `${scriptBody}\n` +
     `__component.${compiled.render.replace(/^function /, 'render = function ')};\n` +
     stylesLine +

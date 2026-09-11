@@ -65,13 +65,21 @@ export function effect(fn) {
 }
 
 // 独立した reactive スコープで fn を実行し、{value, dispose} を返す（Solid createRoot 相当）。
-// keyed リストの各アイテムを「親 effect の再実行で壊されない独立スコープ」に置くために使う。
-export function createRoot(fn) {
+// owner を渡すと、その子として登録（owner 破棄で一緒に破棄 = unmount 時の一括破棄）。
+export function createRoot(fn, owner = null) {
   const sub = makeSub(() => {});
+  if (owner) owner.children.add(sub);
   const prevOwner = activeOwner, prevSub = activeSub;
   activeOwner = sub; activeSub = null; // 追跡を切り、内部 effect は sub を親にする
-  try { return { value: fn(), dispose: () => sub.dispose() }; }
+  try { return { value: fn(), dispose: () => { sub.dispose(); owner?.children.delete(sub); } }; }
   finally { activeOwner = prevOwner; activeSub = prevSub; }
+}
+// 独立スコープ（owner の子）。keyed リストのアイテム親として使い、親 effect の再実行では壊れず、
+// 囲む scope（v-if サブツリー等）の破棄でまとめて破棄される。
+function makeScope(owner) {
+  const sub = makeSub(() => {});
+  if (owner) owner.children.add(sub);
+  return sub;
 }
 
 // keyed v-for マーカ。insertExpression が検出して「キーでノードを再利用・移動」する。
@@ -146,6 +154,7 @@ export function validateProps(Comp, props) {
     }
   }
   for (const key of Object.keys(props)) {
+    if (key[0] === '$') continue; // $slot 等の予約 prop はスキップ
     if (!(key in schema)) throw new Error(`${name}: 未知の prop "${key}"。許可: ${Object.keys(schema).join(', ')}。`);
   }
 }
@@ -196,14 +205,14 @@ function createNode(vnode, doc) {
 }
 
 // キー付きリストの再利用・移動・削除（並び替え / DnD で node 同一性と in-item 状態を保つ）。
-function reconcileKeyed(parent, end, prev, desc, doc) {
+function reconcileKeyed(parent, end, prev, desc, doc, itemsRoot) {
   const next = new Map();
   const order = [];
   for (const item of desc.list) {
     const k = desc.keyFn(item);
     order.push(k);
     if (prev && prev.has(k)) next.set(k, prev.get(k)); // 既存ノードを再利用（effect も保持）
-    else { const root = createRoot(() => createNode(desc.renderFn(item), doc)); next.set(k, { node: root.value, dispose: root.dispose }); }
+    else { const root = createRoot(() => createNode(desc.renderFn(item), doc), itemsRoot); next.set(k, { node: root.value, dispose: root.dispose }); }
   }
   if (prev) for (const [k, rec] of prev) { if (!next.has(k)) { rec.dispose(); rec.node.remove?.(); } } // 消えたキーを破棄
   for (const k of order) parent.insertBefore(next.get(k).node, end); // 順序どおり挿入＝既存ノードは移動
@@ -216,17 +225,21 @@ function insertExpression(parent, fn, doc) {
   const end = doc.createComment('');
   parent.appendChild(start);
   parent.appendChild(end);
+  const parentOwner = activeOwner; // 囲む scope（unmount / v-if 解除でまとめて破棄される）
   let current = [];
   let keyState = null;
+  let itemsRoot = null;
   effect(() => {
     const value = fn();
     // keyed v-for: キー差分で再利用・移動
     if (value && value.__keyed) {
       for (const n of current) n.remove(); current = [];
-      keyState = reconcileKeyed(parent, end, keyState, value, doc);
+      if (!itemsRoot) itemsRoot = makeScope(parentOwner); // 親 effect の再実行では壊れない安定スコープ
+      keyState = reconcileKeyed(parent, end, keyState, value, doc, itemsRoot);
       return;
     }
     if (keyState) { for (const rec of keyState.values()) { rec.dispose(); rec.node.remove?.(); } keyState = null; }
+    if (itemsRoot) { itemsRoot.dispose(); parentOwner?.children.delete(itemsRoot); itemsRoot = null; }
     // テキスト→テキストの単純ケースは in-place 更新（node 同一性を保つ）
     if ((typeof value === 'string' || typeof value === 'number') &&
         current.length === 1 && current[0].nodeType === 3) {
@@ -251,12 +264,16 @@ function normalize(value, doc) {
 }
 
 // 対話コンポーネント: render を 1 回実行して DOM を組む（以降は細粒度 effect が更新）。
+// 戻り値 { ctx, dispose }。dispose() で全 effect・keyed スコープをまとめて破棄（unmount）。
 export function mount(component, el, doc = (typeof document !== 'undefined' ? document : null)) {
   if (!doc) throw new Error('mount() は DOM が必要です（テストは renderComponentToString を使う）');
-  if (component.static) { el.innerHTML = component.render(); return {}; }
-  const ctx = component.setup ? component.setup() : {};
-  el.appendChild(createNode(component.render(ctx), doc));
-  return ctx;
+  if (component.static) { el.innerHTML = component.render(); return { ctx: {}, dispose() {} }; }
+  let ctx = {};
+  const root = createRoot(() => {
+    ctx = component.setup ? component.setup() : {};
+    el.appendChild(createNode(component.render(ctx), doc));
+  });
+  return { ctx, dispose: () => { root.dispose(); el.textContent = ''; } };
 }
 
 // 静的コンポーネント専用の最小 mount（reactivity を一切参照しない → tree-shake で軽い）。
@@ -277,17 +294,36 @@ function _ensureRoute() {
 }
 // 現在のパスを表す signal（読むと購読 → route で画面が更新される）。
 export function useRoute() { return _ensureRoute(); }
-// 画面遷移。hash を変え、戻る/進む（履歴）も効く。
+// ルートガード: navigate 前に fn(to, from) を呼び、false を返すと遷移中止、文字列ならそこへリダイレクト。
+let _guard = null;
+export function setRouteGuard(fn) { _guard = fn; }
+// 画面遷移。hash を変え、戻る/進む（履歴）も効く。ガードがあれば通す。
 export function navigate(to) {
+  const from = _ensureRoute().peek();
+  if (_guard) {
+    const r = _guard(to, from);
+    if (r === false) return;            // 中止
+    if (typeof r === 'string') to = r;  // リダイレクト
+  }
   if (typeof location !== 'undefined') location.hash = to;
   _ensureRoute().set(to);
 }
 // '/day/:date' 等のパターン照合。一致で params（{date}）、不一致で null。
+// 末尾 '*' は前方一致（ネスト用）: '/settings/*' は '/settings/x/y' に一致し params['*']='x/y'。
 export function matchRoute(pattern, path) {
   const pp = pattern.split('/');
   const sp = path.split('?')[0].split('/');
-  if (pp.length !== sp.length) return null;
   const params = {};
+  if (pp[pp.length - 1] === '*') {
+    if (sp.length < pp.length) return null;
+    for (let i = 0; i < pp.length - 1; i++) {
+      if (pp[i].startsWith(':')) params[pp[i].slice(1)] = decodeURIComponent(sp[i]);
+      else if (pp[i] !== sp[i]) return null;
+    }
+    params['*'] = sp.slice(pp.length - 1).join('/');
+    return params;
+  }
+  if (pp.length !== sp.length) return null;
   for (let i = 0; i < pp.length; i++) {
     if (pp[i].startsWith(':')) params[pp[i].slice(1)] = decodeURIComponent(sp[i]);
     else if (pp[i] !== sp[i]) return null;

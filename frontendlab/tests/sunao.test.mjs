@@ -7,8 +7,8 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import esbuild from 'esbuild';
-import { signal, effect, computed, component, validateProps, matchRoute, renderComponentToString } from '../plugins/sunao/runtime.mjs';
-import { compileSFC, compileTemplate, CompileError } from '../plugins/sunao/compile.mjs';
+import { signal, effect, computed, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { compileSFC, compileTemplate, analyze, CompileError } from '../plugins/sunao/compile.mjs';
 import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -112,6 +112,16 @@ test('④ 型付き props: 必須欠落・未知・型不一致は fail-closed',
   assert.doesNotThrow(() => validateProps(Greeting, { name: () => 'a', count: () => 1 }));
 });
 
+test('④ build時の契約: analyze で子の props と親の渡し prop を取り、不一致を検出', () => {
+  const child = analyze(`<template><p>{{ name() }}</p></template><script>export default { name:'X', props:{ name:{type:'string',required:true} }, setup(){ return {}; } }</script>`);
+  assert.deepEqual(Object.keys(child.props), ['name']);
+  assert.equal(child.props.name.required, true);
+  const host = analyze(`<template><X :name="a()" :bad="b()"/></template><script>import X from './X.sunao'; export default { setup(){ return {}; } }</script>`);
+  assert.deepEqual(host.uses, [{ tag: 'X', props: ['name', 'bad'] }]);
+  const declared = Object.keys(child.props);
+  assert.deepEqual(host.uses[0].props.filter((p) => !declared.includes(p)), ['bad'], '子に無い prop を検出');
+});
+
 test('④ 合成: import されていないコンポーネント参照は止まる', () => {
   const src = `<template><div><Foo :x="1"/></div></template><script>export default { setup(){ return {}; } }</script>`;
   assert.throws(() => compileSFC(src, { runtime: RUNTIME }), /import されていません/);
@@ -142,10 +152,50 @@ test('① keyed v-for: :key は keyed() を生成する', () => {
   assert.doesNotMatch(r.render, /"key":/); // :key は DOM 属性として出さない
 });
 
-test('② router: matchRoute がパターンとパスを照合する', () => {
+test('② router: matchRoute がパターンとパスを照合する（末尾 * は前方一致）', () => {
   assert.deepEqual(matchRoute('/day/:date', '/day/2026-9-15'), { date: '2026-9-15' });
   assert.deepEqual(matchRoute('/', '/'), {});
   assert.equal(matchRoute('/day/:date', '/other'), null);
+  assert.deepEqual(matchRoute('/settings/*', '/settings/a/b'), { '*': 'a/b' });
+  assert.equal(matchRoute('/settings/*', '/other'), null);
+});
+
+test('② router: ガードで遷移を中止/リダイレクトできる', () => {
+  const route = useRoute();
+  navigate('/base');
+  setRouteGuard((to) => (to === '/blocked' ? false : to === '/redir' ? '/ok' : true));
+  navigate('/allowed'); assert.equal(route.peek(), '/allowed');
+  navigate('/blocked'); assert.equal(route.peek(), '/allowed', 'ガードで中止');
+  navigate('/redir'); assert.equal(route.peek(), '/ok', 'リダイレクト');
+  setRouteGuard(null);
+});
+
+test('unmount: createRoot dispose で内部 effect が止まる（keyed の一括破棄基盤）', () => {
+  const n = signal(0);
+  let runs = 0;
+  const root = createRoot(() => { effect(() => { n(); runs++; }); });
+  assert.equal(runs, 1);
+  n.set(1); assert.equal(runs, 2);
+  root.dispose();
+  n.set(2); assert.equal(runs, 2, 'dispose 後は再実行しない');
+});
+
+test('slots: 親の子要素が子の <slot> に差し込まれる', async () => {
+  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/SlotHost.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  const dir = mkdtempSync(join(tmpdir(), 'sl-'));
+  try {
+    const f = join(dir, 'S.mjs');
+    writeFileSync(f, r.outputFiles[0].contents);
+    const Host = (await import(pathToFileURL(f).href)).default;
+    const html = renderComponentToString(Host);
+    assert.match(html, /<div class="card-body"><p class="slotted">スロット差し込み: こんにちは<\/p><\/div>/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('③ factory: node check.mjs が全部品で通る（exit 0）', () => {
