@@ -12,7 +12,7 @@ import { join, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import esbuild from 'esbuild';
-import { compileSFC, analyze, CompileError } from './plugins/sunao/compile.mjs';
+import { compileSFC, analyze, warningsOf, CompileError } from './plugins/sunao/compile.mjs';
 import { basename } from 'node:path';
 import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
 
@@ -22,6 +22,8 @@ const BUDGET = { raw: 8192, gzip: 4096 }; // 入口ごとの既定予算
 const BUDGET_OVERRIDE = {
   'app-ui/owner-main.js': { raw: 20000, gzip: 8000 },
   'app-ui/deploy-main.js': { raw: 24000, gzip: 9000 },
+  'app-ui/board-main.js': { raw: 20000, gzip: 7000 },
+  'app-ui/calendar-main.js': { raw: 10000, gzip: 4096 }, // 月グリッド全体（リッチ画面）
 };
 const budgetFor = (entry) => BUDGET_OVERRIDE[entry] || BUDGET;
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -49,6 +51,7 @@ console.log('─'.repeat(66));
 // 1. compile-check（＋ クロスコンポーネント契約用メタを収集）
 const registry = new Map(); // tag(=basename or name) -> props schema
 const usages = []; // { parent, tag, props }
+const warns = []; // 非致命の警告（() 呼び忘れ等）。落とさず表示だけ。
 for (const f of sfcs) {
   try {
     const src = readFileSync(f, 'utf8');
@@ -58,7 +61,9 @@ for (const f of sfcs) {
     registry.set(bn, meta.props);
     if (meta.name) registry.set(meta.name, meta.props);
     for (const u of meta.uses) usages.push({ parent: relative(ROOT, f), ...u });
-    console.log(`  compile  ${pad(relative(ROOT, f), 40)} ok`);
+    const w = warningsOf(src);
+    for (const x of w) warns.push(`${relative(ROOT, f)}: ${x.message}`);
+    console.log(`  compile  ${pad(relative(ROOT, f), 40)} ok${w.length ? ` ⚠ ${w.length}` : ''}`);
   } catch (e) {
     const kind = e instanceof CompileError ? 'CompileError' : 'Error';
     console.log(`  compile  ${pad(relative(ROOT, f), 40)} ✗ ${kind}`);
@@ -101,6 +106,11 @@ for (const entry of entries) {
 }
 
 console.log('─'.repeat(66));
+if (warns.length) {
+  console.log(`⚠ ${warns.length} 件の警告（非致命・意図的なら無視可）:`);
+  for (const w of warns) console.log(`  - ${w}`);
+  console.log('');
+}
 if (failures.length) {
   console.log(`✗ ${failures.length} 件の不合格:`);
   for (const f of failures) console.log(`  - ${f}`);

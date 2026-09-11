@@ -9,7 +9,8 @@
 ```
 再現: cd frontendlab && npm run build && npm run check && npm test
 実装: plugins/sunao/{runtime,compile,esbuild-plugin}.mjs / build.mjs / check.mjs
-デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング・スロット）, fixtures/static-ui/（静的）
+デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング・スロット・FLIPボード）, fixtures/static-ui/（静的）
+参照: docs/reference.md（AI 向け・低 context の API 表）
 受領書: results/raw/build-app-ui.json
 ```
 
@@ -56,6 +57,24 @@
 > **Owner Inbox 公開**: https://claude.ai/code/artifact/fc4a364a-caf9-4081-915d-220cdbcd8293
 > （5 型カードを非同期取得・Recipe.palette 切替で配色が決定論的に変化・実時計）。これが direction B の
 > 「Recipe=見た目 / sunao=振る舞い」の合成そのもの。
+
+## v0.7 で実装した「使いやすさの角・アニメ・低 context リファレンス」
+
+「あなたは使いやすい？難しめデザインできそう？」への回答。**角（footgun）を機械で潰し**、
+**難しめデザイン（FLIP アニメ）を 1 プリミティブ**にし、**AI 向けリファレンス**を 1 枚に畳んだ。
+
+| 課題 | 実装 | テスト・実測 |
+|---|---|---|
+| **① `()` 呼び忘れ警告**（一番効く角） | 値位置に裸で出た識別子が他所で `name()` と呼ばれていれば `SUNAO_CALL_FORGOTTEN` を**非致命警告**（`warningsOf()` / `check.mjs` が ⚠ 表示）。signal は「呼んで読む」ので `{{ count }}` の取り違えを機械が指摘 | 警告の発火/非発火・`warningsOf` を単体 green |
+| **① `v-for="(item, i)"`** | index つき反復（`i` は 0 始まり・束縛済み扱い＝未宣言参照にならない） | 生成コードで `(item, i) =>`・index 束縛を確認 |
+| **① keyed component** | `<Child :key="x.id" v-for=…/>` を `keyed()` 経路で再利用（部品リストの並び替えも状態保持） | 生成コードで `keyed(` + `component(` を確認 |
+| **② FLIP アニメ**（難しめデザイン） | keyed `v-for` に `flip` を付けるだけで **並び替え=FLIP（First-Last-Invert-Play）移動・追加=enter・削除=leave** を WAAPI で。ブラウザのみ（Node では無視＝SSR 安全） | 実機: shuffle で 4 つの移動アニメ・追加で enter・削除で leave が発火 |
+| **`<style scoped>` が実際に効く** | `mount()`/`component()` が scoped CSS を **1 度だけ** head へ注入。scope は **Vue 方式の compound**（`.x` → `.x[data-s]`）に修正＝**ルート要素にも効き**他部品へ漏れない | 実機で root 背景・カード・疑似要素すべて適用。compound/疑似/combinator を単体 green |
+| **④ 低 context リファレンス** | [`reference.md`](reference.md): 文法・runtime・借用・**footgun 表**・決定論/予算を 1 枚に。AI が最小 context で全 API を掴める | — |
+
+> **Priority Board 公開**: https://claude.ai/code/artifact/e8659c38-a848-48de-87cd-53d1d4ed4f10
+> （FLIP 並び替え・追加/削除アニメ・カードクリックで優先度巡回＝色も動く・palette 5 種切替を 1 SFC で）。
+> 「難しめデザイン（滑るアニメ・リッチな配色）」も宣言のまま書けることの実証。
 
 ## v0.2 の柱（維持）
 
@@ -114,7 +133,7 @@
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、41 件すべて green）
+## テスト（`npm test`、43 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/

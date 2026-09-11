@@ -1,0 +1,163 @@
+<template>
+  <div class="board" :style="recipeStyle({ palette: palette(), density: 'comfortable' })">
+    <header class="bar">
+      <div class="brand">
+        <span class="dot"></span>
+        <div>
+          <h1>Priority Board</h1>
+          <p class="sub">FLIP アニメ・keyed 並び替え・enter/leave を 1 コンポーネントで</p>
+        </div>
+      </div>
+      <div class="tools">
+        <label class="pal">
+          palette
+          <select @change="setPalette($event.target.value)">
+            <option v-for="p in palettes" :key="p" :value="p">{{ p }}</option>
+          </select>
+        </label>
+        <button class="t" @click="shuffle()">shuffle</button>
+        <button class="t" @click="sortByPrio()">priority 順</button>
+        <button class="t primary" @click="add()">+ 追加</button>
+      </div>
+    </header>
+
+    <div class="stat">
+      <span>{{ tasks().length }} 件</span>
+      <span class="hi">{{ hiCount() }} urgent</span>
+      <span class="muted">クリックで昇格 / ✕ で削除 / ↑↓ で移動 — すべて FLIP で滑る</span>
+    </div>
+
+    <ul class="grid">
+      <li class="cell" v-for="(t, i) in tasks()" :key="t.id" flip
+          :class="'p-' + t.prio()">
+        <article class="tk" @click="bump(t)">
+          <div class="tkbar">
+            <span class="badge">{{ label(t.prio()) }}</span>
+            <span class="ord">#{{ i + 1 }}</span>
+          </div>
+          <h3 class="tkt">{{ t.title }}</h3>
+          <div class="meta">
+            <span class="who">{{ t.who }}</span>
+            <span class="pts">{{ t.pts }} pt</span>
+          </div>
+          <div class="ops">
+            <button class="op" @click="moveUp(t.id, $event)" title="上へ">↑</button>
+            <button class="op" @click="moveDown(t.id, $event)" title="下へ">↓</button>
+            <button class="op del" @click="remove(t.id, $event)" title="削除">✕</button>
+          </div>
+        </article>
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script>
+import { recipeStyle } from 'sunao/theme';
+
+const NAMES = ['設計を凍結', '実測を回す', '受領書を書く', '予算ゲートを通す', '公開する', '差分を測る', 'レシートを残す', 'schema を締める'];
+const WHO = ['あなた', 'レビュア', 'CI', 'owner'];
+const PRIOS = ['urgent', 'normal', 'low'];
+const PRANK = { urgent: 0, normal: 1, low: 2 };
+let seq = 100;
+
+export default {
+  name: 'Board',
+  setup() {
+    const palette = signal('calm');
+    const palettes = ['calm', 'editorial', 'command-center', 'conversational', 'high-contrast'];
+    const setPalette = (v) => palette.set(v);
+
+    // prio は **per-item signal**。keyed でノードが再利用されても、束縛が signal を購読して
+    // その場で色/ラベルが更新される（fine-grained。並び替えは配列 signal、色替えは要素 signal）。
+    const mk = (title, prio, who, pts) => ({ id: 's' + (seq++), title, prio: signal(prio), who, pts });
+    const tasks = signal([
+      mk('設計を凍結する', 'urgent', 'あなた', 5),
+      mk('EXP を実測する', 'normal', 'CI', 3),
+      mk('受領書を書く', 'normal', 'あなた', 2),
+      mk('予算ゲートを通す', 'urgent', 'CI', 3),
+      mk('ショーケースを公開', 'low', 'owner', 1),
+    ]);
+
+    const label = (p) => match(p, { urgent: () => 'URGENT', normal: () => 'NORMAL', low: () => 'LOW' });
+    const hiCount = computed(() => tasks().filter((t) => t.prio() === 'urgent').length);
+
+    const shuffle = () => {
+      const a = [...tasks()];
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      tasks.set(a);
+    };
+    const sortByPrio = () => tasks.set([...tasks()].sort((x, y) => PRANK[x.prio()] - PRANK[y.prio()] || y.pts - x.pts));
+    const add = () => {
+      const title = NAMES[Math.floor(Math.random() * NAMES.length)];
+      const prio = PRIOS[Math.floor(Math.random() * PRIOS.length)];
+      const who = WHO[Math.floor(Math.random() * WHO.length)];
+      tasks.set([mk(title, prio, who, 1 + Math.floor(Math.random() * 5)), ...tasks()]);
+    };
+    const remove = (id, e) => { e.stopPropagation(); tasks.set(tasks().filter((t) => t.id !== id)); };
+    // urgent → normal → low → urgent の巡回（カードクリック）。配列は変えず prio signal だけ更新＝その場で recolor。
+    const bump = (t) => t.prio.set(PRIOS[(PRIOS.indexOf(t.prio()) + 1) % 3]);
+    const swap = (id, dir) => {
+      const a = [...tasks()];
+      const i = a.findIndex((t) => t.id === id);
+      const j = i + dir;
+      if (j < 0 || j >= a.length) return;
+      [a[i], a[j]] = [a[j], a[i]];
+      tasks.set(a);
+    };
+    const moveUp = (id, e) => { e.stopPropagation(); swap(id, -1); };
+    const moveDown = (id, e) => { e.stopPropagation(); swap(id, 1); };
+
+    return { palette, palettes, setPalette, tasks, label, hiCount, shuffle, sortByPrio, add, remove, bump, moveUp, moveDown, recipeStyle, match };
+  },
+};
+</script>
+
+<style>
+.board { min-height: 100vh; background: var(--k-page); color: var(--k-ink); font-family: var(--k-font);
+  padding: clamp(1rem, 3vw, 2.5rem); display: flex; flex-direction: column; gap: 1.25rem; }
+.bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.brand { display: flex; gap: .8rem; align-items: center; }
+.dot { width: 42px; height: 42px; border-radius: 13px; flex: none;
+  background: conic-gradient(from 210deg, var(--k-accent), var(--k-unknown), var(--k-positive), var(--k-accent));
+  box-shadow: 0 6px 22px -8px var(--k-accent); }
+.brand h1 { margin: 0; font-size: 1.5rem; letter-spacing: -.02em; }
+.sub { margin: .15rem 0 0; color: var(--k-quiet); font-size: .85rem; }
+.tools { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.pal { display: flex; flex-direction: column; font-size: .6rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--k-quiet); gap: .2rem; }
+.pal select { font: inherit; padding: .4rem .5rem; border-radius: 9px; border: 1px solid var(--k-border);
+  background: var(--k-card); color: var(--k-ink); }
+.t { font: inherit; font-weight: 600; padding: .55rem .9rem; border-radius: 10px; border: 1px solid var(--k-border);
+  background: var(--k-card); color: var(--k-ink); cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.t:hover { transform: translateY(-1px); box-shadow: 0 6px 18px -10px var(--k-ink); }
+.t.primary { background: var(--k-accent); border-color: var(--k-accent); color: var(--k-on-accent); }
+.stat { display: flex; gap: .9rem; align-items: baseline; font-size: .82rem; color: var(--k-ink2); flex-wrap: wrap; }
+.stat .hi { color: var(--k-danger); font-weight: 700; }
+.stat .muted { color: var(--k-quiet); font-size: .74rem; }
+.grid { list-style: none; margin: 0; padding: 0; display: grid; gap: .9rem;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.cell { list-style: none; }
+.tk { background: var(--k-card); border: 1px solid var(--k-border); border-radius: 16px; padding: 1rem;
+  display: flex; flex-direction: column; gap: .55rem; cursor: pointer; position: relative; overflow: hidden;
+  border-block-start: 4px solid var(--k-quiet); transition: box-shadow .15s, transform .12s, border-color .25s; }
+.tk::after { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--k-quiet); opacity: 0; }
+.tk:hover { box-shadow: 0 14px 34px -18px var(--k-ink); transform: translateY(-2px); }
+.p-urgent .tk { border-block-start-color: var(--k-danger); }
+.p-normal .tk { border-block-start-color: var(--k-accent); }
+.p-low .tk { border-block-start-color: var(--k-positive); }
+.tkbar { display: flex; justify-content: space-between; align-items: center; }
+.badge { font-size: .62rem; font-weight: 800; letter-spacing: .09em; padding: .18rem .5rem; border-radius: 999px;
+  background: color-mix(in oklch, var(--k-quiet) 18%, transparent); color: var(--k-quiet); }
+.p-urgent .badge { background: color-mix(in oklch, var(--k-danger) 20%, transparent); color: var(--k-danger); }
+.p-normal .badge { background: color-mix(in oklch, var(--k-accent) 18%, transparent); color: var(--k-accent); }
+.p-low .badge { background: color-mix(in oklch, var(--k-positive) 20%, transparent); color: var(--k-positive); }
+.ord { font-size: .72rem; color: var(--k-quiet); font-variant-numeric: tabular-nums; }
+.tkt { margin: 0; font-size: 1.02rem; line-height: 1.35; letter-spacing: -.01em; }
+.meta { display: flex; justify-content: space-between; font-size: .78rem; color: var(--k-ink2); }
+.pts { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ops { display: flex; gap: .35rem; margin-block-start: .2rem; }
+.op { flex: 1; font: inherit; font-size: .82rem; padding: .32rem; border-radius: 8px; border: 1px solid var(--k-border);
+  background: var(--k-sunken); color: var(--k-ink2); cursor: pointer; transition: background .12s, color .12s; }
+.op:hover { background: var(--k-accent); border-color: var(--k-accent); color: var(--k-on-accent); }
+.op.del:hover { background: var(--k-danger); border-color: var(--k-danger); }
+</style>

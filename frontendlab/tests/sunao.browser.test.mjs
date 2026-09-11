@@ -216,3 +216,56 @@ test('ブラウザ: カレンダーが実機で動く（月移動・日付選択
     server.close();
   }
 });
+
+test('ブラウザ: Priority Board — scoped style 注入・FLIP アニメ・優先度巡回', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/board-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = `<!doctype html><meta charset="utf-8"><style>html,body{margin:0}</style><div id="app"></div><script type="module" src="/main.js"></script>`;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); }
+    else { res.setHeader('content-type', 'text/html'); res.end(html); }
+  });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
+
+    // <style scoped> が head に注入され、ルート要素にも効く（compound scope）
+    const boardBg = await page.$eval('.board', (el) => getComputedStyle(el).backgroundColor);
+    assert.match(boardBg, /oklch|rgb/, 'ルート .board に背景トークンが適用される（scoped 注入＋compound）');
+    assert.equal(await page.locator('.cell').count(), 5);
+
+    // 追加 → enter アニメが走り、件数が増える
+    const enterAnims = await page.evaluate(() => { document.querySelector('button.t.primary').click(); return document.getAnimations().length; });
+    assert.ok(enterAnims >= 1, '追加で enter アニメが発火');
+    assert.equal(await page.locator('.cell').count(), 6);
+
+    // priority 順 → FLIP 移動アニメ（transform）が走る
+    const flipAnims = await page.evaluate(() => { [...document.querySelectorAll('button.t')].find((b) => /priority/.test(b.textContent)).click(); return document.getAnimations().length; });
+    assert.ok(flipAnims >= 1, 'priority 順で FLIP 移動アニメが発火');
+    await page.waitForTimeout(300);
+    // urgent が先頭に来る（PRANK 昇順）
+    const firstBadge = await page.$eval('.cell:first-child .badge', (el) => el.textContent);
+    assert.equal(firstBadge, 'URGENT', 'priority 順で urgent が先頭');
+
+    // カードクリックで優先度が巡回（urgent→normal）＝ :class が変わり色が動く
+    const cls0 = await page.$eval('.cell:first-child', (el) => el.className);
+    await page.click('.cell:first-child .tk');
+    await page.waitForTimeout(50);
+    const cls1 = await page.$eval('.cell:first-child', (el) => el.className);
+    assert.notEqual(cls1, cls0, 'クリックで優先度クラスが変わる（色が動く）');
+
+    // 削除 → leave アニメ＋件数が減る
+    const before = await page.locator('.cell').count();
+    const leaveAnims = await page.evaluate(() => { document.querySelector('.op.del').click(); return document.getAnimations().length; });
+    assert.ok(leaveAnims >= 1, '削除で leave アニメが発火');
+    await page.waitForTimeout(250);
+    assert.equal(await page.locator('.cell').count(), before - 1, '削除で 1 件減る');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});

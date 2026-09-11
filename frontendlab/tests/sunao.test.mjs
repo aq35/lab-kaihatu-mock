@@ -10,7 +10,7 @@ import esbuild from 'esbuild';
 import { signal, effect, computed, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, renderComponentToString } from '../plugins/sunao/runtime.mjs';
 import { recipeStyle } from '../plugins/sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
-import { compileSFC, compileTemplate, analyze, CompileError } from '../plugins/sunao/compile.mjs';
+import { compileSFC, compileTemplate, analyze, warningsOf, CompileError } from '../plugins/sunao/compile.mjs';
 import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -67,7 +67,19 @@ test('⑤ v-model: :value + @input へ純粋 desugar される', () => {
 test('⑤ scoped styles: 要素に scope 属性、CSS が scope 限定される（最小）', () => {
   const mod = compileSFC('<template><p class="x">hi</p></template><style>.x { color: red }</style>', { runtime: RUNTIME });
   assert.match(mod, /data-s[0-9a-z]+/, 'scope 属性が付く');
-  assert.match(mod, /\[data-s[0-9a-z]+\] \.x/, 'CSS が [scope] で限定される');
+  assert.match(mod, /\.x\[data-s[0-9a-z]+\]/, 'CSS が compound [scope] で限定される（ルート要素にも効く）');
+});
+
+test('⑤ scoped styles: ルート要素・疑似・combinator も正しく scope される', () => {
+  const { render } = compileTemplate('<div class="root">x</div>'); // ダミー（scope 抽出は compileSFC）
+  const mod = compileSFC('<template><div class="root"><a class="c">y</a></div></template>' +
+    '<style>.root { color: red } .a:hover { color: blue } .p .c::after { content: "" }</style>', { runtime: RUNTIME });
+  const attr = (/data-s[0-9a-z]+/.exec(mod) || [])[0];
+  assert.ok(attr);
+  assert.ok(mod.includes(`.root[${attr}]`), 'ルート要素の compound');
+  assert.ok(mod.includes(`.a[${attr}]:hover`), '疑似クラスの前に挿入');
+  assert.ok(mod.includes(`.c[${attr}]::after`), '疑似要素の前に挿入（最後の compound のみ）');
+  assert.ok(!mod.includes(`.p[${attr}]`), '先頭 compound には付けない（最後だけ）');
 });
 
 test('④ 宣言必須(fail-closed): expose に無い識別子の参照は止まる', () => {
@@ -395,4 +407,49 @@ test('reactivity + render: setup 経由で状態を進めると HTML が変わ�
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('① v-for: "(item, i) in list" で index が束縛される', () => {
+  const r = compileTemplate('<li v-for="(row, i) in rows()" :key="row.id">{{ i }}:{{ row.name }}</li>');
+  assert.match(r.render, /\(row, i\) =>/, 'index パラメータが出る');
+  assert.match(r.render, /keyed\(/, ':key があれば keyed');
+  assert.ok(r.used.includes('rows'), 'list 式の自由識別子は ctx から取る');
+  assert.ok(!r.used.includes('i'), 'index は束縛済み（未宣言参照にならない）');
+  assert.ok(!r.used.includes('row'), 'item は束縛済み');
+});
+
+test('① keyed component: <Child :key> は keyed() で再利用される', () => {
+  const src = `<template><Row v-for="r in rows()" :key="r.id" :name="r.name"/></template>` +
+    `<script>import Row from './Row.sunao';\nexport default { setup(){ const rows = signal([]); return { rows }; } }</script>`;
+  const mod = compileSFC(src, { runtime: RUNTIME });
+  assert.match(mod, /keyed\(/, 'component + :key は keyed 経路');
+  assert.match(mod, /component\(Row/, 'Row を component() で描画');
+});
+
+test('① flip 属性: keyed v-for に FLIP フラグ（第4引数 true）が付く', () => {
+  const r = compileTemplate('<li v-for="x in xs()" :key="x.id" flip>{{ x.n }}</li>');
+  assert.match(r.render, /keyed\([^;]*,\s*true\)/, 'flip で keyed(..., true)');
+  assert.doesNotMatch(r.render, /flip=/, 'flip は DOM 属性として出さない');
+});
+
+test('① () 呼び忘れ警告: 値位置の裸 signal を別所で呼んでいれば警告（非致命）', () => {
+  // count は {{ count }} で裸、@click で count() と呼ばれている → 呼び忘れ濃厚
+  const r = compileTemplate('<button @click="count()">{{ count }}</button>');
+  assert.ok(r.warnings.length >= 1, '警告が出る');
+  assert.equal(r.warnings[0].code, 'SUNAO_CALL_FORGOTTEN');
+  assert.equal(r.warnings[0].ident, 'count');
+});
+
+test('① () 呼び忘れ警告: 正しく count() と書けば警告なし', () => {
+  const r = compileTemplate('<button @click="count()">{{ count() }}</button>');
+  assert.equal(r.warnings.length, 0, '両方 () なら警告なし');
+});
+
+test('① warningsOf: SFC 全体から警告を非致命で取り出す', () => {
+  const src = `<template><b @click="n.update(v=>v+1)" :class="n() > 3 ? 'hot' : ''">{{ n }}</b></template>` +
+    `<script>export default { setup(){ const n = signal(0); return { n }; } }</script>`;
+  const ws = warningsOf(src);
+  assert.ok(ws.some((w) => w.ident === 'n' && w.code === 'SUNAO_CALL_FORGOTTEN'));
+  // コンパイルエラーになる SFC でも警告取得は throw しない（ベストエフォート）
+  assert.deepEqual(warningsOf('<template><div v-bogus="x"></div></template>'), []);
 });

@@ -181,6 +181,16 @@ function refsCtx(expr, bound) {
   collectIdents(expr, bound, s);
   return s.size > 0;
 }
+// 呼び出された識別子（name(）を記録＝「関数っぽい」判定用。
+function noteCalled(expr, ctx) {
+  for (const m of expr.matchAll(/([A-Za-z_$][\w$]*)\s*\(/g)) ctx.called.add(m[1]);
+}
+const isBareIdent = (e) => /^[A-Za-z_$][\w$]*$/.test(String(e).trim());
+// 値位置の裸の識別子を記録（他所で name() と呼ばれていれば () 呼び忘れ警告）。
+function noteBare(expr, bound, ctx) {
+  const e = String(expr).trim();
+  if (isBareIdent(e) && !bound.has(e) && !GLOBALS.has(e)) ctx.bare.push(e);
+}
 const isLiteral = (expr) => /^(['"]).*\1$/s.test(expr.trim()) || /^-?\d+(\.\d+)?$/.test(expr.trim());
 
 // ---- codegen ----
@@ -192,6 +202,7 @@ function genNode(node, bound, ctx) {
   if (node.type === 'text') return JSON.stringify(node.value);
   if (node.type === 'interp') {
     collectIdents(node.expr, bound, ctx.used);
+    noteCalled(node.expr, ctx); noteBare(node.expr, bound, ctx);
     if (refsCtx(node.expr, bound)) { ctx.hasDynamic = true; return `() => String(${node.expr})`; }
     if (!isLiteral(node.expr)) ctx.staticSerializable = false;
     return `String(${node.expr})`;
@@ -210,14 +221,20 @@ function genNode(node, bound, ctx) {
   let innerBound = bound;
   let forHead = null;
   let keyExpr = null;
+  let flipOn = false; // `flip` 属性 = keyed リストの並び替えを FLIP アニメ
   if (vFor) {
-    const mm = /^\s*([A-Za-z_$][\w$]*)\s+in\s+([\s\S]+)$/.exec(vFor.value);
-    if (!mm) fail('SUNAO_VFOR_FORM', `v-for は "x in expr" の形で書いてください: "${vFor.value}"`, { src: ctx.src, index: node.start, suggestions: ['item in items()'] });
-    collectIdents(mm[2], bound, ctx.used);
-    innerBound = new Set([...bound, mm[1]]);
-    forHead = { item: mm[1], listExpr: mm[2] };
+    // "item in expr" または "(item, index) in expr"
+    const mm = /^\s*(?:\(\s*([A-Za-z_$][\w$]*)\s*,\s*([A-Za-z_$][\w$]*)\s*\)|([A-Za-z_$][\w$]*))\s+in\s+([\s\S]+)$/.exec(vFor.value);
+    if (!mm) fail('SUNAO_VFOR_FORM', `v-for は "x in expr" か "(x, i) in expr" の形で書いてください: "${vFor.value}"`, { src: ctx.src, index: node.start, suggestions: ['item in items()', '(item, i) in items()'] });
+    const item = mm[1] || mm[3];
+    const index = mm[2] || null;
+    const listExpr = mm[4];
+    collectIdents(listExpr, bound, ctx.used);
+    noteCalled(listExpr, ctx);
+    innerBound = new Set([...bound, item, ...(index ? [index] : [])]);
+    forHead = { item, index, listExpr };
     const keyAttr = node.attrs.find((a) => a.name === ':key' || a.name === 'key');
-    if (keyAttr) { keyExpr = keyAttr.value; collectIdents(keyExpr, innerBound, ctx.used); }
+    if (keyAttr) { keyExpr = keyAttr.value; collectIdents(keyExpr, innerBound, ctx.used); noteCalled(keyExpr, ctx); }
   }
 
   if (isComponent) {
@@ -240,6 +257,7 @@ function genNode(node, bound, ctx) {
       if (a.name.startsWith(':')) {
         const key = a.name.slice(1);
         collectIdents(a.value, innerBound, ctx.used);
+        noteCalled(a.value, ctx); noteBare(a.value, innerBound, ctx);
         cprops.push(`${JSON.stringify(key)}: () => (${a.value})`); // accessor で渡す（reactive）
       } else {
         // 静的属性も accessor に揃える（子は常に prop() で読む）。
@@ -247,8 +265,14 @@ function genNode(node, bound, ctx) {
       }
     }
     let expr = `component(${node.tag}, {${cprops.join(', ')}})`;
-    if (vIf) { collectIdents(vIf.value, innerBound, ctx.used); expr = refsCtx(vIf.value, innerBound) && !vFor ? `() => (${vIf.value}) ? ${expr} : null` : `((${vIf.value}) ? ${expr} : null)`; }
-    if (forHead) { const inner = `(${forHead.listExpr}).map((${forHead.item}) => ${expr})`; expr = refsCtx(forHead.listExpr, bound) ? `() => ${inner}` : inner; }
+    if (vIf) { collectIdents(vIf.value, innerBound, ctx.used); noteCalled(vIf.value, ctx); noteBare(vIf.value, innerBound, ctx); expr = refsCtx(vIf.value, innerBound) && !vFor ? `() => (${vIf.value}) ? ${expr} : null` : `((${vIf.value}) ? ${expr} : null)`; }
+    if (forHead) {
+      const params = forHead.index ? `(${forHead.item}, ${forHead.index})` : `(${forHead.item})`;
+      const inner = keyExpr
+        ? `keyed((${forHead.listExpr}), (${forHead.item}) => (${keyExpr}), ${params} => ${expr})`
+        : `(${forHead.listExpr}).map(${params} => ${expr})`;
+      expr = (refsCtx(forHead.listExpr, bound) || keyExpr) ? `() => ${inner}` : inner;
+    }
     return expr;
   }
 
@@ -258,17 +282,20 @@ function genNode(node, bound, ctx) {
   for (const a of node.attrs) {
     if (a.name === 'v-if' || a.name === 'v-for' || a.name === 'v-model') continue;
     if (a.name === ':key' || (a.name === 'key' && keyExpr)) continue; // v-for の :key は keyed() が消費
+    if (a.name === 'flip') { flipOn = true; continue; } // FLIP アニメ指定（属性として出さない）
     if (a.name === 'class') { staticClass = a.value; continue; }
-    if (a.name === ':class') { collectIdents(a.value, innerBound, ctx.used); dynClass = a.value; continue; }
+    if (a.name === ':class') { collectIdents(a.value, innerBound, ctx.used); noteCalled(a.value, ctx); noteBare(a.value, innerBound, ctx); dynClass = a.value; continue; }
     if (a.name.startsWith(':')) {
       const key = a.name.slice(1);
       collectIdents(a.value, innerBound, ctx.used);
+      noteCalled(a.value, ctx); noteBare(a.value, innerBound, ctx);
       if (refsCtx(a.value, innerBound)) { ctx.hasDynamic = true; props.push(`${JSON.stringify(key)}: () => (${a.value})`); }
       else props.push(`${JSON.stringify(key)}: (${a.value})`);
     } else if (a.name.startsWith('@')) {
       const ev = a.name.slice(1);
       const on = 'on' + ev.charAt(0).toUpperCase() + ev.slice(1);
       collectIdents(a.value, innerBound, ctx.used);
+      noteCalled(a.value, ctx);
       ctx.hasEvent = true;
       // イベント引数の糖衣: 単なる参照/関数式はそのまま、式・文なら ($event) => {...} に包む（Vue 互換）。
       const v = a.value.trim();
@@ -292,6 +319,7 @@ function genNode(node, bound, ctx) {
   if (vModel) {
     // 純粋な糖衣: :value + @input（signal 前提）。魔法を runtime に持ち込まない。
     collectIdents(vModel.value, innerBound, ctx.used);
+    noteCalled(vModel.value, ctx);
     ctx.hasDynamic = true; ctx.hasEvent = true;
     props.push(`"value": () => (${vModel.value})()`);
     props.push(`"onInput": (e) => (${vModel.value}).set(e.target.value)`);
@@ -302,13 +330,15 @@ function genNode(node, bound, ctx) {
 
   if (vIf) {
     collectIdents(vIf.value, innerBound, ctx.used);
+    noteCalled(vIf.value, ctx); noteBare(vIf.value, innerBound, ctx);
     if (refsCtx(vIf.value, innerBound) && !vFor) { ctx.hasDynamic = true; expr = `() => (${vIf.value}) ? ${expr} : null`; }
     else expr = `((${vIf.value}) ? ${expr} : null)`;
   }
   if (forHead) {
+    const params = forHead.index ? `(${forHead.item}, ${forHead.index})` : `(${forHead.item})`;
     const inner = keyExpr
-      ? `keyed((${forHead.listExpr}), (${forHead.item}) => (${keyExpr}), (${forHead.item}) => ${expr})`
-      : `(${forHead.listExpr}).map((${forHead.item}) => ${expr})`;
+      ? `keyed((${forHead.listExpr}), (${forHead.item}) => (${keyExpr}), ${params} => ${expr}${flipOn ? ', true' : ''})`
+      : `(${forHead.listExpr}).map(${params} => ${expr})`;
     if (refsCtx(forHead.listExpr, bound) || keyExpr) { ctx.hasDynamic = true; expr = `() => ${inner}`; }
     else expr = inner;
   }
@@ -347,29 +377,71 @@ function nearest(name, candidates) {
 /** テンプレート → render ソース + メタ。 */
 export function compileTemplate(template, { scopeAttr = null, components = new Set() } = {}) {
   const nodes = parseTemplate(template);
-  const ctx = { used: new Set(), hasDynamic: false, hasEvent: false, staticSerializable: true, scopeAttr, components, src: template };
+  const ctx = { used: new Set(), hasDynamic: false, hasEvent: false, staticSerializable: true, scopeAttr, components, src: template, called: new Set(), bare: [] };
   const roots = genChildren(nodes, new Set(), ctx);
   const body = roots.length === 1 ? roots[0] : `[${roots.join(', ')}]`;
   const destructure = ctx.used.size ? `const { ${[...ctx.used].join(', ')} } = ctx;\n  ` : '';
   const render = `function render(ctx) {\n  ${destructure}return ${body};\n}`;
   const isStatic = !ctx.hasDynamic && !ctx.hasEvent && ctx.staticSerializable;
+  // () 呼び忘れ警告: 値位置に裸で出た識別子が、どこかで name() と関数呼びされている＝signal/関数の呼び忘れ濃厚。
+  const warnings = [...new Set(ctx.bare)].filter((n) => ctx.called.has(n)).map((n) => ({
+    code: 'SUNAO_CALL_FORGOTTEN',
+    message: `"${n}" は値位置で裸で使われていますが、別の箇所で ${n}() と呼ばれています。signal/関数なら ${n}() が要るかもしれません（意図的なら無視可）。`,
+    ident: n,
+  }));
   return {
     render,
     used: [...ctx.used],
     hasDynamic: ctx.hasDynamic || ctx.hasEvent,
     static: isStatic,
     staticHTML: isStatic ? serializeStatic(nodes, scopeAttr) : null,
+    warnings,
   };
 }
 
-// scoped styles（最小）: content から短い hash、selector を [scopeAttr] で descendant 限定。
+/** SFC → 警告配列（非致命）。ツール/factory が表示に使う。 */
+export function warningsOf(source) {
+  try {
+    const { template, script } = extractBlocks(source);
+    const components = new Set();
+    for (const m of script.matchAll(/import\s+([A-Z]\w*)\s+from/g)) components.add(m[1]);
+    let scopeAttr = null;
+    const sty = /<style[^>]*>([\s\S]*?)<\/style>/.exec(source);
+    if (sty) scopeAttr = scopeStyles(sty[1], '').attr;
+    return compileTemplate(template, { scopeAttr, components }).warnings || [];
+  } catch {
+    return []; // コンパイルエラーは別系統（fail-closed）。警告はベストエフォート。
+  }
+}
+
+// scoped styles（最小・Vue 方式）: content から短い hash、各セレクタの最後の compound に
+// `[scopeAttr]` を足す（`.x` → `.x[data-s]`）。全要素が同じ scope 属性を持つので、
+// **ルート要素自身も** マッチし（descendant 方式の穴を塞ぐ）、他コンポーネントには漏れない。
 function scopeStyles(css, scopeAttr) {
   let h = 5381;
   for (let i = 0; i < css.length; i++) h = ((h << 5) + h + css.charCodeAt(i)) >>> 0;
   const attr = `data-s${h.toString(36)}`;
-  const scoped = css.replace(/([^{}]+)\{/g, (_, sel) =>
-    sel.split(',').map((s) => `[${attr}] ${s.trim()}`).join(', ') + ' {');
+  const scoped = css.replace(/([^{}]+)\{/g, (m, sel) => {
+    // @media 等の at-rule プレリュードはそのまま（中の規則が再帰的に処理される）。
+    if (sel.trim().startsWith('@')) return m;
+    return sel.split(',').map((s) => scopeSelector(s.trim(), attr)).join(', ') + ' {';
+  });
   return { attr, scoped };
+}
+// 複合セレクタ列の「最後の単純セレクタ群」に [attr] を挿入（疑似要素/クラスの前）。
+function scopeSelector(sel, attr) {
+  if (!sel) return sel;
+  const parts = sel.split(/(\s*[>+~]\s*|\s+)/); // combinator を保持して分割
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    if (p && !/^\s*[>+~]\s*$/.test(p) && !/^\s+$/.test(p)) { parts[i] = injectScopeAttr(p, attr); break; }
+  }
+  return parts.join('');
+}
+function injectScopeAttr(compound, attr) {
+  const m = /::?[\w-]/.exec(compound); // 最初の疑似（:hover / ::after）位置
+  const idx = m ? m.index : compound.length;
+  return `${compound.slice(0, idx)}[${attr}]${compound.slice(idx)}`;
 }
 
 /**

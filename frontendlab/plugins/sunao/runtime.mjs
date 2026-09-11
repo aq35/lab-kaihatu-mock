@@ -93,8 +93,9 @@ function makeScope(owner) {
 }
 
 // keyed v-for マーカ。insertExpression が検出して「キーでノードを再利用・移動」する。
-export function keyed(list, keyFn, renderFn) {
-  return { __keyed: true, list, keyFn, renderFn };
+// flip=true で enter/leave フェード＋並び替えの FLIP アニメ（ブラウザのみ。Node では無視）。
+export function keyed(list, keyFn, renderFn, flip = false) {
+  return { __keyed: true, list, keyFn, renderFn, flip };
 }
 
 // 派生値（Svelte $derived / Vue computed / Solid createMemo 相当）。読むと購読。
@@ -185,6 +186,7 @@ export function inject(key, def) { return _provides.has(key) ? _provides.get(key
 // ctx は { ...props(accessor), ...setup(props) の戻り } を合成 → テンプレは宣言 prop を直接参照できる。
 export function component(Comp, props = {}) {
   validateProps(Comp, props);
+  if (Comp.styles && typeof document !== 'undefined') injectStyles(Comp, document); // 子の scoped CSS も 1 度だけ注入
   const parent = _provides;
   _provides = new Map(parent); // 親の context を継承
   try {
@@ -233,17 +235,35 @@ function createNode(vnode, doc) {
 }
 
 // キー付きリストの再利用・移動・削除（並び替え / DnD で node 同一性と in-item 状態を保つ）。
+// desc.flip なら enter/leave フェード＋FLIP（First-Last-Invert-Play）で移動をアニメ。
 function reconcileKeyed(parent, end, prev, desc, doc, itemsRoot) {
+  const flip = desc.flip && prev && typeof requestAnimationFrame !== 'undefined';
+  const oldRects = flip ? new Map() : null;
+  if (flip) for (const [k, rec] of prev) if (rec.node.getBoundingClientRect) oldRects.set(k, rec.node.getBoundingClientRect());
   const next = new Map();
   const order = [];
   for (const item of desc.list) {
     const k = desc.keyFn(item);
     order.push(k);
     if (prev && prev.has(k)) next.set(k, prev.get(k)); // 既存ノードを再利用（effect も保持）
-    else { const root = createRoot(() => createNode(desc.renderFn(item), doc), itemsRoot); next.set(k, { node: root.value, dispose: root.dispose }); }
+    else { const root = createRoot(() => createNode(desc.renderFn(item), doc), itemsRoot); next.set(k, { node: root.value, dispose: root.dispose, isNew: true }); }
   }
-  if (prev) for (const [k, rec] of prev) { if (!next.has(k)) { rec.dispose(); rec.node.remove?.(); } } // 消えたキーを破棄
+  if (prev) for (const [k, rec] of prev) { // 消えたキーを破棄（flip なら leave アニメ後に）
+    if (next.has(k)) continue;
+    const n = rec.node;
+    if (desc.flip && n.animate) n.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(.92)' }], { duration: 150, easing: 'ease' }).finished.then(() => { rec.dispose(); n.remove?.(); }, () => { rec.dispose(); n.remove?.(); });
+    else { rec.dispose(); n.remove?.(); }
+  }
   for (const k of order) parent.insertBefore(next.get(k).node, end); // 順序どおり挿入＝既存ノードは移動
+  for (const k of order) { // enter（新規）/ FLIP（移動）
+    const rec = next.get(k), n = rec.node;
+    if (rec.isNew) { rec.isNew = false; if (desc.flip && n.animate) n.animate([{ opacity: 0, transform: 'scale(.95)' }, { opacity: 1, transform: 'none' }], { duration: 150, easing: 'ease' }); }
+    else if (flip && oldRects.has(k) && n.getBoundingClientRect && n.animate) {
+      const nr = n.getBoundingClientRect(), o = oldRects.get(k);
+      const dx = o.left - nr.left, dy = o.top - nr.top;
+      if (dx || dy) n.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    }
+  }
   return next;
 }
 
@@ -293,8 +313,19 @@ function normalize(value, doc) {
 
 // 対話コンポーネント: render を 1 回実行して DOM を組む（以降は細粒度 effect が更新）。
 // 戻り値 { ctx, dispose }。dispose() で全 effect・keyed スコープをまとめて破棄（unmount）。
+const _injectedStyles = new Set(); // 同じ scoped CSS を二重注入しない（content で dedupe）。
+function injectStyles(component, doc) {
+  const css = component && component.styles;
+  if (!css || _injectedStyles.has(css)) return;
+  _injectedStyles.add(css);
+  const tag = doc.createElement('style');
+  tag.setAttribute('data-sunao', '');
+  tag.textContent = css;
+  (doc.head || doc.documentElement).appendChild(tag);
+}
 export function mount(component, el, doc = (typeof document !== 'undefined' ? document : null)) {
   if (!doc) throw new Error('mount() は DOM が必要です（テストは renderComponentToString を使う）');
+  injectStyles(component, doc); // <style scoped> ブロックを 1 度だけ head へ
   if (component.static) { el.innerHTML = component.render(); return { ctx: {}, dispose() {} }; }
   _provides = new Map();
   let ctx = {};
