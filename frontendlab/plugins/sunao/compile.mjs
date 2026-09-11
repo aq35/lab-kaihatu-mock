@@ -58,7 +58,7 @@ function fail(code, message, { src = null, index = null, suggestions = [] } = {}
 const ALLOWED_DIRECTIVES = new Set(['v-if', 'v-for', 'v-model']);
 const GLOBALS = new Set([
   'true', 'false', 'null', 'undefined', 'NaN', 'Infinity', 'String', 'Number', 'Boolean',
-  'Array', 'Object', 'Math', 'JSON', 'Date', 'this', 'new', 'typeof', 'void', 'e',
+  'Array', 'Object', 'Math', 'JSON', 'Date', 'this', 'new', 'typeof', 'void', 'e', '$event',
 ]);
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 
@@ -163,12 +163,15 @@ function parseAttrs(str, tag, html, base) {
 }
 
 // ---- 式解析ヘルパ ----
+// 自由識別子を集める。文字列リテラルは除外、`.prop`（property）と `key:`（object key）は除外、
+// `$event` のような $ 始まりも 1 識別子として拾う。※正規表現ベースの近似（本式パーサは将来）。
 function collectIdents(expr, bound, used) {
-  const re = /(\.)?\b([A-Za-z_$][\w$]*)\b(\s*:(?!:))?/g;
+  const noStr = expr.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/g, ' ');
+  const re = /(?<![\w$.])([A-Za-z_$][\w$]*)\s*(:(?!:))?/g;
   let m;
-  while ((m = re.exec(expr))) {
-    const [, dot, name, colon] = m;
-    if (dot || colon) continue;
+  while ((m = re.exec(noStr))) {
+    const [, name, colon] = m;
+    if (colon) continue; // object literal key
     if (GLOBALS.has(name) || bound.has(name)) continue;
     used.add(name);
   }
@@ -240,8 +243,11 @@ function genNode(node, bound, ctx) {
 
   const props = [];
   if (ctx.scopeAttr) props.push(`${JSON.stringify(ctx.scopeAttr)}: true`);
+  let staticClass = null, dynClass = null; // class マージ用
   for (const a of node.attrs) {
     if (a.name === 'v-if' || a.name === 'v-for' || a.name === 'v-model') continue;
+    if (a.name === 'class') { staticClass = a.value; continue; }
+    if (a.name === ':class') { collectIdents(a.value, innerBound, ctx.used); dynClass = a.value; continue; }
     if (a.name.startsWith(':')) {
       const key = a.name.slice(1);
       collectIdents(a.value, innerBound, ctx.used);
@@ -252,10 +258,24 @@ function genNode(node, bound, ctx) {
       const on = 'on' + ev.charAt(0).toUpperCase() + ev.slice(1);
       collectIdents(a.value, innerBound, ctx.used);
       ctx.hasEvent = true;
-      props.push(`${JSON.stringify(on)}: (${a.value})`);
+      // イベント引数の糖衣: 単なる参照/関数式はそのまま、式・文なら ($event) => {...} に包む（Vue 互換）。
+      const v = a.value.trim();
+      const isRef = /^[A-Za-z_$][\w$.]*$/.test(v);
+      const isFn = v.startsWith('(') || v.startsWith('function') || /=>/.test(v);
+      props.push(`${JSON.stringify(on)}: ${(isRef || isFn) ? `(${v})` : `($event) => { ${v}; }`}`);
     } else {
       props.push(`${JSON.stringify(a.name)}: ${JSON.stringify(a.value)}`);
     }
+  }
+  // class マージ: 静的 class と :class を結合（Vue 同様）。
+  if (staticClass != null && dynClass != null) {
+    ctx.hasDynamic = true;
+    props.push(`"class": () => [${JSON.stringify(staticClass)}, (${dynClass})].filter(Boolean).join(' ')`);
+  } else if (dynClass != null) {
+    if (refsCtx(dynClass, innerBound)) { ctx.hasDynamic = true; props.push(`"class": () => (${dynClass})`); }
+    else props.push(`"class": (${dynClass})`);
+  } else if (staticClass != null) {
+    props.push(`"class": ${JSON.stringify(staticClass)}`);
   }
   if (vModel) {
     // 純粋な糖衣: :value + @input（signal 前提）。魔法を runtime に持ち込まない。

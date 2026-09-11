@@ -27,15 +27,25 @@
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
 ③ computed ④ 宣言必須 fail-closed ⑤ v-model 糖衣 / scoped styles（最小）。
 
-## 実例: カレンダーが作れる（`fixtures/app-ui/Calendar.sunao`）
+## 実例: カレンダーを作って公開した（`fixtures/app-ui/Calendar.sunao`）
 
-月カレンダー（前後の月移動・日付選択）が **現状の sunao で作れる**。signal/computed で日付計算、
-`v-for` でセル、`@click` で選択、`v-if` で選択表示。**実機ブラウザで月移動・選択が動く**（テスト green）。
-バンドル **3,546 B / 1,598 B gzip**・決定論・予算内。
-- 作る過程で **パーサのバグを 1 つ発見・修正**: 属性値中の `>`（arrow `=>` や `a > b`）で開きタグが誤終端していた
-  → 引用符内を無視して `>` を探すように修正。
-- 残る ergonomic gap: `@click="pick(c)"`（引数つき）は未サポートで、**`@click="() => pick(c)"`** と書く必要がある
-  （イベント引数の糖衣が未実装）。静的 class と `:class` の**マージも未対応**（`:class` が上書き）。
+**公開URL**: https://claude.ai/code/artifact/20e0f784-a1fd-4e38-b5c9-002675c9e15e （self-contained HTML に runtime 込みで inline）
+
+月カレンダー（前後の月移動・**今日**ボタン・日付選択・**予定の追加/表示**・イベントドット・週末色分け・
+**localStorage 保存**）を sunao で実装。**実機ブラウザで全操作が動く**（テスト green）。バンドル **5,249 B /
+2,309 B gzip**（runtime 込み）・決定論・予算内。再生成: esbuild + `sunao()` プラグインで
+`fixtures/app-ui/calendar-main.js` を bundle し HTML に inline（scratchpad の生成手順）。
+
+**正直な到達点**: これは実用的な「月ビュー＋予定」カレンダー（date-planner 相当）。Google Calendar 級の
+週/日ビュー・ドラッグ・繰り返し予定・同期は範囲外（sunao の限界でなく機能量の問題）。
+
+作る過程で **見つけて直した gap**:
+- **パーサのバグ**: 属性値中の `>`（arrow `=>` や `a > b`）で開きタグが誤終端 → 引用符内を無視して `>` を探す修正。
+- **識別子抽出のバグ**: `$event` が `event` として拾われ、文字列リテラル内（`'Enter'`）も誤検出 → 文字列除去＋
+  lookbehind で修正。
+- **イベント引数の糖衣**: `@click="pick(c)"` を `($event) => { pick(c); }` に自動 desugar（Vue 互換、`$event` 可）。
+- **class マージ**: 静的 `class` と `:class` を結合（Vue 同様）。
+→ これらにより **`@click="pick(c)"` / `class="cell" :class="cellClass(c)"` と自然に書ける**ようになった。
 
 ## これは何か（2 つ）
 
@@ -43,7 +53,7 @@
 - **runtime**（`runtime.mjs`）: `signal` / `effect` / `computed` / `h` / `renderToString` / `mount` / `mountStatic`。
   Vue の reactivity + render の芯。隠れた unref をしない（値が要る所は自分で `count()` を呼ぶ）。
 - **compiler**（`compile.mjs`）: SFC(`.sunao`) の `<template>` を **build 時に** render へコンパイル。
-  対応: `{{ }}` / `:bind` / `@event` / `v-if` / `v-for` / `v-model` / `<style>`(scoped)。**それ以外の `v-*` は CompileError。**
+  対応: `{{ }}` / `:bind` / `@event`(引数糖衣・`$event`) / `v-if` / `v-for` / `v-model` / class マージ / `<style>`(scoped)。**それ以外の `v-*` は CompileError。**
 
 ### 2. ビルドツール = プラグインを native bundler に載せる薄い束ね
 - `esbuild-plugin.mjs`: `import 'sunao'` を runtime に解決し、`*.sunao` を onLoad でコンパイル（vite-plugin-vue と同発想）。
@@ -96,8 +106,7 @@ reactivity / computed / 決定論（compile・render）/ fail-closed（未知デ
 
 ## 限界・次（正直に）
 
-- **イベント引数の糖衣が未実装**: `@click="pick(c)"` は不可、`@click="() => pick(c)"` と書く（次段で desugar 予定）。
-- **class マージ未対応**: 静的 `class` と `:class` を同時指定すると `:class` が上書き（Vue のような結合はしない）。
+- **v-for の keyed diff 未実装**: リスト変更時はその区間を作り直す（`:key` によるノード再利用は次段）。カレンダー月ビューでは不要だった。
 - **prop の型検査は runtime 境界**（mount/component 時）。コンパイル時に式の型まで推論はしない（名前・必須はコンパイル時）。
 - **スロット（子要素の受け渡し）未対応**。コンポーネントへは props のみ（`@event` も未対応）。
 - **v-for に key が無い**: リスト変更時はその区間を作り直す（keyed diff は未実装）。`:key` 必須化が次段。

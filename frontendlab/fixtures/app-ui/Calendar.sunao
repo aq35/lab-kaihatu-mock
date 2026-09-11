@@ -1,41 +1,93 @@
 <template>
   <div class="cal">
-    <div class="cal-head">
-      <button class="prev" @click="prev">‹</button>
+    <header class="cal-head">
+      <button class="nav" @click="prev" aria-label="前の月">‹</button>
       <strong class="label">{{ label() }}</strong>
-      <button class="next" @click="next">›</button>
-    </div>
-    <div class="cal-dow">
+      <button class="nav" @click="next" aria-label="次の月">›</button>
+      <button class="today-btn" @click="goToday">今日</button>
+    </header>
+
+    <div class="dow-row">
       <span class="dow" v-for="d in dows">{{ d }}</span>
     </div>
-    <div class="cal-grid">
-      <button class="cell" v-for="c in cells()" :class="cls(c)" @click="() => pick(c)">{{ c.label }}</button>
+
+    <div class="grid">
+      <button v-for="c in cells()" class="cell" :class="cellClass(c)" @click="pick(c)">
+        <span class="dnum" v-if="!c.blank">{{ c.day }}</span>
+        <span class="dots" v-if="c.count">{{ dots(c.count) }}</span>
+      </button>
     </div>
-    <p class="sel" v-if="selected()">選択: {{ selected() }}</p>
+
+    <section class="detail" v-if="selected()">
+      <h3 class="detail-h">{{ selected() }} の予定（{{ dayCount() }} 件）</h3>
+      <ul class="ev-list">
+        <li class="ev" v-for="ev in dayEvents()">{{ ev }}</li>
+      </ul>
+      <p class="empty" v-if="!dayCount()">予定はありません。</p>
+      <div class="add">
+        <input class="inp" v-model="draft" placeholder="予定を追加（Enter）" @keydown="$event.key === 'Enter' && add()">
+        <button class="add-btn" @click="add">追加</button>
+      </div>
+    </section>
   </div>
 </template>
 <script>
 export default {
+  name: 'Calendar',
   setup() {
     const now = new Date();
+    const key = (yy, mm, dd) => yy + '-' + (mm + 1) + '-' + dd;
     const y = signal(now.getFullYear());
     const m = signal(now.getMonth());
     const selected = signal('');
+    const draft = signal('');
+    const STORE = 'sunao-cal-v1';
+    const seed = { [key(now.getFullYear(), now.getMonth(), Math.min(15, 28))]: ['サンプル会議 10:00'] };
+    const load = () => { try { const s = JSON.parse(localStorage.getItem(STORE)); return s && Object.keys(s).length ? s : seed; } catch { return seed; } };
+    const events = signal(typeof localStorage !== 'undefined' ? load() : seed);
+    effect(() => { try { localStorage.setItem(STORE, JSON.stringify(events())); } catch {} }); // 再読込しても残る
     const dows = ['日', '月', '火', '水', '木', '金', '土'];
+
     const label = computed(() => y() + '年 ' + (m() + 1) + '月');
+    const todayKey = key(now.getFullYear(), now.getMonth(), now.getDate());
     const cells = computed(() => {
       const startDow = new Date(y(), m(), 1).getDay();
       const days = new Date(y(), m() + 1, 0).getDate();
+      const ev = events();
       const arr = [];
-      for (let i = 0; i < startDow; i++) arr.push({ label: '', day: 0 });
-      for (let d = 1; d <= days; d++) arr.push({ label: String(d), day: d });
+      for (let i = 0; i < startDow; i++) arr.push({ blank: true, key: 'b' + i });
+      for (let d = 1; d <= days; d++) {
+        const k = key(y(), m(), d);
+        arr.push({ day: d, key: k, dow: new Date(y(), m(), d).getDay(), isToday: k === todayKey, count: (ev[k] || []).length });
+      }
       return arr;
     });
-    const cls = (c) => (c.day && selected() === (y() + '-' + (m() + 1) + '-' + c.day)) ? 'cell on' : 'cell';
-    const pick = (c) => { if (c.day) selected.set(y() + '-' + (m() + 1) + '-' + c.day); };
-    const prev = () => { if (m() === 0) { y.update((v) => v - 1); m.set(11); } else m.update((v) => v - 1); selected.set(''); };
-    const next = () => { if (m() === 11) { y.update((v) => v + 1); m.set(0); } else m.update((v) => v + 1); selected.set(''); };
-    return { y, m, selected, dows, label, cells, cls, pick, prev, next };
+    const dayEvents = computed(() => events()[selected()] || []);
+    const dayCount = computed(() => dayEvents().length);
+
+    const dots = (n) => '•'.repeat(Math.min(n, 3));
+    const cellClass = (c) => {
+      if (c.blank) return 'blank';
+      const parts = [];
+      if (selected() === c.key) parts.push('on');
+      else if (c.isToday) parts.push('today');
+      if (c.dow === 0) parts.push('sun');
+      if (c.dow === 6) parts.push('sat');
+      return parts.join(' ');
+    };
+    const pick = (c) => { if (!c.blank) selected.set(c.key); };
+    const add = () => {
+      const t = draft().trim();
+      if (!t || !selected()) return;
+      const ev = events();
+      events.set({ ...ev, [selected()]: [...(ev[selected()] || []), t] });
+      draft.set('');
+    };
+    const goToday = () => { y.set(now.getFullYear()); m.set(now.getMonth()); selected.set(todayKey); };
+    const prev = () => { if (m() === 0) { y.update((v) => v - 1); m.set(11); } else m.update((v) => v - 1); };
+    const next = () => { if (m() === 11) { y.update((v) => v + 1); m.set(0); } else m.update((v) => v + 1); };
+
+    return { y, m, selected, draft, events, dows, label, cells, dayEvents, dayCount, dots, cellClass, pick, add, goToday, prev, next };
   },
 };
 </script>

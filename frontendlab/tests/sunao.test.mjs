@@ -154,15 +154,18 @@ test('実例: カレンダーが作れる（コンパイル・描画・月移動
     const Cal = (await import(pathToFileURL(f).href)).default;
     const html = renderComponentToString(Cal);
     assert.match(html, /class="dow"/); // 曜日ヘッダ
-    assert.equal((html.match(/class="cell"/g) || []).length >= 28, true); // 日セル
-    // ロジック: 月移動で label が変わり、日付選択が反映される
+    assert.equal((html.match(/class="cell/g) || []).length >= 28, true); // 日セル
+    // ロジック: 月移動 / 日付選択 / 予定追加
     const ctx = Cal.setup();
     const before = ctx.label();
     ctx.next();
     assert.notEqual(ctx.label(), before, '次の月へ');
-    const someDay = ctx.cells().find((c) => c.day);
+    const someDay = ctx.cells().find((c) => !c.blank);
     ctx.pick(someDay);
     assert.match(ctx.selected(), /\d+-\d+-\d+/, '日付が選択される');
+    ctx.draft.set('打合せ 14:00');
+    ctx.add();
+    assert.deepEqual(ctx.dayEvents(), ['打合せ 14:00'], '予定が追加される');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

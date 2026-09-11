@@ -84,13 +84,17 @@ test('ブラウザ: カレンダーが実機で動く（月移動・日付選択
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
     const label0 = await page.textContent('.label');
-    await page.click('button.next');
+    await page.locator('button.nav', { hasText: '›' }).click();
     assert.notEqual(await page.textContent('.label'), label0, '次の月で label が変わる');
-    await page.click('button.prev');
+    await page.locator('button.nav', { hasText: '‹' }).click();
     assert.equal(await page.textContent('.label'), label0, '前の月で戻る');
-    // 実日付セル（空でない）をクリック → 選択が表示
-    await page.locator('button.cell', { hasText: /^15$/ }).first().click();
-    assert.match(await page.textContent('.sel'), /選択:/, '日付選択が表示される');
+    // 今日を選択 → 詳細パネルが出る
+    await page.click('button.today-btn');
+    assert.match(await page.textContent('.detail-h'), /の予定/, '選択日の詳細が出る');
+    // 予定を追加 → リストに反映
+    await page.fill('input.inp', 'テスト予定 09:00');
+    await page.click('button.add-btn');
+    assert.match(await page.textContent('.ev-list'), /テスト予定 09:00/, '予定が追加される');
   } finally {
     await browser.close();
     server.close();
