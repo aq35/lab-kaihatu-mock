@@ -7,7 +7,9 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import esbuild from 'esbuild';
-import { signal, effect, computed, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { signal, effect, computed, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { recipeStyle } from '../plugins/sunao/theme.mjs';
+import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, CompileError } from '../plugins/sunao/compile.mjs';
 import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
@@ -144,6 +146,43 @@ test('B bridge: OwnerCard の閉じた語彙が repo の presentation-recipe.sch
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('time: interval は発火し stop で止まる / debounce は最後の一回に畳む', async () => {
+  let ticks = 0;
+  const stop = interval(20, () => ticks++);
+  await new Promise((r) => setTimeout(r, 75));
+  stop();
+  const after = ticks;
+  assert.ok(ticks >= 2, 'interval が複数回発火');
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(ticks, after, 'stop 後は増えない');
+
+  let calls = 0;
+  const d = debounce(() => calls++, 30);
+  d(); d(); d();
+  await new Promise((r) => setTimeout(r, 60));
+  assert.equal(calls, 1, 'debounce は最後の一回だけ');
+});
+
+test('async: resource は loading→data、失敗は error（Go の context 相当で abort 可能）', async () => {
+  const res = resource(() => new Promise((r) => setTimeout(() => r(42), 20)));
+  assert.equal(res.loading(), true);
+  assert.equal(res(), null);
+  await new Promise((r) => setTimeout(r, 45));
+  assert.equal(res.loading(), false);
+  assert.equal(res(), 42);
+  const bad = resource(() => Promise.reject(new Error('boom')));
+  await new Promise((r) => setTimeout(r, 10));
+  assert.ok(bad.error(), 'error に入る');
+});
+
+test('CSS/Recipe: recipeStyle が閉じた語彙 → CSS トークンを返す / vocab は schema 由来', () => {
+  const s = recipeStyle({ palette: 'command-center', density: 'comfortable' });
+  assert.match(s, /--k-accent:oklch/);
+  assert.match(s, /--k-ink:oklch/);
+  assert.deepEqual(RECIPE_KINDS, ['OWNER_QUESTION', 'ACTION_APPROVAL', 'OUTCOME_UNKNOWN_REVIEW', 'RESULT_REVIEW', 'INFORMATION']);
+  assert.ok(RECIPE_PROPS.palette.enum.includes('command-center'));
 });
 
 test('④ 合成: import されていないコンポーネント参照は止まる', () => {

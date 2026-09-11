@@ -18,6 +18,9 @@ import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
 
 const ROOT = 'fixtures';
 const BUDGET = { raw: 8192, gzip: 4096 }; // 入口ごとの既定予算
+// 入口ごとの上書き（リッチな画面は個別に予算を持つ）。
+const BUDGET_OVERRIDE = { 'app-ui/owner-main.js': { raw: 20000, gzip: 8000 } };
+const budgetFor = (entry) => BUDGET_OVERRIDE[entry] || BUDGET;
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
 function walk(dir) {
@@ -82,11 +85,12 @@ for (const entry of entries) {
     const b = await build();
     const det = sha(a) === sha(b);
     const raw = a.length, gz = gzipSync(a, { level: 9 }).length;
-    const over = raw > BUDGET.raw || gz > BUDGET.gzip;
+    const bud = budgetFor(relative(ROOT, entry));
+    const over = raw > bud.raw || gz > bud.gzip;
     const ok = det && !over;
     console.log(`  build    ${pad(relative(ROOT, entry), 40)} ${padL(raw + 'B/' + gz + 'gz', 14)} ${ok ? 'ok' : '✗'}${det ? '' : ' 非決定論'}${over ? ' 予算超過' : ''}`);
     if (!det) failures.push(`${entry}: 非決定論（2 回ビルドで sha 不一致）`);
-    if (over) failures.push(`${entry}: 予算超過 raw ${raw}>${BUDGET.raw} or gzip ${gz}>${BUDGET.gzip}`);
+    if (over) failures.push(`${entry}: 予算超過 raw ${raw}>${bud.raw} or gzip ${gz}>${bud.gzip}`);
   } catch (e) {
     console.log(`  build    ${pad(relative(ROOT, entry), 40)} ✗ ${e.message.split('\n')[0]}`);
     failures.push(`${entry}: ${e.message.split('\n')[0]}`);

@@ -43,6 +43,20 @@
 
 > **正直な非対応**: 式の *値の型* のコンパイル時推論（TS 相当の型システムが要る）と、**遅延ルート**（= `import()`＋esbuild splitting で可能だが専用 API は無し）。
 
+## v0.6 で実装した「通信・時間・CSS・Recipe 統合」
+
+| 領域 | 実装 | テスト |
+|---|---|---|
+| **通信（Go 並み）** | `resource(fetcher)`（reactive な loading/error/data・refetch）＋`context()`/`go()`（AbortController = Go の context キャンセル）。前の取得は refetch/scope 破棄で abort | resource loading→data→error、Inbox 実機で非同期 5 枚取得 |
+| **時間（Go 並み）** | `now(tick)` 実時計 signal・`interval`/`timeout`（scope 破棄で自動停止）・`debounce`/`throttle` | interval 発火/stop・debounce 畳み込み・実機の時計 |
+| **CSS をいい感じに** | `sunao/theme`: 閉じた Recipe 語彙 → 実 CSS トークン(oklch, repo compiler と同値)。`recipeStyle(recipe)` で `:style` に流すだけ。`themeCSS` の良い既定 | recipeStyle がトークン生成・実機で palette 切替→配色変化 |
+| **Recipe→props コード生成** | `node tools/gen-recipe-vocab.mjs` が schema から `recipe-vocab.mjs`(RECIPE_PROPS/RECIPE_KINDS) を生成。`import from 'sunao/recipe'`。**手コピー無し＝drift 不能** | vocab==schema、kinds=5 |
+| **5 カード型** | `OwnerCard` が `kind` enum(OWNER_QUESTION…INFORMATION)で 5 型を描画（役割ごとの強調色） | Inbox 実機で 5 枚＋承認 |
+
+> **Owner Inbox 公開**: https://claude.ai/code/artifact/fc4a364a-caf9-4081-915d-220cdbcd8293
+> （5 型カードを非同期取得・Recipe.palette 切替で配色が決定論的に変化・実時計）。これが direction B の
+> 「Recipe=見た目 / sunao=振る舞い」の合成そのもの。
+
 ## v0.2 の柱（維持）
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
@@ -100,7 +114,7 @@
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、27 件すべて green）
+## テスト（`npm test`、33 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/

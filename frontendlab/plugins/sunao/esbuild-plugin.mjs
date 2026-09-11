@@ -11,6 +11,8 @@ import { compileSFC } from './compile.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const RUNTIME = resolve(HERE, 'runtime.mjs');
+const THEME = resolve(HERE, 'theme.mjs');
+const VOCAB = resolve(HERE, 'recipe-vocab.mjs');
 
 export function sunao() {
   return {
@@ -18,6 +20,10 @@ export function sunao() {
     setup(build) {
       // import { mount, signal } from 'sunao'
       build.onResolve({ filter: /^sunao$/ }, () => ({ path: RUNTIME }));
+      // import { recipeStyle, themeCSS } from 'sunao/theme'（使わなければ tree-shake）
+      build.onResolve({ filter: /^sunao\/theme$/ }, () => ({ path: THEME }));
+      // import { RECIPE_PROPS, RECIPE_KINDS } from 'sunao/recipe'（schema から自動生成された語彙）
+      build.onResolve({ filter: /^sunao\/recipe$/ }, () => ({ path: VOCAB }));
       // *.sunao → コンパイル済み JS。runtime は 'sunao' として解決させる。
       build.onLoad({ filter: /\.sunao$/ }, async (args) => {
         const src = await readFile(args.path, 'utf8');

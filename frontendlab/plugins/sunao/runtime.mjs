@@ -40,6 +40,7 @@ function makeSub(fn) {
   const sub = {
     deps: new Set(),      // このeffectが購読しているsignalのsubs集合
     children: new Set(),  // このeffectの実行中に作られた子effect
+    cleanups: [],         // scope 破棄/再実行時に呼ぶ後始末（timer/fetch abort 等）
     run() {
       sub.cleanup();
       const prevSub = activeSub, prevOwner = activeOwner;
@@ -47,6 +48,8 @@ function makeSub(fn) {
       try { fn(); } finally { activeSub = prevSub; activeOwner = prevOwner; }
     },
     cleanup() {
+      for (const c of sub.cleanups) { try { c(); } catch {} }
+      sub.cleanups.length = 0;
       for (const c of sub.children) c.dispose();
       sub.children.clear();
       for (const set of sub.deps) set.delete(sub);
@@ -62,6 +65,13 @@ export function effect(fn) {
   if (activeOwner) activeOwner.children.add(sub);
   sub.run();
   return sub;
+}
+
+// 現在の scope に後始末を登録（scope 破棄で自動実行）。timer/fetch のキャンセルに使う。
+export function onCleanup(fn) {
+  const owner = activeSub || activeOwner;
+  if (owner) owner.cleanups.push(fn);
+  return fn;
 }
 
 // 独立した reactive スコープで fn を実行し、{value, dispose} を返す（Solid createRoot 相当）。
@@ -335,4 +345,89 @@ export function matchRoute(pattern, path) {
     else if (pp[i] !== sp[i]) return null;
   }
   return params;
+}
+
+// ---- 時間まわり（Go の time / ticker 相当。scope 破棄で自動停止） ----
+// 一定間隔で更新する時計 signal。読むと購読 → 時刻表示が自動更新。
+export function now(tickMs = 1000) {
+  const s = signal(Date.now());
+  if (typeof setInterval !== 'undefined') {
+    const id = setInterval(() => s.set(Date.now()), tickMs);
+    onCleanup(() => clearInterval(id));
+  }
+  return () => s();
+}
+// 反復。stop() で止まり、scope 破棄でも自動停止。
+export function interval(ms, fn) {
+  const id = setInterval(fn, ms);
+  const stop = () => clearInterval(id);
+  onCleanup(stop);
+  return stop;
+}
+// 一回遅延。cancel() で取り消し、scope 破棄でも自動取消。
+export function timeout(ms, fn) {
+  const id = setTimeout(fn, ms);
+  const cancel = () => clearTimeout(id);
+  onCleanup(cancel);
+  return cancel;
+}
+// デバウンス／スロットル（入力・スクロール等）。
+export function debounce(fn, ms) {
+  let t;
+  const d = (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  d.cancel = () => clearTimeout(t);
+  onCleanup(d.cancel);
+  return d;
+}
+export function throttle(fn, ms) {
+  let last = 0, t;
+  const th = (...a) => {
+    const rem = ms - (Date.now() - last);
+    if (rem <= 0) { last = Date.now(); fn(...a); }
+    else { clearTimeout(t); t = setTimeout(() => { last = Date.now(); fn(...a); }, rem); }
+  };
+  th.cancel = () => clearTimeout(t);
+  onCleanup(th.cancel);
+  return th;
+}
+
+// ---- 通信・並行まわり（Go の context / goroutine 相当） ----
+const _ctrl = () => (typeof AbortController !== 'undefined' ? new AbortController() : { abort() {}, signal: { aborted: false } });
+// キャンセル可能な context（Go の context.WithCancel）。scope 破棄で自動 abort。
+export function context() {
+  const c = _ctrl();
+  onCleanup(() => c.abort());
+  return { signal: c.signal, cancel: () => c.abort() };
+}
+// 非同期タスクを走らせて { promise, cancel } を返す（goroutine + context）。
+export function go(fn) {
+  const ctx = context();
+  const promise = Promise.resolve().then(() => fn(ctx.signal));
+  return { promise, cancel: ctx.cancel };
+}
+// リアクティブな非同期データ（Solid createResource / SWR 相当）。
+//   const user = resource((signal) => fetch('/me', {signal}).then(r=>r.json()));
+//   テンプレ: user.loading() / user.error() / user() / user.refetch()
+// 前の取得は refetch/scope 破棄で abort（Go context のキャンセル伝播）。
+export function resource(fetcher, { initial = null } = {}) {
+  const data = signal(initial);
+  const loading = signal(true);
+  const error = signal(null);
+  let cur = null;
+  const load = () => {
+    cur?.abort();
+    cur = _ctrl();
+    const my = cur;
+    loading.set(true); error.set(null);
+    Promise.resolve().then(() => fetcher(my.signal))
+      .then((v) => { if (!my.signal.aborted) { data.set(v); loading.set(false); } })
+      .catch((e) => { if (!my.signal.aborted) { error.set(e); loading.set(false); } });
+  };
+  onCleanup(() => cur?.abort());
+  load();
+  const read = () => data();
+  read.loading = () => loading();
+  read.error = () => error();
+  read.refetch = load;
+  return read;
 }

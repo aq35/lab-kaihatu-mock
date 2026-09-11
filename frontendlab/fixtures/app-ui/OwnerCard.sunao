@@ -1,47 +1,51 @@
 <template>
-  <article class="oc" :class="klass()">
-    <header class="oc-head">
-      <span class="oc-kind">承認依頼</span>
-      <h3 class="oc-title">{{ title() }}</h3>
-    </header>
-    <dl class="oc-facts">
-      <div class="oc-fact"><dt>実行内容</dt><dd>{{ effect() }}</dd></div>
-      <div class="oc-fact" v-if="scope()"><dt>影響範囲</dt><dd>{{ scope() }}</dd></div>
-      <div class="oc-fact" v-if="risk()"><dt>リスク</dt><dd>{{ risk() }}</dd></div>
+  <article class="k-card" :style="cardStyle()">
+    <span class="k-kind">{{ kindLabel() }}</span>
+    <h3 class="k-title">{{ title() }}</h3>
+    <dl class="k-facts">
+      <div class="k-fact"><dt>内容</dt><dd>{{ effect() }}</dd></div>
+      <div class="k-fact" v-if="scope()"><dt>範囲</dt><dd>{{ scope() }}</dd></div>
+      <div class="k-fact" v-if="risk()"><dt>リスク</dt><dd>{{ risk() }}</dd></div>
     </dl>
-    <div class="oc-actions" v-if="!decided()">
-      <button class="oc-approve" @click="approve">承認する</button>
-      <button class="oc-reject" @click="reject">却下する</button>
+    <div class="k-actions" v-if="!decided() && isApproval()">
+      <button class="k-btn primary" @click="approve">承認する</button>
+      <button class="k-btn" @click="reject">却下する</button>
     </div>
-    <p class="oc-decided" v-if="decided()">→ {{ decidedLabel() }}</p>
+    <div class="k-actions" v-if="!decided() && !isApproval()">
+      <button class="k-btn" @click="ack">確認した</button>
+    </div>
+    <p class="k-done" v-if="decided()">→ {{ decidedLabel() }}</p>
   </article>
 </template>
 <script>
+import { RECIPE_PROPS, RECIPE_KINDS } from 'sunao/recipe';
+import { recipeStyle, KIND_ACCENT, KIND_LABEL } from 'sunao/theme';
 export default {
   name: 'OwnerCard',
-  // props = PresentationRecipe の部分（閉じた語彙）＋ カードのデータ。
-  // 語彙は contracts/presentation-recipe.schema.json と一致（drift はテストで検査）。
+  // 語彙は schema から自動生成（sunao/recipe）。手でコピーしない = drift しない。
   props: {
+    kind: { enum: RECIPE_KINDS, required: true },
     title: { type: 'string', required: true },
-    effect: { type: 'string', required: true },
+    effect: { type: 'string' },
     scope: { type: 'string' },
     risk: { type: 'string' },
-    palette: { enum: ['calm', 'editorial', 'command-center', 'conversational', 'high-contrast'] },
-    density: { enum: ['comfortable', 'compact', 'dense'] },
-    cardShape: { enum: ['rounded', 'square', 'left-rule', 'top-rule'] },
+    palette: RECIPE_PROPS.palette,
+    density: RECIPE_PROPS.density,
+    cardShape: RECIPE_PROPS.cardShape,
   },
   setup(props) {
     const decided = signal('');
     const approve = () => decided.set('approved');
     const reject = () => decided.set('rejected');
-    const decidedLabel = () => (decided() === 'approved' ? '承認しました' : '却下しました');
-    const pick = (fn, def) => (fn ? fn() || def : def);
-    const klass = () => [
-      'oc--' + pick(props.palette, 'calm'),
-      'oc--' + pick(props.density, 'comfortable'),
-      'oc--' + pick(props.cardShape, 'rounded'),
-    ].join(' ');
-    return { decided, approve, reject, decidedLabel, klass };
+    const ack = () => decided.set('acked');
+    const isApproval = () => props.kind() === 'ACTION_APPROVAL';
+    const kindLabel = () => KIND_LABEL[props.kind()] || props.kind();
+    const decidedLabel = () => ({ approved: '承認しました', rejected: '却下しました', acked: '確認しました' })[decided()] || '';
+    const g = (fn, d) => (fn ? fn() || d : d);
+    const cardStyle = () =>
+      recipeStyle({ palette: g(props.palette, 'calm'), density: g(props.density, 'comfortable'), cardShape: g(props.cardShape, 'left-rule') }) +
+      ';--k-kind:' + (KIND_ACCENT[props.kind()] || 'var(--k-accent)');
+    return { decided, approve, reject, ack, isApproval, kindLabel, decidedLabel, cardStyle };
   },
 };
 </script>

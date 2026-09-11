@@ -47,8 +47,14 @@ repo の中心命題「AI が UI を安全に作る」の上で意味を持つ�
 - より密な統合（repo の `compile(cards,recipe)` の `{html,css}` を sunao の既定 static 土台にして、
   sunao が対話だけ足す「islands 的 hydration」）は次段。Recipe schema から sunao props を自動生成するのも候補。
 
-## 次
+## 次 → **v0.6 で 3 つとも着手**
 
-1. **Recipe → sunao props のコード生成**（schema を単一の真実に、drift 検査を不要化）。
-2. **`compile()` 出力 × sunao hydration**（見た目は Recipe コンパイラ、対話は sunao）。
-3. repo の 5 カード型（`contracts/cards.schema.json`）すべてに OwnerCard 系を広げる。
+1. ✅ **Recipe → props コード生成**: `tools/gen-recipe-vocab.mjs` が両 schema から `recipe-vocab.mjs`
+   （`RECIPE_PROPS`/`RECIPE_KINDS`）を生成。OwnerCard は `import from 'sunao/recipe'`＝**単一の真実・drift 不能**。
+2. 🔶 **見た目の統合（CSS トークン）**: `compile()` の DOM 再利用 hydration までは行かず、Recipe compiler と
+   **同値の PALETTE(oklch) を `sunao/theme` に持ち**、`recipeStyle(recipe)` で決定論的に配色。見た目は Recipe 由来・対話は sunao。
+3. ✅ **5 カード型**: `OwnerCard` が `kind` enum で 5 型（OWNER_QUESTION…INFORMATION）を描画。
+   → [Owner Inbox](https://claude.ai/code/artifact/fc4a364a-caf9-4081-915d-220cdbcd8293) で 5 型＋非同期取得＋palette 切替を公開。
+
+> 残る密統合（repo の `compile()` が吐く HTML/CSS を sunao が hydrate して DOM を再利用）は次段。今は
+> *語彙と配色を同値に保つ*ところまで（drift 検査つき）。

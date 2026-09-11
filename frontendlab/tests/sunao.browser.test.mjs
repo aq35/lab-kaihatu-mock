@@ -68,6 +68,40 @@ test('ブラウザ: クリックで count が増え、DOM が更新される', {
   }
 });
 
+test('ブラウザ: Owner Inbox — 非同期取得(5枚)・時計・palette 切替・承認', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/owner-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); }
+    else { res.setHeader('content-type', 'text/html'); res.end(html); }
+  });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
+    // 通信: resource が非同期で 5 枚を取得
+    await page.waitForSelector('.k-card', { timeout: 5000 });
+    assert.equal(await page.locator('.k-card').count(), 5, '5 つのカード種別');
+    // 時計（時刻表示）
+    assert.match(await page.textContent('.oc-clock'), /\d/, '時計が表示される');
+    // palette 切替で見た目トークンが変わる
+    const before = await page.evaluate(() => getComputedStyle(document.querySelector('.k-root')).getPropertyValue('--k-accent'));
+    await page.locator('.oc-chip', { hasText: 'editorial' }).click();
+    const after = await page.evaluate(() => getComputedStyle(document.querySelector('.k-root')).getPropertyValue('--k-accent'));
+    assert.notEqual(before, after, 'Recipe.palette 切替で CSS トークンが変わる');
+    // 承認（ACTION_APPROVAL カード）
+    await page.locator('.k-btn.primary', { hasText: '承認する' }).first().click();
+    assert.match(await page.textContent('.k-card'), /承認しました/, '承認が反映される');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
+
 test('ブラウザ: keyed 並び替え&DnD が node 同一性と in-item 状態を保つ', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
   const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/sortable-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });

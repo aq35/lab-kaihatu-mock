@@ -1,25 +1,62 @@
 <template>
-  <div class="oc-demo">
+  <div class="k-root" :style="rootStyle()">
+    <div class="oc-bar">
+      <strong class="oc-h">Owner Inbox</strong>
+      <span class="oc-clock">{{ clock() }}</span>
+    </div>
     <div class="oc-switch">
       <span class="oc-switch-label">Recipe.palette</span>
       <button class="oc-chip" v-for="p in palettes" :key="p" :class="p === palette() ? 'on' : ''" @click="setP(p)">{{ p }}</button>
     </div>
+    <p class="oc-sync" v-if="feed.loading()">同期中…</p>
+    <p class="oc-sync err" v-if="feed.error()">同期に失敗しました</p>
     <OwnerCard
-      :palette="palette()" density="comfortable" cardShape="left-rule"
-      title="本番DBに migration を適用"
-      effect="orders テーブルに index を追加（推定 8 分・書き込みロックあり）"
-      scope="orders / order_items（約 240 万行）"
-      risk="適用中は注文の書き込みが遅延。ロールバックは別 migration が必要。" />
+      v-for="c in cards()" :key="c.id"
+      :kind="c.kind" :title="c.title" :effect="c.effect" :scope="c.scope" :risk="c.risk"
+      :palette="palette()" density="comfortable" cardShape="left-rule" />
   </div>
 </template>
 <script>
 import OwnerCard from './OwnerCard.sunao';
+import { themeCSS, recipeStyle } from 'sunao/theme';
+
+const SEED = [
+  { id: 1, kind: 'ACTION_APPROVAL', title: '本番DBに migration を適用', effect: 'orders テーブルに index を追加（推定 8 分・書き込みロックあり）', scope: 'orders / order_items（約 240 万行）', risk: '適用中は注文の書き込みが遅延。ロールバックは別 migration が必要。' },
+  { id: 2, kind: 'OWNER_QUESTION', title: '週次バッチの実行時刻を変更しますか', effect: '03:00 → 05:00 に変更（他ジョブと負荷を分散するため）', scope: '', risk: '' },
+  { id: 3, kind: 'OUTCOME_UNKNOWN_REVIEW', title: '決済 API の応答が確認できない', effect: 'timeout 後の課金状態が不明。二重課金の恐れ', scope: 'order #48210', risk: '再試行すると二重課金の可能性。手動確認が必要。' },
+  { id: 4, kind: 'RESULT_REVIEW', title: 'メール配信が完了しました', effect: '12,480 件送信・失敗 3 件', scope: '', risk: '' },
+  { id: 5, kind: 'INFORMATION', title: '依存の更新があります', effect: 'esbuild 0.28.1 → 0.28.2（パッチ）', scope: '', risk: '' },
+];
+const OC_EXTRA = `
+.oc-bar{display:flex;align-items:baseline;gap:.6rem}
+.oc-h{font-size:1.1rem;font-weight:700;margin-inline-end:auto}
+.oc-clock{font-variant-numeric:tabular-nums;color:var(--k-quiet);font-size:.85rem}
+.oc-switch{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+.oc-switch-label{font-size:.72rem;color:var(--k-quiet);margin-inline-end:.2rem}
+.oc-chip{padding:.3rem .65rem;border-radius:999px;border:1px solid var(--k-border);background:var(--k-sunken);color:var(--k-ink);font:inherit;font-size:.78rem;cursor:pointer}
+.oc-chip.on{background:var(--k-accent);border-color:var(--k-accent);color:var(--k-on-accent)}
+.oc-sync{margin:.2rem 0;font-size:.85rem;color:var(--k-quiet)} .oc-sync.err{color:var(--k-danger)}
+body{margin:0}
+`;
+
 export default {
   setup() {
+    if (typeof document !== 'undefined' && !document.getElementById('sunao-theme')) {
+      const s = document.createElement('style'); s.id = 'sunao-theme'; s.textContent = themeCSS + OC_EXTRA; document.head.appendChild(s);
+    }
     const palettes = ['calm', 'editorial', 'command-center', 'conversational', 'high-contrast'];
     const palette = signal('command-center');
     const setP = (p) => palette.set(p);
-    return { palettes, palette, setP };
+    const tick = now(1000); // Go の time.Ticker 相当（1 秒ごと）
+    const clock = () => new Date(tick()).toLocaleTimeString('ja-JP');
+    // 通信: 非同期でカードを取得（実 fetch と同じ形。ここではデモとして遅延で返す）。
+    const feed = resource((sig) => new Promise((res, rej) => {
+      const id = setTimeout(() => res(SEED), 500);
+      sig?.addEventListener('abort', () => { clearTimeout(id); rej(new Error('aborted')); });
+    }), { initial: [] });
+    const cards = () => feed();
+    const rootStyle = () => recipeStyle({ palette: palette(), density: 'comfortable' });
+    return { palettes, palette, setP, clock, feed, cards, rootStyle };
   },
 };
 </script>

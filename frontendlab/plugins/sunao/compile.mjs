@@ -233,9 +233,9 @@ function genNode(node, bound, ctx) {
       if (sk.length) cprops.push(`"$slot": () => [${sk.join(', ')}]`);
     }
     for (const a of node.attrs) {
-      if (a.name === 'v-if' || a.name === 'v-for') continue;
+      if (a.name === 'v-if' || a.name === 'v-for' || a.name === ':key' || a.name === 'key') continue;
       if (a.name === 'v-model' || a.name.startsWith('@')) {
-        fail('SUNAO_COMPONENT_EVENT', `<${node.tag}>: コンポーネントへの ${a.name} は未対応です（v0.3, props のみ）。`, { src: ctx.src, index: node.start });
+        fail('SUNAO_COMPONENT_EVENT', `<${node.tag}>: コンポーネントへの ${a.name} は未対応です（props のみ）。`, { src: ctx.src, index: node.start });
       }
       if (a.name.startsWith(':')) {
         const key = a.name.slice(1);
@@ -396,10 +396,29 @@ export function analyze(source) {
   const props = {};
   const propsBody = balancedBlock(script, 'props');
   if (propsBody) {
-    for (const m of propsBody.matchAll(/([A-Za-z_$][\w$]*)\s*:\s*(\{[^}]*\}|'[^']*'|"[^"]*")/g)) {
-      const spec = m[2];
-      const type = (/['"](\w+)['"]/.exec(spec) || [])[1] || null;
-      props[m[1]] = { required: /required\s*:\s*true/.test(spec), type };
+    // トップレベルのキーを深さ 0 で拾う（値が {…} でも識別子でも登録。spread(...X) は無視）。
+    let i = 0, depth = 0;
+    while (i < propsBody.length) {
+      const ch = propsBody[i];
+      if (ch === '{' || ch === '(' || ch === '[') depth++;
+      else if (ch === '}' || ch === ')' || ch === ']') depth--;
+      else if (depth === 0) {
+        const mm = /^([A-Za-z_$][\w$]*)\s*:/.exec(propsBody.slice(i));
+        if (mm) {
+          let j = i + mm[0].length, d = 0, val = '';
+          for (; j < propsBody.length; j++) {
+            const c = propsBody[j];
+            if (c === '{' || c === '(' || c === '[') d++;
+            else if (c === '}' || c === ')' || c === ']') d--;
+            else if (c === ',' && d === 0) break;
+            val += c;
+          }
+          props[mm[1]] = { required: /required\s*:\s*true/.test(val), type: (/['"](\w+)['"]/.exec(val) || [])[1] || null };
+          i = j;
+          continue;
+        }
+      }
+      i++;
     }
   }
   const uses = [];
@@ -481,7 +500,7 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
   return (
-    `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute, setRouteGuard } from ${JSON.stringify(runtime)};\n` +
+    `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource } from ${JSON.stringify(runtime)};\n` +
     `${scriptBody}\n` +
     `__component.${compiled.render.replace(/^function /, 'render = function ')};\n` +
     stylesLine +
