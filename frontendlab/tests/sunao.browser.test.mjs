@@ -67,3 +67,32 @@ test('ブラウザ: クリックで count が増え、DOM が更新される', {
     server.close();
   }
 });
+
+test('ブラウザ: カレンダーが実機で動く（月移動・日付選択）', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/calendar-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); }
+    else { res.setHeader('content-type', 'text/html'); res.end(html); }
+  });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
+    const label0 = await page.textContent('.label');
+    await page.click('button.next');
+    assert.notEqual(await page.textContent('.label'), label0, '次の月で label が変わる');
+    await page.click('button.prev');
+    assert.equal(await page.textContent('.label'), label0, '前の月で戻る');
+    // 実日付セル（空でない）をクリック → 選択が表示
+    await page.locator('button.cell', { hasText: /^15$/ }).first().click();
+    assert.match(await page.textContent('.sel'), /選択:/, '日付選択が表示される');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});

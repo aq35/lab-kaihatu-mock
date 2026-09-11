@@ -18,7 +18,7 @@
 | 所 | 実装 | fail-closed / 実測 |
 |---|---|---|
 | **① 型付き契約（props）** | `export default { props: { name:'string', count:{type:'number',required:true} } }`。runtime 境界で **未知 prop・型不一致・必須欠落を throw**（精密メッセージ） | 3 種の違反すべてテストで停止確認 |
-| **② 診断（エラーが直し方を言う）** | 未宣言参照を **「もしかして: count？」** と提案（Levenshtein）つきで停止。許可集合も提示 | typo → 提案つき CompileError |
+| **② 診断（エラーが直し方を言う）** | 全 CompileError が **機械可読 diagnostic**（`code` / `loc{line,column}` / コードフレーム(^) / `suggestions[]`）を持つ。未宣言参照は Levenshtein で「もしかして: count？」 | 構造化フィールドをテストで検証（AI が parse して自己修正できる） |
 | **③ 量産ガードレール（factory）** | `npm run check`: 全 `*.sunao` を compile-check ＋ 全 `main.js` を build して **決定論(2回sha)・予算** を一括検査。1 つ落ちれば exit 1 | 4 部品 compile / 3 入口 build すべて green |
 | **④ コンポーネント合成** | 大文字タグ＝子。`<Greeting name="Alice" :count="n()"/>`。**import 必須（fail-closed）**、props は accessor で渡し reactive。宣言必須は props∪`return{}`∪expose で判定 | 親が 2 つの子を型付き props で描画（e2e テスト green） |
 
@@ -26,6 +26,16 @@
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
 ③ computed ④ 宣言必須 fail-closed ⑤ v-model 糖衣 / scoped styles（最小）。
+
+## 実例: カレンダーが作れる（`fixtures/app-ui/Calendar.sunao`）
+
+月カレンダー（前後の月移動・日付選択）が **現状の sunao で作れる**。signal/computed で日付計算、
+`v-for` でセル、`@click` で選択、`v-if` で選択表示。**実機ブラウザで月移動・選択が動く**（テスト green）。
+バンドル **3,546 B / 1,598 B gzip**・決定論・予算内。
+- 作る過程で **パーサのバグを 1 つ発見・修正**: 属性値中の `>`（arrow `=>` や `a > b`）で開きタグが誤終端していた
+  → 引用符内を無視して `>` を探すように修正。
+- 残る ergonomic gap: `@click="pick(c)"`（引数つき）は未サポートで、**`@click="() => pick(c)"`** と書く必要がある
+  （イベント引数の糖衣が未実装）。静的 class と `:class` の**マージも未対応**（`:class` が上書き）。
 
 ## これは何か（2 つ）
 
@@ -59,7 +69,7 @@
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、17 件すべて green）
+## テスト（`npm test`、20 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/
@@ -86,6 +96,8 @@ reactivity / computed / 決定論（compile・render）/ fail-closed（未知デ
 
 ## 限界・次（正直に）
 
+- **イベント引数の糖衣が未実装**: `@click="pick(c)"` は不可、`@click="() => pick(c)"` と書く（次段で desugar 予定）。
+- **class マージ未対応**: 静的 `class` と `:class` を同時指定すると `:class` が上書き（Vue のような結合はしない）。
 - **prop の型検査は runtime 境界**（mount/component 時）。コンパイル時に式の型まで推論はしない（名前・必須はコンパイル時）。
 - **スロット（子要素の受け渡し）未対応**。コンポーネントへは props のみ（`@event` も未対応）。
 - **v-for に key が無い**: リスト変更時はその区間を作り直す（keyed diff は未実装）。`:key` 必須化が次段。

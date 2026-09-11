@@ -1,0 +1,41 @@
+<template>
+  <div class="cal">
+    <div class="cal-head">
+      <button class="prev" @click="prev">‹</button>
+      <strong class="label">{{ label() }}</strong>
+      <button class="next" @click="next">›</button>
+    </div>
+    <div class="cal-dow">
+      <span class="dow" v-for="d in dows">{{ d }}</span>
+    </div>
+    <div class="cal-grid">
+      <button class="cell" v-for="c in cells()" :class="cls(c)" @click="() => pick(c)">{{ c.label }}</button>
+    </div>
+    <p class="sel" v-if="selected()">選択: {{ selected() }}</p>
+  </div>
+</template>
+<script>
+export default {
+  setup() {
+    const now = new Date();
+    const y = signal(now.getFullYear());
+    const m = signal(now.getMonth());
+    const selected = signal('');
+    const dows = ['日', '月', '火', '水', '木', '金', '土'];
+    const label = computed(() => y() + '年 ' + (m() + 1) + '月');
+    const cells = computed(() => {
+      const startDow = new Date(y(), m(), 1).getDay();
+      const days = new Date(y(), m() + 1, 0).getDate();
+      const arr = [];
+      for (let i = 0; i < startDow; i++) arr.push({ label: '', day: 0 });
+      for (let d = 1; d <= days; d++) arr.push({ label: String(d), day: d });
+      return arr;
+    });
+    const cls = (c) => (c.day && selected() === (y() + '-' + (m() + 1) + '-' + c.day)) ? 'cell on' : 'cell';
+    const pick = (c) => { if (c.day) selected.set(y() + '-' + (m() + 1) + '-' + c.day); };
+    const prev = () => { if (m() === 0) { y.update((v) => v - 1); m.set(11); } else m.update((v) => v - 1); selected.set(''); };
+    const next = () => { if (m() === 11) { y.update((v) => v + 1); m.set(0); } else m.update((v) => v + 1); selected.set(''); };
+    return { y, m, selected, dows, label, cells, cls, pick, prev, next };
+  },
+};
+</script>

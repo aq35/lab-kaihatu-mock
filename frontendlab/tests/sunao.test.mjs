@@ -80,6 +80,30 @@ test('② 診断: 未宣言参照は「もしかして」提案つきで止ま�
   assert.throws(() => compileSFC(src, { runtime: RUNTIME }), /もしかして.*count/);
 });
 
+test('A 構造化診断: エラーは code/loc/frame/suggestions を機械可読に持つ', () => {
+  // 未知ディレクティブ（位置つき）
+  try {
+    compileTemplate('<div>\n  <span v-shwo="x"></span>\n</div>');
+    assert.fail('should throw');
+  } catch (e) {
+    assert.ok(e instanceof CompileError);
+    const d = e.diagnostic;
+    assert.equal(d.code, 'SUNAO_UNKNOWN_DIRECTIVE');
+    assert.deepEqual(d.loc, { line: 2, column: 3 });
+    assert.match(d.frame, /\^/); // キャレットを含むコードフレーム
+    assert.ok(d.suggestions.includes('v-if'));
+  }
+  // 未宣言参照（提案つき）
+  try {
+    compileSFC('<template><b>{{ cont() }}</b></template><script>export default { setup(){ const count = signal(0); return { count }; } }</script>', { runtime: RUNTIME });
+    assert.fail('should throw');
+  } catch (e) {
+    assert.equal(e.diagnostic.code, 'SUNAO_UNDECLARED_REF');
+    assert.deepEqual(e.diagnostic.suggestions, ['count']);
+    assert.equal(e.diagnostic.loc.line, 1);
+  }
+});
+
 test('④ 型付き props: 必須欠落・未知・型不一致は fail-closed', () => {
   const Greeting = { name: 'Greeting', props: { name: { type: 'string', required: true }, count: 'number' }, setup: () => ({}), render: () => null };
   assert.throws(() => validateProps(Greeting, { count: () => 1 }), /必須 prop "name"/);
@@ -115,6 +139,33 @@ test('④ 合成(e2e): 親が子を型付き props で描画する', async () =>
 test('③ factory: node check.mjs が全部品で通る（exit 0）', () => {
   // 失敗なら execFileSync が throw する
   execFileSync('node', ['check.mjs'], { stdio: 'pipe' });
+});
+
+test('実例: カレンダーが作れる（コンパイル・描画・月移動・日付選択）', async () => {
+  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/Calendar.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  const dir = mkdtempSync(join(tmpdir(), 'cal-'));
+  try {
+    const f = join(dir, 'Cal.mjs');
+    writeFileSync(f, r.outputFiles[0].contents);
+    const Cal = (await import(pathToFileURL(f).href)).default;
+    const html = renderComponentToString(Cal);
+    assert.match(html, /class="dow"/); // 曜日ヘッダ
+    assert.equal((html.match(/class="cell"/g) || []).length >= 28, true); // 日セル
+    // ロジック: 月移動で label が変わり、日付選択が反映される
+    const ctx = Cal.setup();
+    const before = ctx.label();
+    ctx.next();
+    assert.notEqual(ctx.label(), before, '次の月へ');
+    const someDay = ctx.cells().find((c) => c.day);
+    ctx.pick(someDay);
+    assert.match(ctx.selected(), /\d+-\d+-\d+/, '日付が選択される');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('compile: 許可された文法は通る', () => {

@@ -15,8 +15,44 @@
  * それ以外の v-* は CompileError（fail-closed）。
  */
 
+/**
+ * 構造化診断つきコンパイルエラー。文字列でも診断オブジェクトでも作れる（後方互換）。
+ * .diagnostic = { code, message, loc:{line,column}|null, frame|null, suggestions:[] } を機械可読に持つ。
+ * AI/ツールは e.diagnostic を parse して自己修正できる。
+ */
 export class CompileError extends Error {
-  constructor(msg) { super(msg); this.name = 'CompileError'; }
+  constructor(arg) {
+    const d = typeof arg === 'string' ? { code: 'SUNAO_COMPILE', message: arg } : arg;
+    super(d.message);
+    this.name = 'CompileError';
+    this.code = d.code || 'SUNAO_COMPILE';
+    this.loc = d.loc || null;
+    this.frame = d.frame || null;
+    this.suggestions = d.suggestions || [];
+    this.diagnostic = { code: this.code, message: d.message, loc: this.loc, frame: this.frame, suggestions: this.suggestions };
+  }
+}
+
+// index → {line, column}（1 始まり）
+function posAt(src, index) {
+  if (src == null || index == null || index < 0) return null;
+  let line = 1, col = 1;
+  for (let i = 0; i < index && i < src.length; i++) {
+    if (src[i] === '\n') { line++; col = 1; } else col++;
+  }
+  return { line, column: col };
+}
+// 該当行＋キャレットのコードフレーム
+function frameAt(src, index) {
+  const loc = posAt(src, index);
+  if (!loc) return null;
+  const lines = src.split('\n');
+  const ln = lines[loc.line - 1] ?? '';
+  return `  ${loc.line} | ${ln}\n    | ${' '.repeat(Math.max(0, loc.column - 1))}^`;
+}
+// 診断つきで throw するヘルパ
+function fail(code, message, { src = null, index = null, suggestions = [] } = {}) {
+  throw new CompileError({ code, message, loc: posAt(src, index), frame: frameAt(src, index), suggestions });
 }
 
 const ALLOWED_DIRECTIVES = new Set(['v-if', 'v-for', 'v-model']);
@@ -31,8 +67,20 @@ export function extractBlocks(source) {
   const tpl = /<template>([\s\S]*?)<\/template>/.exec(source);
   const scr = /<script>([\s\S]*?)<\/script>/.exec(source);
   const sty = /<style[^>]*>([\s\S]*?)<\/style>/.exec(source);
-  if (!tpl) throw new CompileError('SFC に <template> がありません。');
+  if (!tpl) throw new CompileError({ code: 'SUNAO_NO_TEMPLATE', message: 'SFC に <template> がありません。' });
   return { template: tpl[1].trim(), script: scr ? scr[1].trim() : '', style: sty ? sty[1].trim() : '' };
+}
+
+// 開きタグの終端 '>' を、引用符内を無視して探す（属性値の => や a > b で誤爆しない）。
+function findTagEnd(html, from) {
+  let q = null;
+  for (let j = from; j < html.length; j++) {
+    const ch = html[j];
+    if (q) { if (ch === q) q = null; }
+    else if (ch === '"' || ch === "'") q = ch;
+    else if (ch === '>') return j;
+  }
+  return -1;
 }
 
 // ---- テンプレート parser ----
@@ -42,7 +90,7 @@ function parseTemplate(html) {
   const stack = [root];
   const top = () => stack[stack.length - 1];
 
-  const pushText = (raw) => {
+  const pushText = (raw, base) => {
     let last = 0;
     const re = /\{\{([\s\S]*?)\}\}/g;
     let m;
@@ -50,8 +98,8 @@ function parseTemplate(html) {
       const before = raw.slice(last, m.index);
       if (before.trim()) top().children.push({ type: 'text', value: before.replace(/\s+/g, ' ') });
       const expr = m[1].trim();
-      if (!expr) throw new CompileError('空の補間 {{ }} は書けません。');
-      top().children.push({ type: 'interp', expr });
+      if (!expr) fail('SUNAO_EMPTY_INTERP', '空の補間 {{ }} は書けません。式を入れてください。', { src: html, index: base + m.index });
+      top().children.push({ type: 'interp', expr, start: base + m.index });
       last = m.index + m[0].length;
     }
     const rest = raw.slice(last);
@@ -60,42 +108,42 @@ function parseTemplate(html) {
 
   while (i < html.length) {
     const lt = html.indexOf('<', i);
-    if (lt === -1) { pushText(html.slice(i)); break; }
-    if (lt > i) pushText(html.slice(i, lt));
+    if (lt === -1) { pushText(html.slice(i), i); break; }
+    if (lt > i) pushText(html.slice(i, lt), i);
     if (html.startsWith('<!--', lt)) {
       const end = html.indexOf('-->', lt);
-      if (end === -1) throw new CompileError('コメントが閉じていません。');
+      if (end === -1) fail('SUNAO_COMMENT_UNCLOSED', 'コメントが閉じていません（--> がありません）。', { src: html, index: lt });
       i = end + 3;
       continue;
     }
     if (html[lt + 1] === '/') {
       const gt = html.indexOf('>', lt);
-      if (gt === -1) throw new CompileError('閉じタグが壊れています。');
+      if (gt === -1) fail('SUNAO_BAD_CLOSE_TAG', '閉じタグが壊れています（> がありません）。', { src: html, index: lt });
       const tag = html.slice(lt + 2, gt).trim();
-      if (top().tag !== tag) throw new CompileError(`タグの対応が合いません: </${tag}> に対する開きタグは <${top().tag}>。`);
+      if (top().tag !== tag) fail('SUNAO_TAG_MISMATCH', `タグの対応が合いません: </${tag}> に対する開きタグは <${top().tag}>。`, { src: html, index: lt, suggestions: [`</${top().tag}>`] });
       stack.pop();
       i = gt + 1;
       continue;
     }
-    const gt = html.indexOf('>', lt);
-    if (gt === -1) throw new CompileError('開きタグが閉じていません。');
+    const gt = findTagEnd(html, lt);
+    if (gt === -1) fail('SUNAO_UNCLOSED_TAG', '開きタグが閉じていません（> がありません）。', { src: html, index: lt });
     let inner = html.slice(lt + 1, gt).trim();
     const selfClose = inner.endsWith('/');
     if (selfClose) inner = inner.slice(0, -1).trim();
     const sp = inner.search(/\s/);
     const tag = (sp === -1 ? inner : inner.slice(0, sp)).trim();
     const attrStr = sp === -1 ? '' : inner.slice(sp).trim();
-    if (!/^[a-zA-Z][\w-]*$/.test(tag)) throw new CompileError(`タグ名が不正です: "${tag}"`);
-    const node = { type: 'el', tag, attrs: parseAttrs(attrStr, tag), children: [] };
+    if (!/^[a-zA-Z][\w-]*$/.test(tag)) fail('SUNAO_BAD_TAG', `タグ名が不正です: "${tag}"`, { src: html, index: lt });
+    const node = { type: 'el', tag, attrs: parseAttrs(attrStr, tag, html, lt), children: [], start: lt };
     top().children.push(node);
     if (!selfClose && !VOID.has(tag)) stack.push(node);
     i = gt + 1;
   }
-  if (stack.length !== 1) throw new CompileError(`閉じていない要素があります: <${top().tag}>`);
+  if (stack.length !== 1) fail('SUNAO_UNCLOSED_ELEMENT', `閉じていない要素があります: <${top().tag}>`, { src: html, index: top().start });
   return root.children;
 }
 
-function parseAttrs(str, tag) {
+function parseAttrs(str, tag, html, base) {
   const attrs = [];
   const re = /([:@]?[\w-]+)(?:\s*=\s*"([^"]*)")?/g;
   let m;
@@ -104,7 +152,10 @@ function parseAttrs(str, tag) {
     const name = m[1];
     const value = m[2] ?? '';
     if (name.startsWith('v-') && !ALLOWED_DIRECTIVES.has(name)) {
-      throw new CompileError(`<${tag}> の未知ディレクティブ "${name}"。許可: ${[...ALLOWED_DIRECTIVES].join(', ')}（:bind / @event も可）。`);
+      const sug = nearest(name, [...ALLOWED_DIRECTIVES]);
+      fail('SUNAO_UNKNOWN_DIRECTIVE',
+        `<${tag}> の未知ディレクティブ "${name}"。許可: ${[...ALLOWED_DIRECTIVES].join(', ')}（:bind / @event も可）。${sug ? `もしかして: ${sug}？` : ''}`,
+        { src: html, index: base, suggestions: [...ALLOWED_DIRECTIVES] });
     }
     attrs.push({ name, value });
   }
@@ -151,7 +202,7 @@ function genNode(node, bound, ctx) {
   let forHead = null;
   if (vFor) {
     const mm = /^\s*([A-Za-z_$][\w$]*)\s+in\s+([\s\S]+)$/.exec(vFor.value);
-    if (!mm) throw new CompileError(`v-for は "x in expr" の形で書いてください: "${vFor.value}"`);
+    if (!mm) fail('SUNAO_VFOR_FORM', `v-for は "x in expr" の形で書いてください: "${vFor.value}"`, { src: ctx.src, index: node.start, suggestions: ['item in items()'] });
     collectIdents(mm[2], bound, ctx.used);
     innerBound = new Set([...bound, mm[1]]);
     forHead = { item: mm[1], listExpr: mm[2] };
@@ -160,17 +211,17 @@ function genNode(node, bound, ctx) {
   if (isComponent) {
     // ④ コンポーネント合成: <Child :prop="expr"/>。import 必須（fail-closed）。
     if (!ctx.components.has(node.tag)) {
-      throw new CompileError(`<${node.tag}> は import されていません。<script> に import ${node.tag} from './${node.tag}.sunao' を書いてください（大文字始まり = コンポーネント）。`);
+      fail('SUNAO_COMPONENT_NOT_IMPORTED', `<${node.tag}> は import されていません。<script> に import ${node.tag} from './${node.tag}.sunao' を書いてください（大文字始まり = コンポーネント）。`, { src: ctx.src, index: node.start, suggestions: [...ctx.components] });
     }
     if (node.children.some((c) => c.type !== 'text' || c.value.trim())) {
-      throw new CompileError(`<${node.tag}>: スロット（子要素）は未対応です（v0.3）。props で渡してください。`);
+      fail('SUNAO_COMPONENT_SLOT', `<${node.tag}>: スロット（子要素）は未対応です（v0.3）。props で渡してください。`, { src: ctx.src, index: node.start });
     }
     ctx.hasDynamic = true; // 子は reactive になりうる
     const cprops = [];
     for (const a of node.attrs) {
       if (a.name === 'v-if' || a.name === 'v-for') continue;
       if (a.name === 'v-model' || a.name.startsWith('@')) {
-        throw new CompileError(`<${node.tag}>: コンポーネントへの ${a.name} は未対応です（v0.3, props のみ）。`);
+        fail('SUNAO_COMPONENT_EVENT', `<${node.tag}>: コンポーネントへの ${a.name} は未対応です（v0.3, props のみ）。`, { src: ctx.src, index: node.start });
       }
       if (a.name.startsWith(':')) {
         const key = a.name.slice(1);
@@ -262,7 +313,7 @@ function nearest(name, candidates) {
 /** テンプレート → render ソース + メタ。 */
 export function compileTemplate(template, { scopeAttr = null, components = new Set() } = {}) {
   const nodes = parseTemplate(template);
-  const ctx = { used: new Set(), hasDynamic: false, hasEvent: false, staticSerializable: true, scopeAttr, components };
+  const ctx = { used: new Set(), hasDynamic: false, hasEvent: false, staticSerializable: true, scopeAttr, components, src: template };
   const roots = genChildren(nodes, new Set(), ctx);
   const body = roots.length === 1 ? roots[0] : `[${roots.join(', ')}]`;
   const destructure = ctx.used.size ? `const { ${[...ctx.used].join(', ')} } = ctx;\n  ` : '';
@@ -313,8 +364,11 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   if (declared.size) {
     const unknown = compiled.used.filter((u) => !declared.has(u));
     if (unknown.length) {
+      const sugg = unknown.map((u) => nearest(u, [...declared])).filter(Boolean);
       const hints = unknown.map((u) => { const s = nearest(u, [...declared]); return s ? `${u}（もしかして: ${s}？）` : u; });
-      throw new CompileError(`テンプレが未宣言の識別子を参照: ${hints.join(', ')}。setup の return / props / expose に宣言してください（declared: ${[...declared].join(', ')}）。`);
+      fail('SUNAO_UNDECLARED_REF',
+        `テンプレが未宣言の識別子を参照: ${hints.join(', ')}。setup の return / props / expose に宣言してください（declared: ${[...declared].join(', ')}）。`,
+        { src: template, index: template.indexOf(unknown[0]), suggestions: sugg });
     }
   }
 
@@ -329,7 +383,7 @@ export function compileSFC(source, { runtime = './runtime.mjs' } = {}) {
   }
 
   if (!/export\s+default/.test(script)) {
-    throw new CompileError('<script> は `export default { setup() {...} }` を持つ必要があります（静的コンポーネントは <script> 省略可）。');
+    throw new CompileError({ code: 'SUNAO_NO_EXPORT', message: '<script> は `export default { setup() {...} }` を持つ必要があります（静的コンポーネントは <script> 省略可）。' });
   }
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
