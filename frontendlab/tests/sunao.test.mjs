@@ -10,7 +10,7 @@ import esbuild from 'esbuild';
 import { signal, effect, computed, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, renderComponentToString } from '../plugins/sunao/runtime.mjs';
 import { recipeStyle } from '../plugins/sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
-import { compileSFC, compileTemplate, analyze, warningsOf, CompileError } from '../plugins/sunao/compile.mjs';
+import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../plugins/sunao/compile.mjs';
 import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -189,6 +189,45 @@ test('SSG: server モードで now/interval を使う部品も hang せず描画
   // これ自体が「Node で prerender してもプロセスが固まらない」ことの回帰ガード。
   const page = await prerenderSFC('fixtures/app-ui/DeployConsole.sunao');
   assert.ok(page.html.length > 0, 'DeployConsole が文字列描画される');
+});
+
+test('式パーサ(AST): arrow/分割の仮引数は ctx 参照にしない・shorthand は拾う（regex の誤収集を修正）', () => {
+  const a = compileTemplate('<button @click="rows().forEach(r => pick(r))">x</button>');
+  assert.ok(a.used.includes('rows') && a.used.includes('pick'), '自由変数は集める');
+  assert.ok(!a.used.includes('r'), 'arrow 仮引数 r は束縛済み扱い（regex は誤収集していた）');
+  const b = compileTemplate('<b>{{ items().map(({id}) => id).join(",") }}</b>');
+  assert.ok(b.used.includes('items') && !b.used.includes('id'), '分割仮引数 id も束縛済み');
+  const c = compileTemplate('<div :data-x="{ n }">y</div>');
+  assert.ok(c.used.includes('n'), 'object shorthand は参照として拾う');
+  const d = compileTemplate('<b>{{ a.b.c }}</b>');
+  assert.ok(d.used.includes('a') && !d.used.includes('b') && !d.used.includes('c'), 'member の非computed プロパティは参照でない');
+  const e = compileTemplate('<b>{{ arr[i] }}</b>');
+  assert.ok(e.used.includes('arr') && e.used.includes('i'), 'computed member の添字は参照');
+});
+
+test('式パーサ(AST): arrow 仮引数を未宣言参照と誤検出しない（fail-closed の誤爆修正）', () => {
+  // regex 版は x を ctx 参照として集め → 未宣言(SUNAO_UNDECLARED_REF)で誤爆していた。AST は x を束縛扱い。
+  const src = `<template><button @click="list().forEach(x => pick(x))">go</button></template>` +
+    `<script>export default { setup(){ const list = signal([]); const pick = (x)=>x; return { list, pick }; } }</script>`;
+  assert.doesNotThrow(() => compileSFC(src, { runtime: RUNTIME }));
+});
+
+test('エディタ支援: diagnose() は error/warning を throw せず LSP 風に返す', () => {
+  // error（fail-closed）: 未知ディレクティブ。line/column/suggestions つき、throw しない。
+  const bad = diagnose('<template><div v-bogus="x">y</div></template>', { filename: 'B.sunao' });
+  assert.equal(bad.filename, 'B.sunao');
+  const err = bad.diagnostics.find((d) => d.severity === 'error');
+  assert.ok(err && err.code === 'SUNAO_UNKNOWN_DIRECTIVE');
+  assert.ok(err.suggestions.includes('v-if'));
+  assert.equal(typeof err.line, 'number');
+  // warning（非致命）: () 呼び忘れ。error と別severity で載る。
+  const warnSrc = `<template><b>{{ count }}</b></template><script>export default { setup(){ const count = signal(0); return { count }; } }</script>`;
+  const w = diagnose(warnSrc);
+  assert.ok(w.diagnostics.some((d) => d.severity === 'warning' && d.code === 'SUNAO_CALL_FORGOTTEN'));
+  assert.ok(!w.diagnostics.some((d) => d.severity === 'error'), '正しい SFC に error は無い');
+  // 正常な SFC: 診断ゼロ
+  const ok = diagnose(readFileSync('fixtures/app-ui/Counter.sunao', 'utf8'));
+  assert.equal(ok.diagnostics.filter((d) => d.severity === 'error').length, 0);
 });
 
 test('④ source map: sourcemap:true で inline map が付き、script 行へ対応する', () => {

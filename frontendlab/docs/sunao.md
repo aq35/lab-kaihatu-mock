@@ -94,6 +94,19 @@
 > 見出し・本文・特徴リストは**初期 HTML に焼かれ**（クローラ可読）、カウンタだけ hydrate で対話が戻る。
 > **正直な限界**: source map は line-level（列単位でない）、hydration は骨格 adopt＋動的島の再構築（完全な node 単位でない）。SEO 目的＝初期 HTML に中身、は満たす。
 
+## v0.9 で実装した「残りの大物」（式パーサ堅牢化・エディタ支援）
+
+「残りの大物」＝正規表現の式解析と、エディタ支援。前者は**本式パーサに置換**、後者は**検証可能なスライス**を提供（フル LSP はエディタが無いこの環境で検証できないので作らず、土台までを正直に）。
+
+| 大物 | 実装 | テスト・実測 |
+|---|---|---|
+| **式パーサの堅牢化** | `collectIdents` を **@babel/parser の AST 自由変数解析**に置換（`@babel/core` の推移依存＝新規依存なし・build 時のみ・アプリ bundle には入らない）。MemberExpression / ObjectProperty(shorthand/computed) / arrow・分割の仮引数スコープを正しく処理。パース失敗時は文列ラップ→regex fallback で非回帰 | **regex の誤収集を修正**: `items.map(x => x.a)` の `x` を ctx 参照と誤検出しない＝**arrow 仮引数の誤・未宣言参照エラーが消える**。単体 green |
+| **診断の機械可読エクスポート** | `diagnose(source)`＝throw せず `{diagnostics:[{severity,code,message,line,column,...}]}`（LSP の publishDiagnostics 相当）。`node tools/diagnose.mjs`（`npm run diagnose`）で JSON 出力、error があれば exit 1 | 壊れた SFC→error、`()` 忘れ→warning、正常→0 を単体 green |
+| **構文ハイライト** | `editor/sunao.tmLanguage.json` + `language-configuration.json`（VSCode）。template(`{{}}`/`:bind`/`@event`/`v-*`/`flip`) / script(JS) / style(CSS) を色分け。`editor/README.md` に導入手順 | JSON 妥当性を確認（エディタ実機はこの環境で検証不能＝正直に明記） |
+
+> **フル LSP（補完・ホバー・定義ジャンプ）は未実装**。LSP サーバ＋エディタが要り動作検証できないため。
+> 土台は提供済み: 診断=`diagnose()`、補完候補=`analyze()`(props)＋`scanSignals()`(signal 束縛)。あとは薄くラップするだけ。
+
 ## v0.2 の柱（維持）
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
@@ -151,7 +164,7 @@
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、55 件すべて green）
+## テスト（`npm test`、58 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/

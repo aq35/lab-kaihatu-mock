@@ -141,6 +141,14 @@ KIND_ACCENT / KIND_LABEL / themeCSS
   - `now`/`interval`/`resource` は server モードで発火しない＝Node 描画が hang しない・決定論。
 - **限界（正直に）**: source map は **line-level**（`<script>` 行に対応。テンプレ由来行は script 先頭に寄る＝列単位ではない）。hydration は骨格 adopt＋動的島の再構築（完全な node 単位ハイドレーションではない。SEO 目的＝初期 HTML に中身、は満たす）。
 
+## エディタ支援・診断（LSP が消費する土台）
+
+- **`node tools/diagnose.mjs [file ...] [--pretty]`** … `.sunao` の診断を**機械可読 JSON**で出す（error は fail-closed で exit 1、warning は exit に影響なし）。
+- **`diagnose(source, {filename})`**（`compile.mjs`）… throw せず `{ diagnostics:[{severity, code, message, line, column, suggestions?, ident?}] }` を返す＝LSP の `publishDiagnostics` の中身。
+- **`editor/sunao.tmLanguage.json` + `language-configuration.json`** … VSCode 用の構文ハイライト（`editor/README.md` に導入手順）。
+- 式解析は **@babel/parser の AST**（build 時のみ・アプリ bundle には入らない）。arrow/分割の仮引数を正しくスコープするので、`items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。
+- フル LSP（補完・ホバー）は未実装（エディタが要り検証不能なため）。土台＝`diagnose()`＋`analyze()`＋`scanSignals()` は提供済み。
+
 ## 決定論・予算（factory）
 
 - `node check.mjs` … 全部品の compile / 全入口の build（**2 回 sha 一致＝決定論** + **bytes 予算** + クロス契約 + ⚠警告表示）。1 つでも落ちれば exit 1。

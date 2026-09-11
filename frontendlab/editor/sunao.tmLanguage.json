@@ -1,0 +1,110 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "sunao",
+  "scopeName": "source.sunao",
+  "patterns": [
+    { "include": "#template" },
+    { "include": "#script" },
+    { "include": "#style" }
+  ],
+  "repository": {
+    "template": {
+      "begin": "(<)(template)(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.sunao" },
+        "2": { "name": "entity.name.tag.sunao" },
+        "3": { "name": "punctuation.definition.tag.end.sunao" }
+      },
+      "end": "(</)(template)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.sunao" },
+        "2": { "name": "entity.name.tag.sunao" },
+        "3": { "name": "punctuation.definition.tag.end.sunao" }
+      },
+      "name": "meta.block.template.sunao",
+      "patterns": [
+        { "include": "#interpolation" },
+        { "include": "#tag" },
+        { "include": "text.html.basic" }
+      ]
+    },
+    "interpolation": {
+      "begin": "\\{\\{",
+      "end": "\\}\\}",
+      "name": "meta.embedded.expression.sunao",
+      "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.sunao" } },
+      "endCaptures": { "0": { "name": "punctuation.section.embedded.end.sunao" } },
+      "patterns": [{ "include": "source.js" }]
+    },
+    "tag": {
+      "begin": "(</?)([A-Za-z][\\w-]*)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.sunao" },
+        "2": { "name": "entity.name.tag.sunao" }
+      },
+      "end": "/?>",
+      "endCaptures": { "0": { "name": "punctuation.definition.tag.end.sunao" } },
+      "patterns": [
+        {
+          "match": "\\b(v-if|v-for|v-model|flip)\\b",
+          "name": "keyword.control.directive.sunao"
+        },
+        {
+          "begin": "(:|@)([\\w-]+)(=)(\")",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.directive.sunao" },
+            "2": { "name": "entity.other.attribute-name.dynamic.sunao" },
+            "4": { "name": "punctuation.definition.string.begin.sunao" }
+          },
+          "end": "\"",
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.sunao" } },
+          "name": "meta.embedded.attribute.sunao",
+          "patterns": [{ "include": "source.js" }]
+        },
+        {
+          "match": "([\\w-]+)",
+          "name": "entity.other.attribute-name.sunao"
+        },
+        { "include": "#strings" }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        { "begin": "\"", "end": "\"", "name": "string.quoted.double.sunao" },
+        { "begin": "'", "end": "'", "name": "string.quoted.single.sunao" }
+      ]
+    },
+    "script": {
+      "begin": "(<)(script)(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.sunao" },
+        "2": { "name": "entity.name.tag.sunao" },
+        "3": { "name": "punctuation.definition.tag.end.sunao" }
+      },
+      "end": "(</)(script)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.sunao" },
+        "2": { "name": "entity.name.tag.sunao" },
+        "3": { "name": "punctuation.definition.tag.end.sunao" }
+      },
+      "name": "meta.block.script.sunao",
+      "patterns": [{ "include": "source.js" }]
+    },
+    "style": {
+      "begin": "(<)(style)([^>]*)(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.sunao" },
+        "2": { "name": "entity.name.tag.sunao" },
+        "4": { "name": "punctuation.definition.tag.end.sunao" }
+      },
+      "end": "(</)(style)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.sunao" },
+        "2": { "name": "entity.name.tag.sunao" },
+        "3": { "name": "punctuation.definition.tag.end.sunao" }
+      },
+      "name": "meta.block.style.sunao",
+      "patterns": [{ "include": "source.css" }]
+    }
+  }
+}

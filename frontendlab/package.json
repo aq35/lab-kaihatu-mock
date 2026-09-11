@@ -14,11 +14,13 @@
     "dev": "node dev.mjs",
     "prerender": "node prerender.mjs",
     "check": "node check.mjs",
+    "diagnose": "node tools/diagnose.mjs",
     "gen": "node tools/gen-recipe-vocab.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {
     "@babel/core": "8.0.5",
+    "@babel/parser": "8.0.5",
     "@babel/preset-react": "8.0.1",
     "@babel/preset-typescript": "8.0.1",
     "@swc/core": "1.16.2",

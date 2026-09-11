@@ -15,6 +15,9 @@
  * それ以外の v-* は CompileError（fail-closed）。
  */
 
+// 式の自由変数解析に使う（build 時のみ・アプリ bundle には入らない）。@babel/core の推移依存。
+import { parseExpression as _babelParseExpression } from '@babel/parser';
+
 /**
  * 構造化診断つきコンパイルエラー。文字列でも診断オブジェクトでも作れる（後方互換）。
  * .diagnostic = { code, message, loc:{line,column}|null, frame|null, suggestions:[] } を機械可読に持つ。
@@ -162,28 +165,114 @@ function parseAttrs(str, tag, html, base) {
   return attrs;
 }
 
-// ---- 式解析ヘルパ ----
-// 自由識別子を集める。文字列リテラルは除外、`.prop`（property）と `key:`（object key）は除外、
-// `$event` のような $ 始まりも 1 識別子として拾う。※正規表現ベースの近似（本式パーサは将来）。
-function collectIdents(expr, bound, used) {
-  const noStr = expr.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/g, ' ');
+// ---- 式解析ヘルパ（AST ベース: @babel/parser で自由変数を正しく解析） ----
+// 破棄する AST ノードのメタキー。
+const _AST_META = new Set(['type', 'start', 'end', 'loc', 'range', 'extra', 'leadingComments', 'trailingComments', 'innerComments', 'comments']);
+// 束縛パターン（arrow/function の仮引数・分割代入）から名前を集める。
+function collectBindingNames(node, set) {
+  if (!node || typeof node !== 'object') return;
+  switch (node.type) {
+    case 'Identifier': set.add(node.name); return;
+    case 'AssignmentPattern': collectBindingNames(node.left, set); return; // 既定値の右辺は外側参照だが近似で無視
+    case 'RestElement': collectBindingNames(node.argument, set); return;
+    case 'ArrayPattern': for (const e of node.elements) collectBindingNames(e, set); return;
+    case 'ObjectPattern':
+      for (const p of node.properties) {
+        if (p.type === 'RestElement') collectBindingNames(p.argument, set);
+        else collectBindingNames(p.value, set);
+      }
+      return;
+  }
+}
+// AST を歩いて、宣言/グローバルでない「参照位置の識別子」を used に集める。scopes は束縛集合スタック。
+function walkFreeIdents(node, scopes, used, calls) {
+  if (!node || typeof node !== 'object') return;
+  const declared = (name) => scopes.some((s) => s.has(name));
+  switch (node.type) {
+    case 'Identifier':
+      if (!declared(node.name) && !GLOBALS.has(node.name)) used.add(node.name);
+      return;
+    case 'MemberExpression':
+    case 'OptionalMemberExpression':
+      walkFreeIdents(node.object, scopes, used, calls);
+      if (node.computed) walkFreeIdents(node.property, scopes, used, calls); // a[b] の b は参照
+      return; // a.b の b（非 computed）はプロパティ名＝参照でない
+    case 'ObjectProperty':
+    case 'Property':
+      if (node.computed) walkFreeIdents(node.key, scopes, used, calls); // { [k]: v } の k
+      walkFreeIdents(node.value, scopes, used, calls);                   // shorthand {x} も value=Identifier(x) を辿る
+      return;
+    case 'ArrowFunctionExpression':
+    case 'FunctionExpression':
+    case 'ObjectMethod':
+    case 'FunctionDeclaration': {
+      const s = new Set();
+      for (const p of node.params || []) collectBindingNames(p, s);
+      if (node.id && node.id.type === 'Identifier') s.add(node.id.name);
+      scopes.push(s);
+      walkFreeIdents(node.body, scopes, used, calls);
+      scopes.pop();
+      return;
+    }
+    case 'CallExpression':
+    case 'OptionalCallExpression':
+      // 呼ばれた名前（callee が Identifier / a.b()）を calls に記録（() 呼び忘れ判定用）。
+      if (calls) {
+        const c = node.callee;
+        if (c && c.type === 'Identifier') calls.add(c.name);
+        else if (c && (c.type === 'MemberExpression') && c.property && c.property.type === 'Identifier' && !c.computed && c.object.type === 'Identifier') calls.add(c.object.name);
+      }
+      break; // 既定の子走査へ
+  }
+  // 既定: 全子ノード/配列を再帰。
+  for (const k in node) {
+    if (_AST_META.has(k)) continue;
+    const v = node[k];
+    if (Array.isArray(v)) { for (const c of v) walkFreeIdents(c, scopes, used, calls); }
+    else if (v && typeof v === 'object' && typeof v.type === 'string') walkFreeIdents(v, scopes, used, calls);
+  }
+}
+// 式を parse（式→文の順に試す）。calls に呼ばれた識別子も集める。失敗時は regex fallback。
+function analyzeExpr(expr, bound, used, calls) {
+  let ast = null;
+  try { ast = _parseExpression(String(expr)); }
+  catch {
+    try { ast = _parseExpression(`(()=>{\n${expr}\n})`); } // イベントの文列（a(); b()）等
+    catch { collectIdentsRegex(expr, bound, used); if (calls) noteCalledRegex(expr, calls); return; }
+  }
+  walkFreeIdents(ast, [new Set(bound)], used, calls);
+}
+function _parseExpression(src) {
+  return _babelParseExpression(src, { plugins: ['optionalChaining', 'nullishCoalescingOperator'], errorRecovery: false });
+}
+// 旧・正規表現版（AST が使えない式のフォールバック。非回帰用）。
+function collectIdentsRegex(expr, bound, used) {
+  const noStr = String(expr).replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/g, ' ');
   const re = /(?<![\w$.])([A-Za-z_$][\w$]*)\s*(:(?!:))?/g;
   let m;
   while ((m = re.exec(noStr))) {
     const [, name, colon] = m;
-    if (colon) continue; // object literal key
+    if (colon) continue;
     if (GLOBALS.has(name) || bound.has(name)) continue;
     used.add(name);
   }
+}
+function noteCalledRegex(expr, calls) {
+  for (const m of String(expr).matchAll(/([A-Za-z_$][\w$]*)\s*\(/g)) calls.add(m[1]);
+}
+// 公開ヘルパ（呼び出し側は不変）: 自由識別子を used に集める。
+function collectIdents(expr, bound, used) {
+  analyzeExpr(expr, bound, used, null);
 }
 function refsCtx(expr, bound) {
   const s = new Set();
   collectIdents(expr, bound, s);
   return s.size > 0;
 }
-// 呼び出された識別子（name(）を記録＝「関数っぽい」判定用。
+// 呼び出された識別子（name( / obj.m(）を記録＝「関数っぽい」判定用。
 function noteCalled(expr, ctx) {
-  for (const m of expr.matchAll(/([A-Za-z_$][\w$]*)\s*\(/g)) ctx.called.add(m[1]);
+  const dummy = new Set();
+  analyzeExpr(expr, new Set(), dummy, ctx.called);
 }
 const isBareIdent = (e) => /^[A-Za-z_$][\w$]*$/.test(String(e).trim());
 // 値位置の裸の識別子を記録（他所で name() と呼ばれ or signal 束縛なら () 呼び忘れ警告）。
@@ -441,6 +530,31 @@ export function warningsOf(source) {
   } catch {
     return []; // コンパイルエラーは別系統（fail-closed）。警告はベストエフォート。
   }
+}
+
+/**
+ * 非 throw の診断（エディタ/LSP・ツール用）。error（fail-closed）＋ warning（()呼び忘れ等）を
+ * LSP の Diagnostic に近い形で返す。line/column は 1 始まり。
+ *   { filename, diagnostics: [{ severity:'error'|'warning', code, message, line, column, suggestions?, ident? }] }
+ */
+export function diagnose(source, { filename = 'component.sunao' } = {}) {
+  const diagnostics = [];
+  try {
+    compileSFC(source, { runtime: 'sunao' });
+  } catch (e) {
+    if (e instanceof CompileError) {
+      const d = e.diagnostic;
+      diagnostics.push({ severity: 'error', code: d.code, message: d.message, line: d.loc?.line ?? 1, column: d.loc?.column ?? 1, suggestions: d.suggestions || [] });
+    } else {
+      diagnostics.push({ severity: 'error', code: 'SUNAO_ERROR', message: e.message, line: 1, column: 1, suggestions: [] });
+    }
+  }
+  for (const w of warningsOf(source)) {
+    const idx = w.ident ? source.indexOf(w.ident) : -1; // ベストエフォートの位置
+    const loc = idx >= 0 ? posAt(source, idx) : null;
+    diagnostics.push({ severity: 'warning', code: w.code, message: w.message, line: loc?.line ?? 1, column: loc?.column ?? 1, ident: w.ident });
+  }
+  return { filename, diagnostics };
 }
 
 // scoped styles（最小・Vue 方式）: content から短い hash、各セレクタの最後の compound に
