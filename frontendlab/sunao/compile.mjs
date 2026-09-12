@@ -68,10 +68,18 @@ const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input'
 
 // ---- SFC のブロック抽出 ----
 export function extractBlocks(source) {
-  const tpl = /<template>([\s\S]*?)<\/template>/.exec(source);
-  const scr = /<script>([\s\S]*?)<\/script>/.exec(source);
+  // 開きタグは属性を許す（<script setup>・<script lang="js">・<template ...> 等）。
+  // 終端は最初の閉じタグまで（HTML 準拠: インライン script 内に生の </script> は書けない）。
+  const tpl = /<template(?:\s[^>]*)?>([\s\S]*?)<\/template>/.exec(source);
+  const scr = /<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/.exec(source);
   const sty = /<style([^>]*)>([\s\S]*?)<\/style>/.exec(source);
-  if (!tpl) throw new CompileError({ code: 'SUNAO_NO_TEMPLATE', message: 'SFC に <template> がありません。' });
+  if (!tpl) {
+    // 開きタグはあるのに閉じていない → 具体的なエラー（fail-closed で直し方を示す）。
+    if (/<template(?:\s[^>]*)?>/.test(source)) throw new CompileError({ code: 'SUNAO_TEMPLATE_UNCLOSED', message: '<template> が </template> で閉じられていません。' });
+    throw new CompileError({ code: 'SUNAO_NO_TEMPLATE', message: 'SFC に <template> がありません。' });
+  }
+  if (!scr && /<script(?:\s[^>]*)?>/.test(source)) throw new CompileError({ code: 'SUNAO_SCRIPT_UNCLOSED', message: '<script> が </script> で閉じられていません。' });
+  if (!sty && /<style(?:\s[^>]*)?>/.test(source)) throw new CompileError({ code: 'SUNAO_STYLE_UNCLOSED', message: '<style> が </style> で閉じられていません。' });
   const styleAttrs = sty ? sty[1] : '';
   const langM = /\blang\s*=\s*["']?([\w-]+)/.exec(styleAttrs);
   return { template: tpl[1].trim(), script: scr ? scr[1].trim() : '', style: sty ? sty[2].trim() : '', styleLang: langM ? langM[1].toLowerCase() : null };

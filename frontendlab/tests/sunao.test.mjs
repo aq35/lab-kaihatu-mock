@@ -1015,3 +1015,58 @@ test('v0.15 scanSignals: 分割代入の signal 束縛も AST で拾う（regex 
   const s2 = scanSignals('export default { props: { title: { type: "string" } }, setup(){ return {}; } }');
   assert.ok(s2.has('title'), 'props キーも拾う');
 });
+
+// ---- v0.15: extractBlocks 堅牢化（属性つき開始タグ・未閉じの明確なエラー）----
+test('v0.15 extractBlocks: <script setup>/属性つき・未閉じの fail-closed', () => {
+  const ok = compileSFC('<template><p>{{ x() }}</p></template><script setup>export default { setup(){ const x = signal(0); return { x }; } }</script>');
+  assert.ok(ok.length > 0, '<script setup> でもコンパイルできる');
+  assert.throws(() => compileSFC('<template><p>hi</p>'), /SUNAO_TEMPLATE_UNCLOSED|閉じ/, '未閉じ template は明確なエラー');
+  assert.throws(() => compileSFC('<template><p>hi</p></template><script>const a = 1;'), /SUNAO_SCRIPT_UNCLOSED|閉じ/, '未閉じ script は明確なエラー');
+});
+
+// ---- v0.15: 式ファズ — 生成した式で自前パーサ＝Babel（差分ガードを生成空間へ拡張）----
+test('v0.15 fuzz: 生成式で自前パーサが Babel と一致（silent-wrong を生成空間で検出）', async (t) => {
+  let babel; try { babel = await import('@babel/parser'); } catch { t.skip('@babel/parser 未導入'); return; }
+  const B = _babelAnalyzerFrom(babel);
+  const rng = _mulberry32(0xC0FFEE);
+  const pick = (a) => a[Math.floor(rng() * a.length)];
+  const NAME = () => pick(['a', 'b', 'c', 'x', 'y', 'n', 'count', 'user', 'item', 'fn', 'get', 'obj']);
+  const PROP = () => pick(['id', 'name', 'value', 'length', 'title', 'x', 'y']);
+  const LEAF = () => pick(['a', 'b', 'count', 'user', 'item', '1', '2', '42', "'s'", '"t"', 'true', 'false', 'null']);
+  const argList = (d) => { const k = Math.floor(rng() * 3); const xs = []; for (let i = 0; i < k; i++) xs.push(gen(d)); return xs.join(', '); };
+  const access = (d) => {
+    let e = NAME();
+    const steps = 1 + Math.floor(rng() * 3);
+    for (let i = 0; i < steps; i++) {
+      const r = rng();
+      if (d <= 0 || r < 0.4) e += '.' + PROP();
+      else if (r < 0.6) e += '?.' + PROP();
+      else if (r < 0.8) e += '(' + argList(d - 1) + ')';
+      else e += '[' + gen(d - 1) + ']';
+    }
+    return e;
+  };
+  function gen(d) {
+    if (d <= 0) return rng() < 0.5 ? LEAF() : access(0);
+    const r = rng();
+    if (r < 0.20) return access(d);
+    if (r < 0.34) return gen(d - 1) + ' ' + pick(['+', '-', '*', '===', '!==', '&&', '||', '<', '>', '??']) + ' ' + gen(d - 1);
+    if (r < 0.44) return '(' + gen(d - 1) + ' ? ' + gen(d - 1) + ' : ' + gen(d - 1) + ')';
+    if (r < 0.56) { const p = pick(['t', 'i', 'v', 'row', 'e']); return '(' + p + ') => ' + gen(d - 1); }
+    if (r < 0.64) return '!' + gen(d - 1);
+    if (r < 0.74) return '{ ' + PROP() + ': ' + gen(d - 1) + ' }';
+    if (r < 0.84) return '[' + argList(d - 1) + ']';
+    if (r < 0.92) return '`v ${' + gen(d - 1) + '}`';
+    return access(d);
+  }
+  let compared = 0;
+  for (let i = 0; i < 400; i++) {
+    const e = gen(3);
+    const b = B(e), m = _mineAnalyzer(e);
+    if (!b || !m) continue; // どちらかが regex 落ち＝安全側なので比較対象外
+    assert.deepEqual(m.used, b.used, `used 不一致: ${e}`);
+    assert.deepEqual(m.calls, b.calls, `calls 不一致: ${e}`);
+    compared++;
+  }
+  assert.ok(compared >= 150, `十分比較した: ${compared}`);
+});

@@ -218,7 +218,13 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 
 **共通基盤**: `export default {}` を `parseExpressionString`（v0.13 の自前パーサ）で ObjectExpression として parse。そのため式パーサを **文レベル（for/while/switch/try/throw/function 宣言・for-of/in）まで拡張**した。
 
-**先取り（ファズ）**: `tests/sunao.test.mjs` に**プロパティ/ファズテスト**を追加。ネスト return・for・switch・try・分割代入を乱択で混ぜた setup を 30+ 本コンパイルし、**返却済みの名前が false な未宣言エラーにならない**ことを検証。＝「使って初めて出る」バグ族を **CI で先取り**する。dashboard テンプレで踏んだ returnNames の穴も、この形が回帰テストに入っている（92→107 green）。
+**先取り（ファズ）**: `tests/sunao.test.mjs` に**プロパティ/ファズテスト**を 2 段追加。
+1. **setup ファズ**: ネスト return・for・switch・try・分割代入を乱択で混ぜた setup を 30+ 本コンパイルし、**返却済みの名前が false な未宣言エラーにならない**ことを検証。dashboard で踏んだ returnNames の穴の形が回帰に入っている。
+2. **式ファズ（生成空間で差分ガード）**: メンバ/呼び出し/optional chaining/三項/アロー/オブジェクト/配列/テンプレリテラルを**乱択生成した式を 400 本**、自前パーサと Babel で解析して **used/calls が一致**することを検証（150+ 本比較・`@babel/parser` が居る dev のみ）。＝固定コーパスを超えて「未知の式で自前が Babel とズレないか」を CI で見張る。
+
+**入口の堅牢化**: `extractBlocks` を、`<script setup>` 等の**属性つき開始タグ**を許し、**未閉じ**（`</template>`/`</script>`/`</style>` 欠落）は専用コード（`SUNAO_*_UNCLOSED`）で fail-closed にした（誤解を招く「no template」エラーを解消）。
+
+（92→109 green）
 
 > 効いた場所の傾向が明確だったので（＝推測ロジック）、**バグ族ごと**を AST で断ち、ファズで再発を止めた。式解析（v0.13）に続き、script 解析も推測から AST へ。
 
