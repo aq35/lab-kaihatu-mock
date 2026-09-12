@@ -15,12 +15,15 @@
 let activeSub = null;   // 依存収集中の effect
 let activeOwner = null; // 現在の親（子 effect を所有し、破棄を伝播）
 
+// 子 sub を owner に登録（children Set は遅延生成＝葉 effect では割り当てない）。
+function addChild(owner, sub) { (owner.children || (owner.children = new Set())).add(sub); }
+
 export function signal(initial) {
   let value = initial;
-  const subs = new Set();
+  let subs = null; // 遅延生成: 一度も購読されない signal は Set を割り当てない
   const read = () => {
     if (activeSub) {
-      subs.add(activeSub);
+      (subs || (subs = new Set())).add(activeSub);
       activeSub.deps.add(subs);
     }
     return value;
@@ -29,7 +32,10 @@ export function signal(initial) {
   read.set = (next) => {
     if (Object.is(next, value)) return;
     value = next;
-    for (const s of [...subs]) s.run();
+    if (subs) {
+      if (_batchDepth) { for (const s of subs) _batchQueue.add(s); } // バッチ中はキューへ（後で 1 回）
+      else for (const s of [...subs]) s.run();
+    }
   };
   read.update = (fn) => read.set(fn(value));
   read.peek = () => value;
@@ -39,8 +45,8 @@ export function signal(initial) {
 function makeSub(fn) {
   const sub = {
     deps: new Set(),      // このeffectが購読しているsignalのsubs集合
-    children: new Set(),  // このeffectの実行中に作られた子effect
-    cleanups: [],         // scope 破棄/再実行時に呼ぶ後始末（timer/fetch abort 等）
+    children: null,       // 遅延: 実行中に作られた子effect（葉なら null のまま）
+    cleanups: null,       // 遅延: 後始末（timer/fetch abort 等。無ければ null）
     run() {
       sub.cleanup();
       const prevSub = activeSub, prevOwner = activeOwner;
@@ -48,10 +54,8 @@ function makeSub(fn) {
       try { fn(); } finally { activeSub = prevSub; activeOwner = prevOwner; }
     },
     cleanup() {
-      for (const c of sub.cleanups) { try { c(); } catch {} }
-      sub.cleanups.length = 0;
-      for (const c of sub.children) c.dispose();
-      sub.children.clear();
+      if (sub.cleanups) { for (const c of sub.cleanups) { try { c(); } catch {} } sub.cleanups = null; }
+      if (sub.children) { for (const c of sub.children) c.dispose(); sub.children = null; }
       for (const set of sub.deps) set.delete(sub);
       sub.deps.clear();
     },
@@ -62,15 +66,29 @@ function makeSub(fn) {
 
 export function effect(fn) {
   const sub = makeSub(fn);
-  if (activeOwner) activeOwner.children.add(sub);
+  if (activeOwner) addChild(activeOwner, sub);
   sub.run();
   return sub;
+}
+
+// ---- バッチング（opt-in）: 既定は同期・単純。batch(fn) の中の複数 set を 1 回の effect 実行に畳む ----
+let _batchDepth = 0;
+const _batchQueue = new Set();
+export function batch(fn) {
+  _batchDepth++;
+  try { return fn(); }
+  finally {
+    if (--_batchDepth === 0 && _batchQueue.size) {
+      const subs = [..._batchQueue]; _batchQueue.clear();
+      for (const s of subs) s.run(); // 同じ effect は 1 回だけ（重複除去＝グリッチ回避）
+    }
+  }
 }
 
 // 現在の scope に後始末を登録（scope 破棄で自動実行）。timer/fetch のキャンセルに使う。
 export function onCleanup(fn) {
   const owner = activeSub || activeOwner;
-  if (owner) owner.cleanups.push(fn);
+  if (owner) (owner.cleanups || (owner.cleanups = [])).push(fn);
   return fn;
 }
 
@@ -78,17 +96,17 @@ export function onCleanup(fn) {
 // owner を渡すと、その子として登録（owner 破棄で一緒に破棄 = unmount 時の一括破棄）。
 export function createRoot(fn, owner = null) {
   const sub = makeSub(() => {});
-  if (owner) owner.children.add(sub);
+  if (owner) addChild(owner, sub);
   const prevOwner = activeOwner, prevSub = activeSub;
   activeOwner = sub; activeSub = null; // 追跡を切り、内部 effect は sub を親にする
-  try { return { value: fn(), dispose: () => { sub.dispose(); owner?.children.delete(sub); } }; }
+  try { return { value: fn(), dispose: () => { sub.dispose(); owner?.children?.delete(sub); } }; }
   finally { activeOwner = prevOwner; activeSub = prevSub; }
 }
 // 独立スコープ（owner の子）。keyed リストのアイテム親として使い、親 effect の再実行では壊れず、
 // 囲む scope（v-if サブツリー等）の破棄でまとめて破棄される。
 function makeScope(owner) {
   const sub = makeSub(() => {});
-  if (owner) owner.children.add(sub);
+  if (owner) addChild(owner, sub);
   return sub;
 }
 
@@ -96,6 +114,29 @@ function makeScope(owner) {
 // flip=true で enter/leave フェード＋並び替えの FLIP アニメ（ブラウザのみ。Node では無視）。
 export function keyed(list, keyFn, renderFn, flip = false) {
   return { __keyed: true, list, keyFn, renderFn, flip };
+}
+
+// 仮想化（windowing）: 巨大リストでも **可視範囲だけ**描画する。実 DOM は数十行に収まる。
+//   const vp = windowed(items, { rowHeight: 28, height: 400 });
+//   template:
+//     <div class="vp" @scroll="vp.onScroll($event)" :style="'height:400px;overflow:auto'">
+//       <div :style="'height:'+vp.total()+'px;position:relative'">
+//         <div :style="'transform:translateY('+vp.offsetY()+'px)'">
+//           <div v-for="row in vp.visible()" :key="row.id" ...>{{ row.label }}</div>
+//   固定 rowHeight・固定 viewport height（可変高は非対応＝正直な最小）。
+export function windowed(items, { rowHeight, height, overscan = 4 } = {}) {
+  if (!rowHeight || !height) throw new Error('windowed() は rowHeight と height（px）が必要です');
+  const scrollTop = signal(0);
+  const count = Math.ceil(height / rowHeight) + overscan * 2; // 一度に描く行数（固定）
+  const list = typeof items === 'function' ? items : () => items;
+  const start = () => Math.max(0, Math.min(Math.floor(scrollTop() / rowHeight) - overscan, Math.max(0, list().length - count)));
+  return {
+    onScroll: (e) => scrollTop.set(e.target.scrollTop),
+    total: () => list().length * rowHeight,       // スクロール領域の総高さ
+    offsetY: () => start() * rowHeight,            // 先頭可視行の translateY
+    visible: () => list().slice(start(), start() + count), // 描画する slice（数十件）
+    count,
+  };
 }
 
 // 派生値（Svelte $derived / Vue computed / Solid createMemo 相当）。読むと購読。
@@ -281,7 +322,15 @@ function reconcileKeyed(parent, end, prev, desc, doc, itemsRoot) {
     if (desc.flip && n.animate) n.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(.92)' }], { duration: 150, easing: 'ease' }).finished.then(() => { rec.dispose(); n.remove?.(); }, () => { rec.dispose(); n.remove?.(); });
     else { rec.dispose(); n.remove?.(); }
   }
-  for (const k of order) parent.insertBefore(next.get(k).node, end); // 順序どおり挿入＝既存ノードは移動
+  // 位置合わせ: 右→左に走査し、**新規 or 位置がズレたノードだけ** insertBefore（全再挿入をやめる）。
+  // 安定した並びなら移動ゼロ、swap なら動いた分だけ＝O(変化) の DOM 操作。
+  let nextDom = end;
+  for (let i = order.length - 1; i >= 0; i--) {
+    const rec = next.get(order[i]);
+    const node = rec.node;
+    if (rec.isNew || node.nextSibling !== nextDom) parent.insertBefore(node, nextDom);
+    nextDom = node;
+  }
   for (const k of order) { // enter（新規）/ FLIP（移動）
     const rec = next.get(k), n = rec.node;
     if (rec.isNew) { rec.isNew = false; if (desc.flip && n.animate) n.animate([{ opacity: 0, transform: 'scale(.95)' }, { opacity: 1, transform: 'none' }], { duration: 150, easing: 'ease' }); }
@@ -314,7 +363,7 @@ function insertExpression(parent, fn, doc) {
       return;
     }
     if (keyState) { for (const rec of keyState.values()) { rec.dispose(); rec.node.remove?.(); } keyState = null; }
-    if (itemsRoot) { itemsRoot.dispose(); parentOwner?.children.delete(itemsRoot); itemsRoot = null; }
+    if (itemsRoot) { itemsRoot.dispose(); parentOwner?.children?.delete(itemsRoot); itemsRoot = null; }
     // テキスト→テキストの単純ケースは in-place 更新（node 同一性を保つ）
     if ((typeof value === 'string' || typeof value === 'number') &&
         current.length === 1 && current[0].nodeType === 3) {

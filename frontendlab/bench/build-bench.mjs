@@ -47,9 +47,13 @@ const sunaoJs = await bundle(resolve(HERE, 'sunao/main.js'), { plugins: [sunao()
 const vueRuntimeProd = require.resolve('vue/dist/vue.runtime.esm-browser.prod.js');
 const vueJs = await bundle(resolve(HERE, 'vue/main.js'), { alias: { vue: vueRuntimeProd } });
 
+// sunao 仮想化版（同じ 10k を windowed で描画）。
+const winJs = await bundle(resolve(HERE, 'windowed/main.js'), { plugins: [sunao()] });
+
 const page = (title, js) => `<!doctype html><meta charset="utf-8"><title>${title}</title><style>${CSS}</style><div id="app"></div><script>${js}</script>`;
 writeFileSync(resolve(HERE, 'dist/sunao.html'), page('sunao bench', sunaoJs.toString('utf8')));
 writeFileSync(resolve(HERE, 'dist/vue.html'), page('vue bench', vueJs.toString('utf8')));
+writeFileSync(resolve(HERE, 'dist/windowed.html'), page('sunao windowed', winJs.toString('utf8')));
 
 const row = (name, b) => `  ${name.padEnd(8)} raw ${String(b.length).padStart(7)} B   gzip ${String(gz(b)).padStart(6)} B`;
 console.log('\nbundle sizes (app + framework runtime, production, minified)');

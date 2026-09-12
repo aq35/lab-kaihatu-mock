@@ -318,3 +318,34 @@ test('ブラウザ: SEO ページを prerender→hydrate（中身入りHTML・�
     server.close();
   }
 });
+
+test('ブラウザ: per-item signal の更新が DOM に反映される（reactive 回帰）', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const src = `<template><ul><li v-for="r in rows()" :key="r.id" class="row" :class="r.hot() ? 'hot' : ''">{{ r.label() }}</li></ul></template>` +
+    `<script>export default { setup(){ const rows = signal([{id:1,label:signal('A'),hot:signal(false)},{id:2,label:signal('B'),hot:signal(false)}]); const hit=()=>{ const r=rows()[0]; r.label.set('CHANGED'); r.hot.set(true); }; return { rows, hit }; } }</script>`;
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const dir = mkdtempSync(join(tmpdir(), 'react-'));
+  try {
+    writeFileSync(join(dir, 'App.sunao'), src);
+    writeFileSync(join(dir, 'main.js'), `import { mount } from 'sunao'; import App from './App.sunao'; const {ctx}=mount(App, document.getElementById('app')); window.hit=()=>{ctx.hit();return Promise.resolve();};`);
+    const b = await esbuild.build({ entryPoints: [join(dir, 'main.js')], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+    const js = Buffer.from(b.outputFiles[0].contents);
+    const html = `<!doctype html><meta charset=utf-8><div id="app"></div><script type="module" src="/main.js"></script>`;
+    const server = http.createServer((req, res) => { if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); } else { res.setHeader('content-type', 'text/html'); res.end(html); } });
+    await new Promise((ok) => server.listen(0, ok));
+    const port = server.address().port;
+    const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+    try {
+      const page = await browser.newPage();
+      await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'load' });
+      assert.equal(await page.textContent('.row'), 'A');
+      assert.equal(await page.getAttribute('.row', 'class'), 'row');
+      await page.evaluate(() => window.hit());
+      await page.waitForTimeout(50);
+      assert.equal(await page.textContent('.row'), 'CHANGED', 'per-item signal の text 更新が反映');
+      assert.match(await page.getAttribute('.row', 'class'), /hot/, 'per-item signal の class 更新が反映');
+    } finally { await browser.close(); server.close(); }
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

@@ -64,6 +64,16 @@ n.set(1); n.update(v => v + 1); n.peek()   // 書く / 無購読で読む
 const d = computed(() => n() * 2);     // 派生（依存が変われば再計算）
 effect(() => console.log(n()));        // 副作用（依存が変わると再実行）
 onCleanup(() => …);                    // 現在の effect/scope 破棄時に実行
+batch(() => { a.set(1); b.set(2); });  // 複数 set を 1 回の effect に畳む（opt-in・既定は同期）
+```
+
+**巨大リストは仮想化**（実 DOM を数十行に抑える。10k 件でも create/scroll が非問題）:
+```js
+const vp = windowed(items, { rowHeight: 28, height: 400 });
+// template: <div @scroll="vp.onScroll($event)" :style="'height:400px;overflow:auto'">
+//   <div :style="'height:'+vp.total()+'px'"><div :style="'transform:translateY('+vp.offsetY()+'px)'">
+//     <div v-for="row in vp.visible()" :key="row.id">…
+// 固定 rowHeight・固定 height（可変高は非対応＝正直な最小）
 ```
 
 ### 描画・マウント / SSR / hydration

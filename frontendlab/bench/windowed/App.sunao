@@ -1,0 +1,28 @@
+<template>
+  <div class="vp" @scroll="vp.onScroll($event)" :style="'height:400px;overflow:auto'">
+    <div class="spacer" :style="'height:' + vp.total() + 'px;position:relative'">
+      <div class="win" :style="'transform:translateY(' + vp.offsetY() + 'px)'">
+        <div class="row" v-for="row in vp.visible()" :key="row.id">
+          <span class="id">{{ row.id }}</span><span>{{ row.label }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+export default {
+  name: 'Windowed',
+  setup() {
+    const items = signal([]);
+    let nextId = 1;
+    const build = (n) => { const a = new Array(n); for (let i = 0; i < n; i++) { const id = nextId++; a[i] = { id, label: `row ${id}` }; } return a; };
+    const vp = windowed(items, { rowHeight: 28, height: 400 });
+    return { vp, items, create10k: () => items.set(build(10000)) };
+  },
+};
+</script>
+<style>
+.vp { border: 1px solid #ddd; font: 13px system-ui; }
+.row { height: 28px; display: flex; gap: 12px; align-items: center; padding: 0 10px; box-sizing: border-box; border-bottom: 1px solid #f0f0f0; }
+.id { color: #999; width: 4rem; }
+</style>

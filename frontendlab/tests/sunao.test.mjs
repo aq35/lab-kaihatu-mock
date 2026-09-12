@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import esbuild from 'esbuild';
-import { signal, effect, computed, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { signal, effect, computed, batch, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, windowed, renderComponentToString } from '../plugins/sunao/runtime.mjs';
 import { recipeStyle } from '../plugins/sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../plugins/sunao/compile.mjs';
@@ -189,6 +189,50 @@ test('SSG: server モードで now/interval を使う部品も hang せず描画
   // これ自体が「Node で prerender してもプロセスが固まらない」ことの回帰ガード。
   const page = await prerenderSFC('fixtures/app-ui/DeployConsole.sunao');
   assert.ok(page.html.length > 0, 'DeployConsole が文字列描画される');
+});
+
+test('reactivity: per-item signal 読み（bound な item の呼び出し）は thunk 化＝更新が反映される', () => {
+  // 以前は「ctx を参照しない＝静的」と誤判定し、{{ r.label() }} が更新漏れしていた回帰ガード。
+  const r = compileTemplate('<li v-for="r in rows()" :key="r.id">{{ r.label() }}</li>', { signals: new Set(['rows']) });
+  assert.match(r.render, /\(\) => String\(r\.label\(\)\)/, 'call を含む式は reactive');
+  const cls = compileTemplate('<li v-for="r in rows()" :key="r.id" :class="r.on() ? \'a\' : \'\'">x</li>', { signals: new Set(['rows']) });
+  assert.match(cls.render, /"class": \(\) => \(r\.on\(\)/, ':class の per-item signal も reactive');
+  const s = compileTemplate('<li v-for="r in rows()" :key="r.id">{{ r.id }}</li>', { signals: new Set(['rows']) });
+  assert.doesNotMatch(s.render, /\(\) => String\(r\.id\)/, 'call 無しは静的のまま（過剰 effect を作らない）');
+});
+
+test('④ batch(): 複数 set を 1 回の effect 実行に畳む（既定は同期・都度実行）', () => {
+  const a = signal(1), b = signal(2);
+  let runs = 0;
+  effect(() => { a(); b(); runs++; });
+  assert.equal(runs, 1, '初回');
+  a.set(10); b.set(20);
+  assert.equal(runs, 3, '既定は set ごとに実行（2回）');
+  batch(() => { a.set(100); b.set(200); });
+  assert.equal(runs, 4, 'batch 内の 2 set は 1 回に畳む');
+  assert.equal(a(), 100);
+  assert.equal(b(), 200);
+  // 同値 set は畳んでも通知しない
+  batch(() => { a.set(100); });
+  assert.equal(runs, 4);
+});
+
+test('② 仮想化 windowed(): 可視 slice・offsetY・total、スクロールで窓が動く', () => {
+  const items = signal(Array.from({ length: 10000 }, (_, i) => ({ id: i })));
+  const vp = windowed(items, { rowHeight: 20, height: 400, overscan: 2 }); // count = 20 + 4 = 24
+  assert.equal(vp.total(), 10000 * 20, '総高さ = 件数 × rowHeight');
+  assert.equal(vp.offsetY(), 0);
+  assert.equal(vp.visible().length, 24, '描画は可視ぶん（数十件）だけ＝実 DOM を抑える');
+  assert.equal(vp.visible()[0].id, 0);
+  // 5000 行分スクロール → 窓がそこへ移動
+  vp.onScroll({ target: { scrollTop: 5000 * 20 } });
+  assert.equal(vp.visible()[0].id, 5000 - 2, 'overscan ぶん手前から');
+  assert.equal(vp.offsetY(), (5000 - 2) * 20);
+  assert.equal(vp.visible().length, 24, '窓の大きさは一定');
+  // 末尾へスクロールしても範囲外にはみ出ない
+  vp.onScroll({ target: { scrollTop: 1e9 } });
+  assert.equal(vp.visible()[vp.visible().length - 1].id, 9999, '末尾で clamp');
+  assert.throws(() => windowed(items, { rowHeight: 20 }), /height/, 'height 必須（fail-closed）');
 });
 
 test('式パーサ(AST): arrow/分割の仮引数は ctx 参照にしない・shorthand は拾う（regex の誤収集を修正）', () => {

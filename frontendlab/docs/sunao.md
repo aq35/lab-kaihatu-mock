@@ -107,6 +107,26 @@
 > **フル LSP（補完・ホバー・定義ジャンプ）は未実装**。LSP サーバ＋エディタが要り動作検証できないため。
 > 土台は提供済み: 診断=`diagnose()`、補完候補=`analyze()`(props)＋`scanSignals()`(signal 束縛)。あとは薄くラップするだけ。
 
+## v0.10 で実装した「パフォーマンス改善（Vue 実測比較つき）＋ correctness 修正」
+
+Vue3 と **同じアプリを実測**（`bench/`・`npm run bench`）して住み分けを数字で確認し、負けていた所を改善した。
+
+**correctness 修正（重要）**: `{{ row.label() }}` のような **per-item signal 読み**を「ctx 非参照＝静的」と誤判定して更新漏れしていた。
+→ **「呼び出しを含む式は reactive」** に修正（signal は呼んで読むため）。keyed リスト内の signal 更新が正しく反映されるようになった。
+
+| 改善 | 内容 | 効果（vs Vue3, commit ms） |
+|---|---|---|
+| **① keyed reconcile 最小移動** | 毎回全ノード再挿入 → 右→左走査で新規・位置ズレだけ移動 | removeFirst vue1.3x→**sunao9.4x**、append 互角→**sunao1.9x** |
+| **② 仮想化 `windowed()`** | 可視範囲だけ描画（固定 rowHeight/height） | 10k 件でも実 DOM **23 行**・create **1.3ms**・scroll **0.6ms** |
+| **③ 割当軽量化** | signal の subs 集合・effect の children/cleanups を遅延生成 | create10k 115→**96ms**、create1k **互角**に |
+| **④ `batch()`（opt-in）** | 複数 set を 1 回の effect に畳む（既定は同期のまま） | グリッチ回避・大量更新の coalesce |
+
+**実測サマリ（最適化後）**: 局所更新（update/select/remove）は **sunao 7〜10x**・追加は sunao 1.9x・**bundle は 11.3x 小**。
+10k の全構築(1.8x)・swap(3.1x) はまだ Vue 有利だが、**仮想化で実アプリはこの規模を作らない**ので実害小。受領書は [`bench/README.md`](../bench/README.md)。
+
+> 結論: **「軽くて、大きな画面の一部が素早く動く UI」に最適化**。局所更新・削除・追加・配信サイズで Vue に勝ち、
+> 10k 全構築/並び替えは Vue に譲る（＝仮想化で回避）。数字は環境依存・桁で読む。
+
 ## v0.2 の柱（維持）
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
@@ -164,7 +184,7 @@
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、58 件すべて green）
+## テスト（`npm test`、62 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/

@@ -269,6 +269,24 @@ function refsCtx(expr, bound) {
   collectIdents(expr, bound, s);
   return s.size > 0;
 }
+// 式に呼び出しが含まれるか（signal は「呼んで読む」ので、call があれば reactive とみなす）。
+function exprHasCall(expr) {
+  let ast;
+  try { ast = _parseExpression(String(expr)); }
+  catch { try { ast = _parseExpression(`(()=>{\n${expr}\n})`); } catch { return /[\w$)\]]\s*\(/.test(String(expr)); } }
+  let found = false;
+  (function w(n) {
+    if (found || !n || typeof n !== 'object') return;
+    if (n.type === 'CallExpression' || n.type === 'OptionalCallExpression') { found = true; return; }
+    for (const k in n) { if (_AST_META.has(k)) continue; const v = n[k]; if (Array.isArray(v)) v.forEach(w); else if (v && typeof v.type === 'string') w(v); }
+  })(ast);
+  return found;
+}
+// 「動的（reactive にすべき）」判定: ctx 参照 **または** 呼び出しを含む。
+// 後者が per-item signal（bound な item を呼ぶ）の reactivity を拾う（従来は静的化して更新漏れしていた）。
+function isDyn(expr, bound) {
+  return refsCtx(expr, bound) || exprHasCall(expr);
+}
 // 呼び出された識別子（name( / obj.m(）を記録＝「関数っぽい」判定用。
 function noteCalled(expr, ctx) {
   const dummy = new Set();
@@ -319,7 +337,7 @@ function genNode(node, bound, ctx) {
   if (node.type === 'interp') {
     collectIdents(node.expr, bound, ctx.used);
     noteCalled(node.expr, ctx); noteBare(node.expr, bound, ctx);
-    if (refsCtx(node.expr, bound)) { ctx.hasDynamic = true; return `() => String(${node.expr})`; }
+    if (isDyn(node.expr, bound)) { ctx.hasDynamic = true; return `() => String(${node.expr})`; }
     if (!isLiteral(node.expr)) ctx.staticSerializable = false;
     return `String(${node.expr})`;
   }
@@ -381,7 +399,7 @@ function genNode(node, bound, ctx) {
       }
     }
     let expr = `component(${node.tag}, {${cprops.join(', ')}})`;
-    if (vIf) { collectIdents(vIf.value, innerBound, ctx.used); noteCalled(vIf.value, ctx); noteBare(vIf.value, innerBound, ctx); expr = refsCtx(vIf.value, innerBound) && !vFor ? `() => (${vIf.value}) ? ${expr} : null` : `((${vIf.value}) ? ${expr} : null)`; }
+    if (vIf) { collectIdents(vIf.value, innerBound, ctx.used); noteCalled(vIf.value, ctx); noteBare(vIf.value, innerBound, ctx); expr = isDyn(vIf.value, innerBound) && !vFor ? `() => (${vIf.value}) ? ${expr} : null` : `((${vIf.value}) ? ${expr} : null)`; }
     if (forHead) {
       const params = forHead.index ? `(${forHead.item}, ${forHead.index})` : `(${forHead.item})`;
       const inner = keyExpr
@@ -406,7 +424,7 @@ function genNode(node, bound, ctx) {
       const key = a.name.slice(1);
       collectIdents(a.value, innerBound, ctx.used);
       noteCalled(a.value, ctx); noteBare(a.value, innerBound, ctx);
-      if (refsCtx(a.value, innerBound)) { ctx.hasDynamic = true; props.push(`${JSON.stringify(key)}: () => (${a.value})`); }
+      if (isDyn(a.value, innerBound)) { ctx.hasDynamic = true; props.push(`${JSON.stringify(key)}: () => (${a.value})`); }
       else props.push(`${JSON.stringify(key)}: (${a.value})`);
     } else if (a.name.startsWith('@')) {
       const ev = a.name.slice(1);
@@ -428,7 +446,7 @@ function genNode(node, bound, ctx) {
     ctx.hasDynamic = true;
     props.push(`"class": () => [${JSON.stringify(staticClass)}, (${dynClass})].filter(Boolean).join(' ')`);
   } else if (dynClass != null) {
-    if (refsCtx(dynClass, innerBound)) { ctx.hasDynamic = true; props.push(`"class": () => (${dynClass})`); }
+    if (isDyn(dynClass, innerBound)) { ctx.hasDynamic = true; props.push(`"class": () => (${dynClass})`); }
     else props.push(`"class": (${dynClass})`);
   } else if (staticClass != null) {
     props.push(`"class": ${JSON.stringify(staticClass)}`);
@@ -448,7 +466,7 @@ function genNode(node, bound, ctx) {
   if (vIf) {
     collectIdents(vIf.value, innerBound, ctx.used);
     noteCalled(vIf.value, ctx); noteBare(vIf.value, innerBound, ctx);
-    if (refsCtx(vIf.value, innerBound) && !vFor) { ctx.hasDynamic = true; expr = `() => (${vIf.value}) ? ${expr} : null`; }
+    if (isDyn(vIf.value, innerBound) && !vFor) { ctx.hasDynamic = true; expr = `() => (${vIf.value}) ? ${expr} : null`; }
     else expr = `((${vIf.value}) ? ${expr} : null)`;
   }
   if (forHead) {
@@ -747,7 +765,7 @@ export function compileSFC(source, { runtime = './runtime.mjs', sourcemap = fals
   }
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
-  const importLine = `import { h, signal, effect, computed, component, keyed, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n`;
+  const importLine = `import { h, signal, effect, computed, batch, component, keyed, windowed, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n`;
   const out = (
     importLine +
     `${scriptBody}\n` +
