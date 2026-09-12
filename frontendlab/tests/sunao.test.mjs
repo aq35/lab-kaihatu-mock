@@ -1150,3 +1150,10 @@ test('fonts: 生成した文字フォント(sunao Pixel)が有効な WOFF2＋ASC
   assert.ok(buf.length < 8192, `軽量: ${buf.length}B`);
   assert.match(readFileSync(resolve('fonts/pixel-demo.html'), 'utf8'), /SUNAO/, 'デモに実テキスト');
 });
+
+test('fonts: 曲線フォント(sunao Round)が有効な WOFF2＋グリフを持つ', () => {
+  const buf = readFileSync(resolve('fonts/sunao-round.woff2'));
+  assert.equal(buf.slice(0, 4).toString('latin1'), 'wOF2', 'WOFF2 signature');
+  assert.ok(buf.length < 8192, `軽量: ${buf.length}B`);
+  assert.match(readFileSync(resolve('fonts/round-demo.html'), 'utf8'), /SUNAO/);
+});
