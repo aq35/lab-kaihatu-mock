@@ -110,6 +110,35 @@ test('LSP: 式位置の補完は signal/prop を name() で挿入（()呼び忘�
   } finally { c.kill(); }
 });
 
+test('LSP: manifest 連携 — 子部品の props / enum 値を補完', async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  const dir = mkdtempSync(join(tmpdir(), 'lspm-'));
+  const c = makeClient();
+  try {
+    // 子: enum prop を持つ Card
+    writeFileSync(join(dir, 'Card.sunao'), '<template><div>{{ kind() }}</div></template><script>export default { name:"Card", props:{ kind:{ enum:["a","b"], required:true }, title:{ type:"string" } }, setup(){return{}} }</script>');
+    const hostPath = join(dir, 'Host.sunao');
+    const hostText = '<template>\n  <Card />\n  <Card :kind="" />\n</template>\n<script>\nimport Card from "./Card.sunao";\nexport default { setup(){ return {}; } }\n</script>';
+    writeFileSync(hostPath, hostText);
+    const uri = pathToFileURL(hostPath).href;
+    await c.request('initialize', { capabilities: {} });
+    c.notify('textDocument/didOpen', { textDocument: { uri, text: hostText } });
+    // (1) `<Card |/>` 属性位置 → 子 props を候補に
+    const attrPos = { line: 1, character: 8 }; // "  <Card |/>"
+    const r1 = await c.request('textDocument/completion', { textDocument: { uri }, position: attrPos });
+    const labels1 = r1.items.map((i) => i.label);
+    assert.ok(labels1.includes('kind') && labels1.includes('title'), '子 Card の props を候補に');
+    // (2) `<Card :kind="|" />` 値位置 → enum 値を候補に
+    const valPos = { line: 2, character: hostText.split('\n')[2].indexOf('="') + 2 }; // 開き " の直後
+    const r2 = await c.request('textDocument/completion', { textDocument: { uri }, position: valPos });
+    const labels2 = r2.items.map((i) => i.label);
+    assert.ok(labels2.includes('a') && labels2.includes('b'), 'enum 値 a/b を候補に');
+  } finally { c.kill(); rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('LSP: hover が signal を「呼んで読む」と説明', async () => {
   const c = makeClient();
   try {

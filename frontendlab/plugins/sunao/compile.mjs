@@ -566,6 +566,24 @@ export function compileTemplate(template, { scopeAttr = null, components = new S
   };
 }
 
+/**
+ * 安全な自動修正（() 呼び忘れのみ）。**警告が指す「式全体が裸の signal」だけ** を `name()` に。
+ * 対象は template の {{ name }} と 値位置属性（:x / v-if / v-model / :class）="name" のみ。
+ * 部分式や text は触らない（精密＝安全）。呼び出し側（doctor --fix）は適用後に再診断して悪化なら破棄する。
+ */
+export function autofix(source) {
+  const flagged = [...new Set(warningsOf(source).filter((w) => w.code === 'SUNAO_CALL_FORGOTTEN').map((w) => w.ident))];
+  if (!flagged.length) return source;
+  let template;
+  try { template = extractBlocks(source).template; } catch { return source; }
+  const alt = flagged.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  let fixed = template
+    .replace(new RegExp(`\\{\\{\\s*(${alt})\\s*\\}\\}`, 'g'), '{{ $1() }}')                             // {{ name }} → {{ name() }}
+    .replace(new RegExp(`((?::[\\w-]+|v-if|v-model)\\s*=\\s*")(${alt})(")`, 'g'), '$1$2()$3');           // :x="name" → :x="name()"
+  if (fixed === template) return source;
+  return source.replace(template, fixed);
+}
+
 /** SFC → 警告配列（非致命）。ツール/factory が表示に使う。 */
 export function warningsOf(source) {
   try {

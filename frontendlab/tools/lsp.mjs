@@ -11,9 +11,22 @@
  *
  * これ単体で「Cargo 並みの思想」= 統合・決定論・fail-closed・エラーが教える、を LSP でも通す。
  */
-import { diagnose, symbols } from '../plugins/sunao/compile.mjs';
+import { diagnose, symbols, manifest } from '../plugins/sunao/compile.mjs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 const docs = new Map(); // uri -> text
+
+// import 済み子コンポーネントを解決して manifest（props/enum を補完に使う）。best-effort。
+function childManifest(text, uri, tag) {
+  try {
+    const m = new RegExp(`import\\s+${tag}\\s+from\\s+['"]([^'"]+)['"]`).exec(text);
+    if (!m || !uri.startsWith('file://')) return null;
+    const path = resolve(dirname(fileURLToPath(uri)), m[1]);
+    return manifest(readFileSync(path, 'utf8'), path);
+  } catch { return null; }
+}
 const COMMON_TAGS = ['div', 'span', 'p', 'a', 'button', 'input', 'ul', 'li', 'ol', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'section', 'header', 'footer', 'nav', 'main', 'form', 'label', 'img', 'h1', 'h2', 'h3', 'small', 'strong', 'em', 'slot'];
 const DIRECTIVES = [
   { label: 'v-if', detail: '条件描画（式が真なら描画）' },
@@ -123,18 +136,21 @@ function contextAt(text, offset) {
   const inTemplate = t && offset > t.index + t[0].length && (tEnd === -1 || offset <= tEnd);
   const before = text.slice(0, offset);
   const line = before.slice(before.lastIndexOf('\n') + 1);
+  // 囲みタグ名（属性/属性値の文脈で子部品を解決するため）: 行内の最後の未閉じ <tag
+  const enclM = /<([A-Za-z][\w-]*)(?:\s[^<>]*)?$/.exec(line);
+  const enclTag = enclM ? enclM[1] : null;
   // {{ ... }} 内（最後の {{ が最後の }} より後）
   const lastOpen = before.lastIndexOf('{{'), lastClose = before.lastIndexOf('}}');
   if (inTemplate && lastOpen > lastClose) return { kind: 'expr' };
-  // 属性値の式内: :x=" / @x=" / v-*=" の未閉じ引用符
-  const attrOpen = /([:@][\w-]+|v-[\w-]+)\s*=\s*"([^"]*)$/.exec(line);
-  if (inTemplate && attrOpen) return { kind: 'expr' };
+  // 属性値内: name="…（未閉じ引用符）。attr 名と囲みタグを持ち帰る（enum 値補完に使う）。
+  const attrOpen = /([:@]?[\w-]+)\s*=\s*"([^"]*)$/.exec(line);
+  if (inTemplate && attrOpen) return { kind: 'attrval', attr: attrOpen[1], tag: enclTag, dynamic: /^[:@]/.test(attrOpen[1]) };
   // タグ名入力中: <word
   const tag = /<([A-Za-z][\w-]*)?$/.exec(line);
   if (inTemplate && tag) return { kind: 'tag', prefix: tag[1] || '' };
   // タグ内の属性名位置: 直前に開きタグがあり、まだ > で閉じていない
   const openLt = line.lastIndexOf('<'), openGt = line.lastIndexOf('>');
-  if (inTemplate && openLt > openGt && !/^<\//.test(line.slice(openLt))) return { kind: 'attr' };
+  if (inTemplate && openLt > openGt && !/^<\//.test(line.slice(openLt))) return { kind: 'attr', tag: enclTag };
   return { kind: inTemplate ? 'text' : 'other' };
 }
 
@@ -148,20 +164,36 @@ function complete(params) {
   const items = [];
   const push = (label, kind, detail, insertText) => items.push({ label, kind, detail, insertText: insertText || label });
 
-  if (ctx.kind === 'tag') {
-    for (const c of sy.components) push(c, 7 /*Class*/, 'component（import 済み）');
-    for (const tg of COMMON_TAGS) push(tg, 10 /*Property*/, 'HTML 要素');
-  } else if (ctx.kind === 'attr') {
-    for (const d of DIRECTIVES) push(d.label, 14 /*Keyword*/, d.detail);
-  } else if (ctx.kind === 'expr') {
-    const sig = new Set(sy.signals);
-    const prop = new Set(sy.props);
-    // signal/prop は「呼んで読む」→ name() を挿入して () 呼び忘れを防ぐ
+  const childProps = (tag) => (tag && /^[A-Z]/.test(tag) ? (childManifest(text, uri, tag)?.props || null) : null);
+  const exprItems = () => {
+    const sig = new Set(sy.signals), prop = new Set(sy.props);
     for (const n of sy.signals) push(n, 3 /*Function*/, 'signal — 呼んで読む', `${n}()`);
     for (const n of sy.props) if (!sig.has(n)) push(n, 5 /*Field*/, 'prop（accessor）— 呼んで読む', `${n}()`);
     for (const n of sy.returns) if (!sig.has(n) && !prop.has(n)) push(n, 6 /*Variable*/, 'setup の return');
     for (const n of sy.exposed) if (!sig.has(n) && !prop.has(n)) push(n, 6, 'expose');
     for (const g of GLOBALS) push(g, 12 /*Value*/, 'グローバル');
+  };
+
+  if (ctx.kind === 'tag') {
+    for (const c of sy.components) push(c, 7 /*Class*/, 'component（import 済み）');
+    for (const tg of COMMON_TAGS) push(tg, 10 /*Property*/, 'HTML 要素');
+  } else if (ctx.kind === 'attr') {
+    // 子コンポーネントなら、その部品の props を候補に（manifest 連携）。
+    const cp = childProps(ctx.tag);
+    if (cp) for (const p of cp) {
+      const d = `prop${p.required ? '（必須）' : ''}${p.type ? ` :${p.type}` : ''}${p.enum ? ` = ${p.enum.join('|')}` : ''}`;
+      push(p.name, 5 /*Field*/, d, `:${p.name}=""`);
+    }
+    for (const dd of DIRECTIVES) push(dd.label, 14 /*Keyword*/, dd.detail);
+  } else if (ctx.kind === 'attrval') {
+    // enum prop の値位置なら enum 値を候補に（子部品の manifest から）。
+    const cp = childProps(ctx.tag);
+    const attrName = ctx.attr.replace(/^[:@]/, '');
+    const p = cp && cp.find((x) => x.name === attrName);
+    if (p && p.enum) for (const v of p.enum) push(v, 12 /*Value*/, `enum 値（${attrName}）`);
+    if (ctx.dynamic) exprItems(); // :x="式" なら式候補も
+  } else if (ctx.kind === 'expr') {
+    exprItems();
   }
   return { isIncomplete: false, items };
 }

@@ -171,10 +171,11 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 
 - **`node tools/diagnose.mjs [file ...] [--pretty]`** … `.sunao` の診断を**機械可読 JSON**で出す（error は fail-closed で exit 1、warning は exit に影響なし）。
 - **`diagnose(source, {filename})`**（`compile.mjs`）… throw せず `{ diagnostics:[{severity, code, message, line, column, suggestions?, ident?}] }` を返す＝LSP の `publishDiagnostics` の中身。
-- **`npm run doctor`** … 全 .sunao の診断＋クロス契約を **1 つの JSON** に（error/契約違反で exit 1）。各 diagnostic は `fix` ヒント付き（AI の自己修正ループ）。
+- **`npm run doctor`** … 全 .sunao の診断＋クロス契約を **1 つの JSON** に（error/契約違反で exit 1）。各 diagnostic は `fix` ヒント付き（AI の自己修正ループ）。**`--fix`** で安全な自動修正（() 呼び忘れ）を適用（再診断で悪化しない時だけ書込）。
 - **`npm run manifest`** … 各部品の契約を JSON（`props{type,required,enum}`/slots/uses/signals）＝AI がソースを読まず `<Child/>` を組める。
 - **`npm run verify`** … `check`＋`fmt`＋`test` の 1 ゲート。
 - **`node tools/lsp.mjs`（`npm run lsp`）** … **依存ゼロの LSP サーバ**（stdio JSON-RPC を手書き）。診断（publishDiagnostics）・補完（式位置=signal/prop/return を `name()` 挿入・タグ位置=component・属性位置=ディレクティブ）・hover・**定義ジャンプ**・**アウトライン(documentSymbol)**。頭脳は `diagnose()`/`symbols()`。エディタ無しで `tests/lsp.test.mjs` がプロトコルを直接叩いて検証。
+- **LSP 補完は manifest 連携** … `<Child |>` で子部品の props（type/required/enum を detail）、`:enumProp="|"` で enum 値を候補に（import を解決して子 .sunao を読む）。
 - **`editor/vscode/`** … VSCode 拡張（F5 で LSP に繋がる）。`editor/sunao.tmLanguage.json` + `language-configuration.json` が構文ハイライト。導入は `GETTING_STARTED.md` / `editor/vscode/README.md`。
 - 式解析は **@babel/parser の AST**（build 時のみ・アプリ bundle には入らない）。arrow/分割の仮引数を正しくスコープするので、`items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。
 - 未実装（正直）: リネーム/シグネチャヘルプ（土台 `symbols()` はある）・`.vsix` パッケージ配布。

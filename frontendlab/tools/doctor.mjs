@@ -7,12 +7,15 @@
  *         contract:[{parent, tag, problem}] }
  * error（fail-closed）か contract 違反があれば exit 1。診断は fix ヒント付き（AI がそのまま直せる）。
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, relative, basename } from 'node:path';
-import { diagnose, analyze } from '../plugins/sunao/compile.mjs';
+import { diagnose, analyze, autofix } from '../plugins/sunao/compile.mjs';
 
 const pretty = process.argv.includes('--pretty');
+const doFix = process.argv.includes('--fix'); // 安全な自動修正（() 呼び忘れ）を適用
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const errCount = (src) => diagnose(src, {}).diagnostics.filter((d) => d.severity === 'error').length;
+const warnCount = (src) => diagnose(src, {}).diagnostics.filter((d) => d.severity === 'warning').length;
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -29,9 +32,17 @@ const registry = new Map(); // tag -> props schema
 const usages = [];
 let errors = 0, warnings = 0;
 
+const fixedFiles = [];
 for (const f of targets) {
-  const src = readFileSync(f, 'utf8');
+  let src = readFileSync(f, 'utf8');
   const rel = relative('.', f);
+  if (doFix) {
+    const cand = autofix(src);
+    // 安全網: 適用後に再診断して error が増えず warning が減る時だけ採用。
+    if (cand !== src && errCount(cand) <= errCount(src) && warnCount(cand) < warnCount(src)) {
+      writeFileSync(f, cand); src = cand; fixedFiles.push(rel);
+    }
+  }
   const { diagnostics } = diagnose(src, { filename: rel });
   for (const d of diagnostics) (d.severity === 'error' ? errors++ : warnings++, void 0);
   files.push({ file: rel, diagnostics });
@@ -55,6 +66,6 @@ for (const u of usages) {
 }
 
 const ok = errors === 0 && contract.length === 0;
-const report = { ok, errors, warnings, contractViolations: contract.length, files, contract };
+const report = { ok, errors, warnings, contractViolations: contract.length, files, contract, ...(doFix ? { fixed: fixedFiles } : {}) };
 process.stdout.write(JSON.stringify(report, null, pretty ? 2 : 0) + '\n');
 process.exit(ok ? 0 : 1);

@@ -12,7 +12,7 @@ import { recipeStyle } from '../plugins/sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../plugins/sunao/compile.mjs';
 import { formatSFC } from '../plugins/sunao/format.mjs';
-import { manifest } from '../plugins/sunao/compile.mjs';
+import { manifest, autofix } from '../plugins/sunao/compile.mjs';
 import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -288,6 +288,18 @@ test('② 仮想化 windowed(): 可視 slice・offsetY・total、スクロール
   vp.onScroll({ target: { scrollTop: 1e9 } });
   assert.equal(vp.visible()[vp.visible().length - 1].id, 9999, '末尾で clamp');
   assert.throws(() => windowed(items, { rowHeight: 20 }), /height/, 'height 必須（fail-closed）');
+});
+
+test('DX: autofix() は () 呼び忘れ（式全体が裸 signal）だけを name() に精密修正', () => {
+  const src = '<template><b>{{ count }}</b><i :class="count">x</i><em>{{ count() + 1 }}</em></template>' +
+    '<script>export default { setup(){ const count = signal(0); return { count }; } }</script>';
+  const fixed = autofix(src);
+  assert.match(fixed, /\{\{ count\(\) \}\}/, '{{ count }} を修正');
+  assert.match(fixed, /:class="count\(\)"/, ':class を修正');
+  assert.match(fixed, /count\(\) \+ 1/, '既に正しい部分式は二重修正しない');
+  assert.equal(warningsOf(fixed).filter((w) => w.code === 'SUNAO_CALL_FORGOTTEN').length, 0, '警告が消える');
+  // 修正不要なら原文をそのまま返す
+  assert.equal(autofix('<template><b>{{ count() }}</b></template><script>export default { setup(){ const count = signal(0); return { count }; } }</script>').includes('count()()'), false, '二重付与しない');
 });
 
 test('DX: manifest() が部品契約を機械可読に（props/enum/slots/uses）', () => {
