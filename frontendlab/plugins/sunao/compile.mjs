@@ -551,6 +551,40 @@ export function warningsOf(source) {
 }
 
 /**
+ * ツール用のシンボル抽出（LSP の補完・ホバーの頭脳）。編集中で壊れていても throw しない。
+ *   { props:[], returns:[], exposed:[], signals:[], components:[] }
+ * props/return/expose = テンプレが参照してよい宣言集合。signals = 「呼んで読む」束縛。components = import 済み大文字タグ。
+ */
+export function symbols(source) {
+  const out = { props: [], returns: [], exposed: [], signals: [], components: [] };
+  try {
+    const scr = /<script>([\s\S]*?)<\/script>/.exec(source);
+    const script = scr ? scr[1] : '';
+    for (const m of script.matchAll(/import\s+([A-Z]\w*)\s+from/g)) out.components.push(m[1]);
+    out.signals = [...scanSignals(script)].filter((n) => !/^[A-Z]/.test(n) || true); // signals ∪ props（scanSignals は props も含む）
+    // props キー（トップレベル）
+    const propsBody = balancedBlock(script, 'props');
+    if (propsBody) {
+      let depth = 0;
+      for (let i = 0; i < propsBody.length; i++) {
+        const ch = propsBody[i];
+        if (ch === '{') depth++; else if (ch === '}') depth--;
+        else if (depth === 0) { const mm = /^([A-Za-z_$][\w$]*)\s*:/.exec(propsBody.slice(i)); if (mm) { out.props.push(mm[1]); i += mm[0].length - 1; } }
+      }
+    }
+    // expose:[...]
+    const ex = /expose\s*:\s*\[([^\]]*)\]/.exec(script);
+    if (ex) ex[1].split(',').forEach((s) => { const n = s.trim().replace(/^['"]|['"]$/g, ''); if (n) out.exposed.push(n); });
+    // setup の return { ... } の名前
+    const rt = /return\s*\{([^{}]*)\}/.exec(script);
+    if (rt) for (const m of rt[1].matchAll(/([A-Za-z_$][\w$]*)/g)) out.returns.push(m[1]);
+  } catch {}
+  const uniq = (a) => [...new Set(a)];
+  for (const k of Object.keys(out)) out[k] = uniq(out[k]);
+  return out;
+}
+
+/**
  * 非 throw の診断（エディタ/LSP・ツール用）。error（fail-closed）＋ warning（()呼び忘れ等）を
  * LSP の Diagnostic に近い形で返す。line/column は 1 始まり。
  *   { filename, diagnostics: [{ severity:'error'|'warning', code, message, line, column, suggestions?, ident? }] }

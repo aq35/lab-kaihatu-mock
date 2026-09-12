@@ -96,7 +96,7 @@
 
 ## v0.9 で実装した「残りの大物」（式パーサ堅牢化・エディタ支援）
 
-「残りの大物」＝正規表現の式解析と、エディタ支援。前者は**本式パーサに置換**、後者は**検証可能なスライス**を提供（フル LSP はエディタが無いこの環境で検証できないので作らず、土台までを正直に）。
+「残りの大物」＝正規表現の式解析と、エディタ支援。前者は**本式パーサに置換**、後者は**検証可能なスライス**を提供（当時はフル LSP を「エディタ無しで検証できない」と保留した — が **v0.11 でこれを撤回**し、プロトコルを直接叩く形で実 LSP を建てて検証した）。
 
 | 大物 | 実装 | テスト・実測 |
 |---|---|---|
@@ -132,6 +132,24 @@ Fenwick(BIT) で累積オフセットを O(log N)・初期は estimate・描画�
 実機で 1,000 件・可変高でも実 DOM 数十行・末尾まで到達を確認。
 **正直な限界**: estimate ベースなので初期のスクロール位置は近似（実測で数フレームで収束）、`attach` 必須。
 これで「巨大リスト」は固定高（`windowed`）・可変高（`windowedVar`）どちらもカバー。残るは swap の LIS 最小化のみ（数千行の全ソートというニッチ・仮想化で回避可能なため保留）。
+
+## v0.11 で実装した「依存ゼロの LSP（エコシステム＝思想）」
+
+「エコシステムとは巨大なコードやコミュニティではなく**思想**」という立場で、**依存ゼロの Language Server** を建てた（`tools/lsp.mjs`・`npm run lsp`）。巨大な依存に頼らず、頭脳は既存の compiler（`diagnose()`/`symbols()`）。
+
+| 機能 | 内容 | 思想 |
+|---|---|---|
+| **publishDiagnostics** | 編集ごとに error(fail-closed)＋warning(()呼び忘れ) を range/severity つきで | エラーが教える |
+| **completion** | 式位置=signal/prop/return（**signal/prop は `name()` を挿入して () 呼び忘れを未然に防ぐ**）・タグ位置=component＋HTML・属性位置=ディレクティブ | 良い既定・footgun を消す |
+| **hover** | signal（呼んで読む）/ prop / component / local を説明 | 宣言が語る |
+
+`symbols(source)` を compiler に追加（props/returns/exposed/signals/components を非 throw 抽出＝補完/hover の頭脳）。
+**検証**: `tests/lsp.test.mjs` が **stdio プロトコルを直接叩いて**（エディタ不要）initialize/診断/補完/hover を確認。5/5 green。
+LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ。
+
+> これで sunao のツール（compile / dev / prerender / diagnose / check / bench / **lsp**）は全部**同じ思想**で一つに繋がる。
+> 規模ではなく「統合・決定論・fail-closed・教えるエラー」という **Cargo 的な一貫性**を、依存ゼロで通した。
+> 未実装（正直）: 定義ジャンプ/リネーム（土台 `symbols()` はある）・VSCode 拡張の配布・swap の LIS 化。
 
 ## v0.2 の柱（維持）
 
@@ -190,7 +208,7 @@ Fenwick(BIT) で累積オフセットを O(log N)・初期は estimate・描画�
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、64 件すべて green）
+## テスト（`npm test`、69 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/

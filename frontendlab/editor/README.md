@@ -41,11 +41,25 @@ const { diagnostics } = diagnose(source, { filename: 'X.sunao' });
 `diagnose()` は **error（未宣言参照・未知ディレクティブ等）と warning（`()` 呼び忘れ等）** を
 `line`/`column`（1 始まり）付きで返す。これが LSP の `textDocument/publishDiagnostics` の中身になる。
 
-## 3. フル LSP（未実装・正直に）
+## 3. LSP サーバ（依存ゼロ・実装済み）
 
-補完（props / signal / ディレクティブ）・ホバー・定義ジャンプは **LSP サーバ＋エディタ**が要り、
-この環境では動作検証できないため作っていない。土台はある:
+`tools/lsp.mjs` … **stdio JSON-RPC の Language Server を手書き**（依存ゼロ＝「巨大な依存に頼らない」思想の体現）。頭脳は compiler の `diagnose()`/`symbols()`。
 
-- **診断**: `diagnose()`（上）をそのまま `publishDiagnostics` に流せる。
-- **補完候補**: `analyze()`（props 抽出）＋`scanSignals()`（signal 束縛）で候補は機械的に出せる。
-- あとは `vscode-languageserver` で薄くラップするだけ（＝将来の宿題。ここでは verifiable な土台までを提供）。
+提供する機能:
+- **publishDiagnostics** … 編集ごとに診断（error=fail-closed / warning=()呼び忘れ）を range/severity つきで送る。
+- **completion** … 文脈で候補を出す:
+  - 式位置（`{{ }}` / `:x="…"` / `@x="…"`）→ signal・prop・setup return・グローバル。**signal/prop は `name()` を挿入して () 呼び忘れを未然に防ぐ**。
+  - タグ位置（`<…`）→ import 済み component ＋ HTML 要素。
+  - 属性位置 → `v-if`/`v-for`/`v-model`/`flip`/`:`/`@`。
+- **hover** … 識別子が signal（呼んで読む）/ prop（accessor）/ component / local のどれかを説明。
+
+起動: `npm run lsp`（または `node tools/lsp.mjs`）。エディタからは stdio で接続する。
+
+**エディタへの繋ぎ方（VSCode 例）**: `vscode-languageclient` で `node tools/lsp.mjs` を stdio 起動し、`.sunao` を languageId に紐付けるだけ（クライアント側は薄い定型）。
+
+**検証**: `tests/lsp.test.mjs` が **プロトコルを直接叩いて**（エディタ不要）initialize/診断/補完/hover を検証。中身はエディタ無しで担保している。
+
+## 4. まだ無いもの（正直に）
+
+- **定義ジャンプ / リネーム / シグネチャヘルプ**（LSP の残り機能）。土台（`symbols()`）はあるので追加は容易。
+- VSCode 拡張の**パッケージ配布**（今は grammar 2 ファイル＋LSP サーバを手で繋ぐ）。

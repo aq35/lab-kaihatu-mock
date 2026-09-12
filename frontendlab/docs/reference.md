@@ -167,9 +167,10 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 
 - **`node tools/diagnose.mjs [file ...] [--pretty]`** … `.sunao` の診断を**機械可読 JSON**で出す（error は fail-closed で exit 1、warning は exit に影響なし）。
 - **`diagnose(source, {filename})`**（`compile.mjs`）… throw せず `{ diagnostics:[{severity, code, message, line, column, suggestions?, ident?}] }` を返す＝LSP の `publishDiagnostics` の中身。
-- **`editor/sunao.tmLanguage.json` + `language-configuration.json`** … VSCode 用の構文ハイライト（`editor/README.md` に導入手順）。
+- **`node tools/lsp.mjs`（`npm run lsp`）** … **依存ゼロの LSP サーバ**（stdio JSON-RPC を手書き）。診断（publishDiagnostics）・補完（式位置=signal/prop/return を `name()` 挿入・タグ位置=component・属性位置=ディレクティブ）・hover（signal は呼んで読む 等）。頭脳は `diagnose()`/`symbols()`。エディタ無しで `tests/lsp.test.mjs` がプロトコルを直接叩いて検証。
+- **`editor/sunao.tmLanguage.json` + `language-configuration.json`** … VSCode 用の構文ハイライト（`editor/README.md` に LSP との繋ぎ方）。
 - 式解析は **@babel/parser の AST**（build 時のみ・アプリ bundle には入らない）。arrow/分割の仮引数を正しくスコープするので、`items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。
-- フル LSP（補完・ホバー）は未実装（エディタが要り検証不能なため）。土台＝`diagnose()`＋`analyze()`＋`scanSignals()` は提供済み。
+- 未実装（正直）: 定義ジャンプ/リネーム/シグネチャヘルプ（土台 `symbols()` はある）・VSCode 拡張のパッケージ配布。
 
 ## 決定論・予算（factory）
 
