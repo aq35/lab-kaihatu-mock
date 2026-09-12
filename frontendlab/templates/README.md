@@ -9,6 +9,7 @@
 | `form` | ＋検証 | `v-model` 双方向・**派生値としての検証**（computed）・`@submit` |
 | `table` | 並び替え/絞り込み | keyed `v-for`・`computed`（filter→sort）・`v-model` フィルタ |
 | `dashboard` | KPI＋時計 | `now`（実時計）・`computed` メトリクス・グリッド |
+| `wiki` | ＋ `articles.js` | **Wiki/ドキュメント記事**（atwiki 風）: 目次(TOC)＋スクロール連動ハイライト・見出し折りたたみ・ページ切替・レスポンシブ2カラム |
 | `gallery` | ＋ `artworks.js` | **イラスト投稿サイト風**（Pixiv 的）: 作品フィード・タグ絞り込み・新着/人気ソート・詳細ページ（ルーティング）・ブックマーク（signal で即反映） |
 | `video` | ＋ `Player.sunao` / `stream.js` / `videos.js` | **YouTube 風ストリーミング**: ルーティング（一覧 ⇄ 視聴）・`<video>` のカスタムコントロール（signal 連動）・**HLS(adaptive) / progressive MP4 両対応**（`stream.js` は依存ゼロ、hls.js はアプリ側の任意 CDN 依存） |
 
@@ -18,6 +19,7 @@ npm run new -- apps/signup --template form
 npm run new -- apps/users  --template table
 npm run new -- apps/kpi    --template dashboard
 npm run new -- apps/art    --template gallery
+npm run new -- apps/docs   --template wiki
 npm run new -- apps/tube   --template video
 ```
 
