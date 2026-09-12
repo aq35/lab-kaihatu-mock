@@ -168,7 +168,7 @@ function complete(params) {
 
 // ---- ホバー ----
 function wordAt(text, offset) {
-  let s = offset, e = offset;
+  let s = Math.max(0, Math.min(offset, text.length)), e = s; // EOF 超過を clamp（text[undefined] 誤爆を防ぐ）
   while (s > 0 && /[\w$]/.test(text[s - 1])) s--;
   while (e < text.length && /[\w$]/.test(text[e])) e++;
   return { word: text.slice(s, e), start: s, end: e };
@@ -198,7 +198,8 @@ function scriptRange(text) {
 function findDecl(text, word) {
   const [s, e] = scriptRange(text); const script = text.slice(s, e);
   const esc = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  for (const re of [new RegExp(`\\bimport\\s+(${esc})\\b`), new RegExp(`\\b(?:const|let|var)\\s+(${esc})\\b`), new RegExp(`(?:^|[\\s{,])(${esc})\\s*:`, 'm')]) {
+  // import / 束縛 / object のキー位置（{ or , の直後）のみ。三項の `a ? big : small` の big を拾わない（M7）。
+  for (const re of [new RegExp(`\\bimport\\s+(${esc})\\b`), new RegExp(`\\b(?:const|let|var)\\s+(${esc})\\b`), new RegExp(`[{,]\\s*(${esc})\\s*:`)]) {
     const m = re.exec(script);
     if (m) return s + m.index + m[0].indexOf(word);
   }

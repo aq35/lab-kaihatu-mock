@@ -20,17 +20,9 @@
     </section>
     <section id="seo" class="section">
       <h2 class="h2">なぜ SEO に強いか</h2>
-      <p class="p">
-        このページ自体が sunao で書かれ、ビルド時に
-        <strong>実 HTML へ prerender</strong>
-        されている。 つまりクローラは JavaScript を実行しなくても、上の見出し・本文・特徴リストをそのまま読める。 対話が必要な部分だけを client で hydrate するので、初期 HTML は常に「中身入り」になる。
-      </p>
+      <p class="p">このページ自体が sunao で書かれ、ビルド時に<strong>実 HTML へ prerender</strong>されている。 つまりクローラは JavaScript を実行しなくても、上の見出し・本文・特徴リストをそのまま読める。 対話が必要な部分だけを client で hydrate するので、初期 HTML は常に「中身入り」になる。</p>
       <div class="counter" data-hydrate="counter">
-        <p class="ctext">
-          これは hydrate される対話要素。サーバHTMLでは
-          <b>{{ count() }}</b>
-          と描画され、 読み込み後はボタンが効く。
-        </p>
+        <p class="ctext">これは hydrate される対話要素。サーバHTMLでは<b>{{ count() }}</b>と描画され、 読み込み後はボタンが効く。</p>
         <div class="crow">
           <button class="btn" @click="dec()">−</button>
           <output class="cval">{{ count() }}</output>

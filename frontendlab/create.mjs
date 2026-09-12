@@ -12,8 +12,15 @@ import { basename, join } from 'node:path';
 
 const dir = process.argv[2];
 if (!dir) { console.error('使い方: node create.mjs <dir>   例) node create.mjs apps/todo'); process.exit(1); }
-if (existsSync(join(dir, 'App.sunao'))) { console.error(`既に存在します: ${dir}/App.sunao（上書きしません）`); process.exit(1); }
-const name = basename(dir);
+// パス検証: `..` による脱出は拒否（絶対パスは明示的な意図として許可）。
+const norm = dir.replace(/\\/g, '/');
+if (/(^|\/)\.\.(\/|$)/.test(norm)) { console.error(`不正なパス: "${dir}"（.. での脱出は不可）`); process.exit(1); }
+const name = basename(norm.replace(/\/+$/, ''));
+if (!/^[A-Za-z0-9._-]+$/.test(name)) { console.error(`不正な名前: "${name}"（英数と . _ - のみ）`); process.exit(1); }
+// 上書きガード: 4 ファイルのいずれかが既にあれば中止（App.sunao だけでなく全部を見る）。
+for (const f of ['App.sunao', 'main.js', 'index.html', 'README.md']) {
+  if (existsSync(join(dir, f))) { console.error(`既に存在します: ${dir}/${f}（上書きしません）`); process.exit(1); }
+}
 
 const APP = `<template>
   <main class="app">

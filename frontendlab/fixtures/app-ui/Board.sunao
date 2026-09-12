@@ -9,12 +9,7 @@
         </div>
       </div>
       <div class="tools">
-        <label class="pal">
-          palette
-          <select @change="setPalette($event.target.value)">
-            <option v-for="p in palettes" :key="p" :value="p">{{ p }}</option>
-          </select>
-        </label>
+        <label class="pal">palette<select @change="setPalette($event.target.value)"><option v-for="p in palettes" :key="p" :value="p">{{ p }}</option></select></label>
         <button class="t" @click="shuffle()">shuffle</button>
         <button class="t" @click="sortByPrio()">priority 順</button>
         <button class="t primary" @click="add()">+ 追加</button>

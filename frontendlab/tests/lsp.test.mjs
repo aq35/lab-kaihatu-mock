@@ -136,6 +136,24 @@ test('LSP: 定義ジャンプ — count の使用位置から <script> の宣言
   } finally { c.kill(); }
 });
 
+test('LSP: 定義ジャンプは三項の参照を宣言と誤認しない（findDecl 修正）', async () => {
+  const c = makeClient();
+  try {
+    await c.request('initialize', { capabilities: {} });
+    const src = `<template><p>{{ pick() }}</p></template>\n<script>\nexport default { setup(){ const big=1, small=2; const pick = () => (true ? big : small); return { pick }; } }\n</script>`;
+    c.notify('textDocument/didOpen', { textDocument: { uri: 'file:///t.sunao', text: src } });
+    // 'big' の宣言は `const big=1`。三項の ` big :` に飛ばないこと。
+    const bigDeclLine = src.split('\n').findIndex((l) => /const big=1/.test(l));
+    // definition on the ternary 'big' (in the arrow body) should resolve to the const line, not itself
+    const lines = src.split('\n');
+    const arrowLine = lines.findIndex((l) => l.includes('true ? big'));
+    const col = lines[arrowLine].indexOf('big', lines[arrowLine].indexOf('?'));
+    const loc = await c.request('textDocument/definition', { textDocument: { uri: 'file:///t.sunao' }, position: { line: arrowLine, character: col + 1 } });
+    assert.ok(loc, 'Location を返す');
+    assert.equal(loc.range.start.line, bigDeclLine, '三項の参照でなく const 宣言に飛ぶ');
+  } finally { c.kill(); }
+});
+
 test('LSP: documentSymbol — signal/prop/component を宣言位置つきで列挙', async () => {
   const c = makeClient();
   try {

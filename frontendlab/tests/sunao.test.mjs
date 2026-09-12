@@ -76,6 +76,19 @@ test('fmt: formatSFC は冪等・content 非破壊・整形後もコンパイル
   assert.doesNotThrow(() => compileSFC(once, { runtime: RUNTIME }), '整形後もコンパイルできる');
 });
 
+test('audit(fmt): content 非破壊 — 属性/補間文字列/インライン混在/pre を壊さない', () => {
+  const T = (inner) => formatSFC(`<template>${inner}</template>`);
+  assert.match(T('<input value="a    b">'), /a    b/, '属性値の空白を保持');
+  assert.match(T("<p>{{ label() || '  x  ' }}</p>"), /'  x  '/, '補間内の文字列を保持');
+  assert.match(T('<span>$<b>5</b></span>'), /<span>\$<b>5<\/b><\/span>/, 'インライン混在に空白を足さない');
+  const pre = T('<pre><code>a\nb</code></pre>');
+  assert.doesNotMatch(pre, /\n\s+<code>/, 'pre は再インデントしない');
+  const once = T('<div><ul><li>x</li></ul></div>');
+  assert.equal(formatSFC(`<template>${'<div><ul><li>x</li></ul></div>'}</template>`), once, '冪等');
+  // 壊れたテンプレは原文を保つ（throw しない）
+  assert.doesNotThrow(() => formatSFC('<template><div><span></div></template>'));
+});
+
 test('scaffold: npm run new が雛形を出し、そのままビルドできる', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'scaf-'));
   const app = join(dir, 'todo');
@@ -85,6 +98,10 @@ test('scaffold: npm run new が雛形を出し、そのままビルドできる'
     // 生成物がそのまま esbuild+sunao で通る（scss 含む）
     const r = await esbuild.build({ entryPoints: [join(app, 'main.js')], bundle: true, minify: true, format: 'iife', write: false, plugins: [sunao()], logLevel: 'silent' });
     assert.ok(r.outputFiles[0].contents.length > 0, 'バンドルできる');
+    // 上書きガード: 2 回目は既存ファイルを検出して非ゼロ終了（App.sunao だけでなく全ファイル）
+    assert.throws(() => execFileSync('node', ['create.mjs', app], { stdio: 'ignore' }), '既存 dir は上書きしない');
+    // .. 脱出は拒否
+    assert.throws(() => execFileSync('node', ['create.mjs', '../evil'], { stdio: 'ignore' }), '.. は拒否');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

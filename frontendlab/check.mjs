@@ -41,7 +41,8 @@ function walk(dir) {
 
 const files = walk(ROOT);
 const sfcs = files.filter((f) => f.endsWith('.sunao'));
-const entries = files.filter((f) => f.endsWith('main.js'));
+// 入口は `main.js` か `*-main.js` のみ（domain.js / remain.js を誤って入口扱いしない）。
+const entries = files.filter((f) => { const b = basename(f); return b === 'main.js' || b.endsWith('-main.js'); });
 const failures = [];
 const pad = (s, n) => String(s).padEnd(n);
 const padL = (s, n) => String(s).padStart(n);
@@ -59,6 +60,9 @@ for (const f of sfcs) {
     compileSFC(src, { runtime: 'sunao' });
     const meta = analyze(src);
     const bn = basename(f).replace(/\.sunao$/, '');
+    // basename 重複はクロス契約検査を曖昧にする → 黙って上書きせず失敗として surface（M6）。
+    if (registry.has(bn) && JSON.stringify(registry.get(bn)) !== JSON.stringify(meta.props))
+      failures.push(`${relative(ROOT, f)}: コンポーネント basename 重複 "${bn}"（契約検査が別部品と混ざる）`);
     registry.set(bn, meta.props);
     if (meta.name) registry.set(meta.name, meta.props);
     for (const u of meta.uses) usages.push({ parent: relative(ROOT, f), ...u });

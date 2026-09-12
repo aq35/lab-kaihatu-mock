@@ -1,39 +1,5 @@
 <template>
-  <div class="cal">
-    <!-- 月ビュー（#/） -->
-    <div class="month" v-if="!dayParam()">
-      <header class="cal-head">
-        <button class="nav" @click="prev" aria-label="前の月">‹</button>
-        <strong class="label">{{ label() }}</strong>
-        <button class="nav" @click="next" aria-label="次の月">›</button>
-        <button class="today-btn" @click="goToday">今日</button>
-      </header>
-      <div class="dow-row">
-        <span class="dow" v-for="d in dows">{{ d }}</span>
-      </div>
-      <div class="grid">
-        <button v-for="c in cells()" :key="c.key" class="cell" :class="cellClass(c)" @click="pick(c)">
-          <span class="dnum" v-if="!c.blank">{{ c.day }}</span>
-          <span class="dots" v-if="c.count">{{ dots(c.count) }}</span>
-        </button>
-      </div>
-    </div>
-    <!-- 日の詳細ビュー（#/day/:date、フロントエンドルーティング） -->
-    <div class="day-view" v-if="dayParam()">
-      <header class="day-head">
-        <button class="back" @click="back">‹ 月へ</button>
-        <strong class="day-title">{{ dayParam() }}</strong>
-      </header>
-      <ul class="ev-list">
-        <li class="ev" v-for="ev in dayEvents()" :key="ev">{{ ev }}</li>
-      </ul>
-      <p class="empty" v-if="!dayCount()">予定はありません。</p>
-      <div class="add">
-        <input class="inp" v-model="draft" placeholder="予定を追加（Enter）" @keydown="$event.key === 'Enter' && add()">
-        <button class="add-btn" @click="add">追加</button>
-      </div>
-    </div>
-  </div>
+  <div class="cal"><!-- 月ビュー（#/） --><div class="month" v-if="!dayParam()"><header class="cal-head"><button class="nav" @click="prev" aria-label="前の月">‹</button><strong class="label">{{ label() }}</strong><button class="nav" @click="next" aria-label="次の月">›</button><button class="today-btn" @click="goToday">今日</button></header><div class="dow-row"><span class="dow" v-for="d in dows">{{ d }}</span></div><div class="grid"><button v-for="c in cells()" :key="c.key" class="cell" :class="cellClass(c)" @click="pick(c)"><span class="dnum" v-if="!c.blank">{{ c.day }}</span><span class="dots" v-if="c.count">{{ dots(c.count) }}</span></button></div></div><!-- 日の詳細ビュー（#/day/:date、フロントエンドルーティング） --><div class="day-view" v-if="dayParam()"><header class="day-head"><button class="back" @click="back">‹ 月へ</button><strong class="day-title">{{ dayParam() }}</strong></header><ul class="ev-list"><li class="ev" v-for="ev in dayEvents()" :key="ev">{{ ev }}</li></ul><p class="empty" v-if="!dayCount()">予定はありません。</p><div class="add"><input class="inp" v-model="draft" placeholder="予定を追加（Enter）" @keydown="$event.key === 'Enter' && add()"><button class="add-btn" @click="add">追加</button></div></div></div>
 </template>
 
 <script>

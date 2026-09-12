@@ -10,9 +10,11 @@ import esbuild from 'esbuild';
 import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
 
 const args = process.argv.slice(2);
-const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
+// フラグの値が欠落 / 次が別フラグなら既定に戻す（--entry を末尾に置いても壊れない）。
+const opt = (n, d) => { const i = args.indexOf(n); if (i === -1) return d; const v = args[i + 1]; return v == null || v.startsWith('--') ? d : v; };
 const ENTRY = opt('--entry', 'fixtures/app-ui/board-main.js');
-const PORT = Number(opt('--port', '8000'));
+const _port = Number(opt('--port', '8000'));
+const PORT = Number.isInteger(_port) && _port > 0 && _port < 65536 ? _port : 8000; // 不正 port は既定に
 const SERVEDIR = 'dist/dev';
 
 // livereload: esbuild は watch 時に /esbuild へ SSE(change) を流す。受けて location.reload()。
