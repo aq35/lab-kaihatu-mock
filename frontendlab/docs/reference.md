@@ -142,7 +142,7 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 
 | 罠 | 症状 | sunao の対応 |
 |---|---|---|
-| **`{{ count }}`（`()` 忘れ）** | signal オブジェクトが出て更新もされない | ⚠ **`SUNAO_CALL_FORGOTTEN` 警告**。`<script>` を走査して signal/computed/resource/now/useRoute/store/machine の束縛と props を把握し、**一度も呼んでいない裸参照でも**検出（`node check.mjs`／`warningsOf()`）。非致命 |
+| **`{{ count }}`（`()` 忘れ）** | signal オブジェクトが出て更新もされない | ⚠ **`SUNAO_CALL_FORGOTTEN` 警告**。`<script>` を走査して signal/computed/resource/now/useRoute/store/machine の束縛と props を把握し、**一度も呼んでいない裸参照でも**検出（`node cli/check.mjs`／`warningsOf()`）。非致命 |
 | 未宣言の識別子 | 実行時 undefined | build で止まる（提案つき） |
 | 未知ディレクティブ | 黙って無視されがち | build で止まる |
 | 子に無い prop / 必須欠落 | props 不一致 | **build 時**にクロス検査（`check.mjs`） |
@@ -158,7 +158,7 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 ## SSR / SSG / SEO / 開発
 
 - **`npm run new -- apps/foo`** … 新規アプリ雛形（App.sunao/main.js/index.html/README）。すぐ `dev`/`build` できる。
-- **`npm run fmt`** … `.sunao` 整形チェック（冪等・content 非破壊。`node format.mjs --write <file>` で修正）。
+- **`npm run fmt`** … `.sunao` 整形チェック（冪等・content 非破壊。`node cli/format.mjs --write <file>` で修正）。
 - **`npm run dev [-- --entry X.js --port 8000]`** … esbuild watch + serve。**保存→自動リビルド→ブラウザ自動リロード**。sourcemap は inline（実行時エラーが .sunao の `<script>` 行へ戻る＝line-level）。
 - **`npm run prerender -- --entry page.sunao --out dist/x.html [--client main.js]`** … ページを **実 HTML へ prerender**（title/description/canonical/OG メタ＋scoped CSS を inline＋`#app` に中身を焼く）。`--client` があれば hydrate 用 bundle も出す。
 - **SEO の考え方**:
@@ -169,23 +169,23 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 
 ## エディタ支援・診断（LSP が消費する土台）
 
-- **`node tools/diagnose.mjs [file ...] [--pretty]`** … `.sunao` の診断を**機械可読 JSON**で出す（error は fail-closed で exit 1、warning は exit に影響なし）。
+- **`node cli/diagnose.mjs [file ...] [--pretty]`** … `.sunao` の診断を**機械可読 JSON**で出す（error は fail-closed で exit 1、warning は exit に影響なし）。
 - **`diagnose(source, {filename})`**（`compile.mjs`）… throw せず `{ diagnostics:[{severity, code, message, line, column, suggestions?, ident?}] }` を返す＝LSP の `publishDiagnostics` の中身。
 - **`npm run doctor`** … 全 .sunao の診断＋クロス契約を **1 つの JSON** に（error/契約違反で exit 1）。各 diagnostic は `fix` ヒント付き（AI の自己修正ループ）。**`--fix`** で安全な自動修正（() 呼び忘れ）を適用（再診断で悪化しない時だけ書込）。
 - **`npm run manifest`** … 各部品の契約を JSON（`props{type,required,enum}`/slots/uses/signals）＝AI がソースを読まず `<Child/>` を組める。
 - **`npm run verify`** … `check`＋`fmt`＋`test` の 1 ゲート。
-- **`node tools/lsp.mjs`（`npm run lsp`）** … **依存ゼロの LSP サーバ**（stdio JSON-RPC を手書き）。診断（publishDiagnostics）・補完（式位置=signal/prop/return を `name()` 挿入・タグ位置=component・属性位置=ディレクティブ）・hover・**定義ジャンプ**・**アウトライン(documentSymbol)**。頭脳は `diagnose()`/`symbols()`。エディタ無しで `tests/lsp.test.mjs` がプロトコルを直接叩いて検証。
+- **`node cli/lsp.mjs`（`npm run lsp`）** … **依存ゼロの LSP サーバ**（stdio JSON-RPC を手書き）。診断（publishDiagnostics）・補完（式位置=signal/prop/return を `name()` 挿入・タグ位置=component・属性位置=ディレクティブ）・hover・**定義ジャンプ**・**アウトライン(documentSymbol)**。頭脳は `diagnose()`/`symbols()`。エディタ無しで `tests/lsp.test.mjs` がプロトコルを直接叩いて検証。
 - **LSP 補完は manifest 連携** … `<Child |>` で子部品の props（type/required/enum を detail）、`:enumProp="|"` で enum 値を候補に（import を解決して子 .sunao を読む）。
 - **`editor/vscode/`** … VSCode 拡張（F5 で LSP に繋がる）。`editor/sunao.tmLanguage.json` + `language-configuration.json` が構文ハイライト。導入は `GETTING_STARTED.md` / `editor/vscode/README.md`。
-- 式解析は **依存ゼロの自前パーサ `plugins/sunao/expr.mjs`**（build 時のみ・アプリ bundle には入らない）。Babel 互換 AST を出す Pratt パーサで、arrow/分割の仮引数を正しくスコープするので `items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。パース不能な稀式は regex fallback（安全網）。**sunao の core（compile/runtime）は第三者依存なし**（`sass` は `lang="scss"` 時のみ lazy、`esbuild` はホストのバンドラ）。
+- 式解析は **依存ゼロの自前パーサ `sunao/expr.mjs`**（build 時のみ・アプリ bundle には入らない）。Babel 互換 AST を出す Pratt パーサで、arrow/分割の仮引数を正しくスコープするので `items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。パース不能な稀式は regex fallback（安全網）。**sunao の core（compile/runtime）は第三者依存なし**（`sass` は `lang="scss"` 時のみ lazy、`esbuild` はホストのバンドラ）。
 - **テンプレ式の対応文法**（＝ここを増やせば文法が増える。`expr.mjs` 冒頭に一覧）: 識別子/リテラル/テンプレリテラル/配列・オブジェクト(shorthand・computed・method・spread)/アロー(式・ブロック・**async**)/関数式/new/メンバ(`.` `?.` `[]`)/呼び出し(`()` `?.()`)/単項(`! - + ~ typeof void delete await ++ --`)/二項・論理(全演算子)/三項/代入/カンマ列/spread。**非対応**（→ 安全に regex 落ち）: generator/yield・正規表現リテラル・ラベル文・class 式・decorator。増やすなら Pratt テーブルに 1 行 or 集合に 1 語。
 - **文法ドリフト検出ガード**: `tests/sunao.test.mjs` は `@babel/parser` が居るとき（dev）だけ **自前 vs Babel の差分テスト**を走らせる（実 fixtures 全式＝完全一致必須／難式＝silent-wrong 検出）。core に無ければ skip。**将来 JS 文法が増えて自前が Babel とズレた瞬間に赤くなる**＝依存を捨てても追従漏れを自動検出。
 - 未実装（正直）: リネーム/シグネチャヘルプ（土台 `symbols()` はある）・`.vsix` パッケージ配布。
 
 ## 決定論・予算（factory）
 
-- `node check.mjs` … 全部品の compile / 全入口の build（**2 回 sha 一致＝決定論** + **bytes 予算** + クロス契約 + ⚠警告表示）。1 つでも落ちれば exit 1。
-- `node build.mjs --entry …` … 決定論レシートを `results/raw/` に残す。
+- `node cli/check.mjs` … 全部品の compile / 全入口の build（**2 回 sha 一致＝決定論** + **bytes 予算** + クロス契約 + ⚠警告表示）。1 つでも落ちれば exit 1。
+- `node cli/build.mjs --entry …` … 決定論レシートを `results/raw/` に残す。
 - 動的もイベントも無い部品は **定数 HTML** にコンパイルされ runtime を import しない（tree-shake で反応性が落ちる）。
 - `v-for` が **裸の非 signal 識別子**（`const items = [...]`）なら thunk 化せず静的 map＝hydrate で adopt でき tree-shake にも効く。signal リスト（`items()`）は従来どおり reactive。
 

@@ -1,6 +1,6 @@
 /**
  * sunao ビルドツール — 既製 native bundler を「作り直さず束ねる」オーケストレータ。
- *   node build.mjs [--entry fixtures/app-ui/main.js] [--out dist/app-ui]
+ *   node build.mjs [--entry examples/app-ui/main.js] [--out dist/app-ui]
  *
  * やること（EXP の結論どおり: transpiler/bundler は native に任せ、fail-closed とレシートを足す）:
  *   1. esbuild + sunao プラグインで .ui をコンパイルしつつ bundle+minify
@@ -20,7 +20,7 @@ import { sunao } from '../sunao/esbuild-plugin.mjs';
 const require = createRequire(import.meta.url);
 const args = process.argv.slice(2);
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
-const ENTRY = opt('--entry', 'fixtures/app-ui/main.js');
+const ENTRY = opt('--entry', 'examples/app-ui/main.js');
 const OUT = opt('--out', 'dist/app-ui');
 
 // アプリの初期ロード予算（fail-closed の閾値）。sunao runtime を含めても小さく保つ。

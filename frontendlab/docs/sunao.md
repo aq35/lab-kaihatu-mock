@@ -8,9 +8,9 @@
 
 ```
 再現: cd frontendlab && npm run build && npm run check && npm test
-開発: npm run dev（保存→自動リロード）/ npm run prerender -- --entry fixtures/seo/Landing.sunao --out dist/seo/index.html --client fixtures/seo/landing-main.js
-実装: plugins/sunao/{runtime,compile,expr,esbuild-plugin}.mjs / build.mjs / dev.mjs / prerender.mjs / check.mjs
-デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング・スロット・FLIPボード）, fixtures/seo/（SSG→hydrate）, fixtures/static-ui/（静的）
+開発: npm run dev（保存→自動リロード）/ npm run prerender -- --entry examples/seo/Landing.sunao --out dist/seo/index.html --client examples/seo/landing-main.js
+実装: sunao/{runtime,compile,expr,esbuild-plugin}.mjs（本体）/ cli/{build,dev,prerender,check,create,format,doctor,manifest,lsp}.mjs（コマンド）
+デモ: examples/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング・スロット・FLIPボード）, examples/seo/（SSG→hydrate）, examples/static-ui/（静的）
 参照: docs/reference.md（AI 向け・低 context の API 表）
 受領書: results/raw/build-app-ui.json
 ```
@@ -52,7 +52,7 @@
 | **通信（Go 並み）** | `resource(fetcher)`（reactive な loading/error/data・refetch）＋`context()`/`go()`（AbortController = Go の context キャンセル）。前の取得は refetch/scope 破棄で abort | resource loading→data→error、Inbox 実機で非同期 5 枚取得 |
 | **時間（Go 並み）** | `now(tick)` 実時計 signal・`interval`/`timeout`（scope 破棄で自動停止）・`debounce`/`throttle` | interval 発火/stop・debounce 畳み込み・実機の時計 |
 | **CSS をいい感じに** | `sunao/theme`: 閉じた Recipe 語彙 → 実 CSS トークン(oklch, repo compiler と同値)。`recipeStyle(recipe)` で `:style` に流すだけ。`themeCSS` の良い既定 | recipeStyle がトークン生成・実機で palette 切替→配色変化 |
-| **Recipe→props コード生成** | `node tools/gen-recipe-vocab.mjs` が schema から `recipe-vocab.mjs`(RECIPE_PROPS/RECIPE_KINDS) を生成。`import from 'sunao/recipe'`。**手コピー無し＝drift 不能** | vocab==schema、kinds=5 |
+| **Recipe→props コード生成** | `node cli/gen-recipe-vocab.mjs` が schema から `recipe-vocab.mjs`(RECIPE_PROPS/RECIPE_KINDS) を生成。`import from 'sunao/recipe'`。**手コピー無し＝drift 不能** | vocab==schema、kinds=5 |
 | **5 カード型** | `OwnerCard` が `kind` enum(OWNER_QUESTION…INFORMATION)で 5 型を描画（役割ごとの強調色） | Inbox 実機で 5 枚＋承認 |
 
 > **Owner Inbox 公開**: https://claude.ai/code/artifact/fc4a364a-caf9-4081-915d-220cdbcd8293
@@ -85,7 +85,7 @@
 |---|---|---|
 | **① `()` 警告の穴** | `<script>` を走査し signal/computed/resource/now/useRoute/store/machine の束縛＋props を把握。**一度も呼んでいない裸参照でも**警告（従来は「他所で呼ばれてる時だけ」だった穴を閉じる）。全 14 部品で誤検出 0 | 単体（silent ケース・props）green |
 | **② SSR server-mode** | server モードで `now`/`interval`/`timeout`/`resource` が**実タイマーを張らない**＝Node 描画が hang しない（DeployConsole を Node で prerender しても止まらない）・決定論 | prerender(DeployConsole) が hang せず描画 green |
-| **② SSG prerender** | `node prerender.mjs --entry x.sunao --out x.html [--client m.js]`。**中身入り HTML**（title/description/canonical/OG＋scoped CSS inline＋`#app` に描画済み）を吐く | Landing を prerender→中身/CSS/meta green |
+| **② SSG prerender** | `node cli/prerender.mjs --entry x.sunao --out x.html [--client m.js]`。**中身入り HTML**（title/description/canonical/OG＋scoped CSS inline＋`#app` に描画済み）を吐く | Landing を prerender→中身/CSS/meta green |
 | **③ hydration** | `hydrate()` が**サーバ HTML を作り直さず** adopt。静的骨格は既存 DOM を再利用し props effect/イベントだけ張り、**動的な島だけ**再構築。裸の非 signal `v-for` を静的化して骨格に含めた | 実機: main/h1/output/feat×4 に SSR 印が残る（adopt）＋カウンタ hydrate green |
 | **④ dev server** | `npm run dev`。esbuild watch+serve で**保存→自動リビルド→自動リロード**（/esbuild SSE） | 起動→index/main.js/livereload 配信を確認 |
 | **④ source map** | codegen は位置追跡しないが script 本文は逐語保持 → **line-level map** を inline（実行時エラーが .sunao の `<script>` 行へ）。build が sourcemap を出す時だけ付与＝本番の予算に載せない | 実機: setup の throw が `Boom.sunao:5` に対応・単体 green |
@@ -101,7 +101,7 @@
 | 大物 | 実装 | テスト・実測 |
 |---|---|---|
 | **式パーサの堅牢化** | `collectIdents` を **AST 自由変数解析**に置換（当時は `@babel/parser`＝`@babel/core` の推移依存。**v0.13 で自前 `expr.mjs` に置換し core を依存ゼロ化**）。MemberExpression / ObjectProperty(shorthand/computed) / arrow・分割の仮引数スコープを正しく処理。パース失敗時は文列→regex fallback で非回帰 | **regex の誤収集を修正**: `items.map(x => x.a)` の `x` を ctx 参照と誤検出しない＝**arrow 仮引数の誤・未宣言参照エラーが消える**。単体 green |
-| **診断の機械可読エクスポート** | `diagnose(source)`＝throw せず `{diagnostics:[{severity,code,message,line,column,...}]}`（LSP の publishDiagnostics 相当）。`node tools/diagnose.mjs`（`npm run diagnose`）で JSON 出力、error があれば exit 1 | 壊れた SFC→error、`()` 忘れ→warning、正常→0 を単体 green |
+| **診断の機械可読エクスポート** | `diagnose(source)`＝throw せず `{diagnostics:[{severity,code,message,line,column,...}]}`（LSP の publishDiagnostics 相当）。`node cli/diagnose.mjs`（`npm run diagnose`）で JSON 出力、error があれば exit 1 | 壊れた SFC→error、`()` 忘れ→warning、正常→0 を単体 green |
 | **構文ハイライト** | `editor/sunao.tmLanguage.json` + `language-configuration.json`（VSCode）。template(`{{}}`/`:bind`/`@event`/`v-*`/`flip`) / script(JS) / style(CSS) を色分け。`editor/README.md` に導入手順 | JSON 妥当性を確認（エディタ実機はこの環境で検証不能＝正直に明記） |
 
 > **フル LSP（補完・ホバー・定義ジャンプ）は未実装**。LSP サーバ＋エディタが要り動作検証できないため。
@@ -135,7 +135,7 @@ Fenwick(BIT) で累積オフセットを O(log N)・初期は estimate・描画�
 
 ## v0.11 で実装した「依存ゼロの LSP（エコシステム＝思想）」
 
-「エコシステムとは巨大なコードやコミュニティではなく**思想**」という立場で、**依存ゼロの Language Server** を建てた（`tools/lsp.mjs`・`npm run lsp`）。巨大な依存に頼らず、頭脳は既存の compiler（`diagnose()`/`symbols()`）。
+「エコシステムとは巨大なコードやコミュニティではなく**思想**」という立場で、**依存ゼロの Language Server** を建てた（`cli/lsp.mjs`・`npm run lsp`）。巨大な依存に頼らず、頭脳は既存の compiler（`diagnose()`/`symbols()`）。
 
 | 機能 | 内容 | 思想 |
 |---|---|---|
@@ -157,7 +157,7 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 
 | 要望 | 実装 | 検証 |
 |---|---|---|
-| **VSCode で開発** | `editor/vscode/`（package.json＋extension.js）。`vscode-languageclient` で `tools/lsp.mjs` に stdio 接続。F5 で起動 | JSON/JS 妥当性・LSP 本体は protocol テスト |
+| **VSCode で開発** | `editor/vscode/`（package.json＋extension.js）。`vscode-languageclient` で `cli/lsp.mjs` に stdio 接続。F5 で起動 | JSON/JS 妥当性・LSP 本体は protocol テスト |
 | **LSP 発展** | 定義ジャンプ・アウトライン(documentSymbol) を追加。`symbols()` を signal/prop 分離に修正 | `tests/lsp.test.mjs` 7/7 |
 | **展開しやすく** | `npm run new -- apps/foo`（App.sunao/main.js/index.html/README を出力・即 build 可） | 生成→バンドル通過を単体で |
 | **SCSS 連携** | `<style lang="scss">`（sass で CSS 化してから scoped。他 lang は fail-closed） | ネスト/変数/& を単体で |
@@ -169,7 +169,7 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 
 ## v0.13 で実装した「依存は捨てる（core を第三者依存ゼロに）」
 
-「依存は捨てました」への回答。**式解析を担っていた唯一の core 依存 `@babel/parser` を撤去**し、自前の Pratt パーサ `plugins/sunao/expr.mjs`（**import 一切なし**）に置換した。「思想としてのエコシステム」の徹底 — core は自分だけで閉じる。
+「依存は捨てました」への回答。**式解析を担っていた唯一の core 依存 `@babel/parser` を撤去**し、自前の Pratt パーサ `sunao/expr.mjs`（**import 一切なし**）に置換した。「思想としてのエコシステム」の徹底 — core は自分だけで閉じる。
 
 | 対象 | before | after | 検証 |
 |---|---|---|---|
@@ -195,7 +195,7 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
 ③ computed ④ 宣言必須 fail-closed ⑤ v-model 糖衣 / scoped styles（最小）。
 
-## 実例: カレンダーを作って公開した（`fixtures/app-ui/Calendar.sunao`）
+## 実例: カレンダーを作って公開した（`examples/app-ui/Calendar.sunao`）
 
 **公開URL**: https://claude.ai/code/artifact/20e0f784-a1fd-4e38-b5c9-002675c9e15e （self-contained HTML に runtime 込みで inline）
 
@@ -252,7 +252,7 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/
 既定 static（import 無し）/ v-model desugar / scoped styles / **診断の提案**（もしかして）/
-**合成 e2e**（親が子を型付き props で描画）/ **factory**（`node check.mjs` exit 0）/
+**合成 e2e**（親が子を型付き props で描画）/ **factory**（`node cli/check.mjs` exit 0）/
 **ブラウザ実機**（クリック→DOM 更新・**要素は再生成されない＝細粒度**）。
 
 ## 「AIが好きそうなコンパイラ」の性質

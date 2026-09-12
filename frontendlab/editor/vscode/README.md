@@ -1,7 +1,7 @@
 # sunao VSCode 拡張
 
 `.sunao` の **構文ハイライト**（TextMate grammar）＋ **LSP**（診断・補完・ホバー・定義ジャンプ・アウトライン）。
-LSP サーバは依存ゼロの `frontendlab/tools/lsp.mjs`。この拡張はそれに stdio で繋ぐ薄いクライアント。
+LSP サーバは依存ゼロの `frontendlab/cli/lsp.mjs`。この拡張はそれに stdio で繋ぐ薄いクライアント。
 
 ## 開発ロード（ソースから試す・一番簡単）
 
@@ -17,7 +17,7 @@ npm install            # vscode-languageclient を入れる（拡張側の唯一
 > grammar / language-configuration は親フォルダ（`frontendlab/editor/`）の 1 ファイルを共有参照している（`../` パス）。
 > ソースから開く用途では問題ない。`.vsix` にパッケージする場合は 2 ファイルをこのフォルダに複製すること。
 
-## 提供機能（サーバ = tools/lsp.mjs）
+## 提供機能（サーバ = cli/lsp.mjs）
 
 - **診断**: 保存/編集ごとに error(fail-closed)・warning(() 呼び忘れ) を表示。
 - **補完**: 式位置=signal/prop/return（signal/prop は `name()` を挿入して () 呼び忘れ防止）・タグ位置=component/HTML・属性位置=ディレクティブ。

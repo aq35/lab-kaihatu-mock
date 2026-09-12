@@ -14,25 +14,25 @@ sunao は「Vue 風 SFC(`.sunao`) を決定論的にコンパイルする、依�
 npm run new -- apps/todo
 
 # 開発サーバ（保存で自動リビルド＋ブラウザ自動リロード・inline sourcemap）
-node dev.mjs --entry apps/todo/main.js
+node cli/dev.mjs --entry apps/todo/main.js
 #   → http://localhost:8000/ を開く
 
 # 本番ビルド（決定論チェック＋予算ゲート＋レシート）
-node build.mjs --entry apps/todo/main.js --out dist/todo
+node cli/build.mjs --entry apps/todo/main.js --out dist/todo
 ```
 
 既存のデモを見るなら:
 ```bash
-node dev.mjs --entry fixtures/app-ui/board-main.js     # FLIP ボード
-node dev.mjs --entry fixtures/app-ui/calendar-main.js  # カレンダー(routing)
+node cli/dev.mjs --entry examples/app-ui/board-main.js     # FLIP ボード
+node cli/dev.mjs --entry examples/app-ui/calendar-main.js  # カレンダー(routing)
 ```
 
 ## 2. 品質ツール（全部同じ思想: 決定論・fail-closed・教える）
 
 ```bash
 npm run check       # 全 .sunao を compile + 全入口を build（2回sha一致=決定論・bytes予算・prop契約・() 警告）
-npm run fmt         # .sunao の整形チェック（--write で修正）: node format.mjs --write <file>
-npm run diagnose -- fixtures/seo/Landing.sunao --pretty   # 診断を JSON で（error は exit 1）
+npm run fmt         # .sunao の整形チェック（--write で修正）: node cli/format.mjs --write <file>
+npm run diagnose -- examples/seo/Landing.sunao --pretty   # 診断を JSON で（error は exit 1）
 npm test            # 全テスト（unit + browser + LSP プロトコル）
 npm run bench       # sunao vs Vue3 の実測（要 vue devDep）
 ```
@@ -40,15 +40,15 @@ npm run bench       # sunao vs Vue3 の実測（要 vue devDep）
 ## 3. SEO ページ（SSG prerender → hydrate）
 
 ```bash
-npm run prerender -- --entry fixtures/seo/Landing.sunao --out dist/seo/index.html --client fixtures/seo/landing-main.js
+npm run prerender -- --entry examples/seo/Landing.sunao --out dist/seo/index.html --client examples/seo/landing-main.js
 #   → dist/seo/index.html は「中身入り HTML」（クローラ可読）＋ page.js（hydrate で対話復帰）
 ```
 
 ## 4. LSP をエディタに繋ぐ（VSCode）
 
-LSP サーバは依存ゼロの `tools/lsp.mjs`（stdio JSON-RPC）。単体起動は:
+LSP サーバは依存ゼロの `cli/lsp.mjs`（stdio JSON-RPC）。単体起動は:
 ```bash
-npm run lsp     # = node tools/lsp.mjs （エディタが stdio で繋ぐサーバ。手で叩く用ではない）
+npm run lsp     # = node cli/lsp.mjs （エディタが stdio で繋ぐサーバ。手で叩く用ではない）
 ```
 
 VSCode で使う（ソースから）:
@@ -69,11 +69,11 @@ cd editor/vscode && npm install     # vscode-languageclient
 
 | 場所 | 中身 |
 |---|---|
-| `plugins/sunao/` | 本体: `compile.mjs`(コンパイラ) / `runtime.mjs`(極小 runtime) / `esbuild-plugin.mjs` / `theme.mjs` / `format.mjs` |
-| ルートの `*.mjs` | ツール: `build` / `dev` / `prerender` / `check` / `create`(new) / `format`(fmt) |
-| `tools/` | `lsp.mjs`(LSP) / `diagnose.mjs` / `gen-recipe-vocab.mjs` |
+| `sunao/` | 本体（依存ゼロ）: `compile.mjs`(コンパイラ) / `runtime.mjs`(極小 runtime) / `expr.mjs`(自前式パーサ) / `esbuild-plugin.mjs` / `theme.mjs` / `format.mjs` / `recipe-vocab.mjs` |
+| `cli/` | コマンド一式: `build` / `dev` / `check` / `create`(new) / `prerender` / `format`(fmt) / `diagnose` / `doctor` / `manifest` / `lsp` / `budget-gate` / `gen-recipe-vocab` |
+| `examples/` | 動くデモ兼 few-shot: `app-ui/`(対話) / `seo/`(SSG) / `static-ui/`(静的) |
 | `editor/` | `sunao.tmLanguage.json`(ハイライト) / `language-configuration.json` / `vscode/`(拡張) |
-| `fixtures/` | デモ: `app-ui/`(対話) / `seo/`(SSG) / `static-ui/`(静的) |
 | `bench/` | sunao vs Vue3 の実測（`README.md` に受領書） |
-| `tests/` | `sunao.test.mjs`(unit) / `sunao.browser.test.mjs`(実機) / `lsp.test.mjs`(LSP) |
+| `tests/` | `sunao.test.mjs`(unit) / `sunao.browser.test.mjs`(実機) / `lsp.test.mjs`(LSP)。`tests/fixtures/` はテスト専用入力 |
 | `docs/` | `reference.md`(API 1 枚) / `sunao.md`(変遷) / `borrowings.md` ほか |
+| `research/` | frontendlab の生みの親（トランスパイラ/バンドラ計測実験）。sunao 本体とは無関係 |

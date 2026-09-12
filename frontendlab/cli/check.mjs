@@ -16,7 +16,7 @@ import { compileSFC, analyze, warningsOf, CompileError } from '../sunao/compile.
 import { basename } from 'node:path';
 import { sunao } from '../sunao/esbuild-plugin.mjs';
 
-const ROOT = 'fixtures';
+const ROOT = 'examples';
 const BUDGET = { raw: 8192, gzip: 4096 }; // 入口ごとの既定予算
 // 入口ごとの上書き（リッチな画面は個別に予算を持つ）。
 const BUDGET_OVERRIDE = {

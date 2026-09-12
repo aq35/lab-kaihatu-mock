@@ -1,6 +1,6 @@
 /**
  * sunao SSG prerender — 部品を **実 HTML** へ焼く（SEO 用）。
- *   node prerender.mjs --entry fixtures/seo/Landing.sunao --out dist/seo/index.html [--client fixtures/seo/landing-main.js]
+ *   node prerender.mjs --entry examples/seo/Landing.sunao --out dist/seo/index.html [--client examples/seo/landing-main.js]
  *
  * やること:
  *   1. server モードで部品を renderComponentToString → 中身入りの HTML 文字列＋収集した scoped CSS＋meta
@@ -19,7 +19,7 @@ import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const args = process.argv.slice(2);
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
-const ENTRY = opt('--entry', 'fixtures/seo/Landing.sunao');
+const ENTRY = opt('--entry', 'examples/seo/Landing.sunao');
 const OUT = opt('--out', 'dist/seo/index.html');
 const CLIENT = opt('--client', null);
 

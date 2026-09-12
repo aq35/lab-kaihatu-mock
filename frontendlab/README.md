@@ -1,76 +1,55 @@
-# frontendlab — フレームワーク非依存のフロントエンド・ツールチェーン実験
+# frontendlab — sunao（AI が書いても壊れないフロントエンド・ツールチェーン）
 
-React/Vue/Svelte のプラグインではなく、その**下の層**（transpiler・bundler・依存コスト・
-tree-shaking・出力バイト）を対象にする。理由は Owner の指摘どおり:
+このディレクトリの主役は **sunao**: Vue 風の SFC（`.sunao`）を**決定論的にコンパイル**する、
+**第三者依存ゼロ**の小さなフロントエンド・ツールチェーン。北極星は
+**「AIが好きそうなコンパイラ」= 宣言的・fail-closed・決定論・小さい・低 context・エラーが直し方を教える**。
 
-- **長寿命で測定可能。** framework 固有の runtime プラグインは framework の寿命に縛られるが、
-  「TS→JS の変換」「依存 1 つの本当のコスト」「bundle バイト」は道具が変わっても残る問いで、桁で測れる。
-- **サプライチェーンの心配が減る。** ここは self-contained（`frontendlab/package.json` で閉じ、
-  root に依存を残さない）。計測対象の transpiler も devDependency として**ここだけ**に置く。
+> 由来: frontendlab は元々「トランスパイラ/バンドラの**計測実験**」として生まれ、その結論
+> （軽さのレバーは変換器でなく**依存の判断**）から sunao が育った。実験そのものは
+> [`research/`](research/README.md) に隔離してある。
 
-## north-star
-
-**最終的に「AIが好きそうなコンパイラ」に近づける。** 速い道具を選ぶのが目的ではない。
-AI にとって扱いやすい compiler の性質を、測れる軸に落として一つずつ観測する:
-
-- 決定論（同入力 → 同出力）
-- 出力の予測可能性・軽さ（桁で暴れない）
-- fail-closed（未知入力はエラーで止まる）
-- 低 context（少ない前提で正しく使える）
-- 型付き・宣言的な入力（Recipe 的）
-
-> この repo は既に上位層で「AI 向け UI 生成言語（Recipe → 決定論的 HTML/CSS、条件 E/F）」を
-> 実験している（root の README 参照）。frontendlab はその**汎用ツールチェーン版の予備調査**。
-
-## 作法（root と同じ）
-
-1. **仮説を結果より先に凍結する。** `docs/_hypotheses-*.md` を追加したコミット SHA が凍結の証拠。
-2. **再現できる形で測る。** `node measure.mjs --exp <name>` 一発。入力は固定 fixture。
-3. **before/after を実測。** 自己評価で確定しない。数値は測定環境（Node/CPU）とセットで残す。
-4. **絶対値でなく桁で語る。** 10x なのか 1.1x なのか。ms の小数は環境依存として扱う。
-5. 受領書（receipt）を `results/raw/*.json` に、読み物を `docs/` に置く。
-
-## 依存のはしご（Owner 提示・この lab の指針）
-
-> **依存を足さない > 共有する > 分割する（code-split） > 遅延読込する**
-
-新しい依存を足す前に、上位の手が尽きているかを問う。EXP-1 以降はこの梯子を測定で裏づける。
-
-## 実験
-
-| ID | 問い | 状態 |
-|---|---|---|
-| EXP-1 | transpiler（Babel/SWC/esbuild/Oxc）の速度・出力サイズは「桁で」どう違うか | [結果](docs/EXP-1-transpiler-orders.md) |
-| EXP-2 | 束ね変換（bundle）の桁。esbuild の IPC 床は bundle で消えるか | [結果](docs/EXP-2-3-4-results.md#exp-2-bundle-orders束ね変換の桁) |
-| EXP-3 | 依存 1 つの本当のコスト（梯子の実測） | [結果](docs/EXP-2-3-4-results.md#exp-3-dependency-cost依存-1-つの本当のコスト梯子の実測) |
-| EXP-4 | minify 込みサイズの桁 | [結果](docs/EXP-2-3-4-results.md#exp-4-minify-ordersminify-込みサイズの桁) |
-
-**→ [方針: 個人用途に閉じたプラグイン](docs/plugin-policy.md)**（実測から導いた、React/Vue/Vite を置き換えない道）
-**→ [P1 依存予算ゲート](docs/P1-budget-gate.md)**（方針の最初の実装。`npm run gate`。EXP-3 の 753x 事故を fail-closed で止める）
-**→ [sunao（Vue 風プラグイン＋ビルドツール）](docs/sunao.md)**（P3, **v0.3**。`npm run build && npm run check && npm test`。細粒度更新・既定static(8x小)・computed・v-model・scoped・型付き props(fail-closed)・**構造化診断(code/loc/frame/suggestions)**・量産ガードレール check・コンポーネント合成。keyed v-for（並び替え・DnD）・hash ルーター（ガード/ネスト）・スロット・unmount 破棄・ビルド時 prop 契約に加え、
-**通信/時間プリミティブ（resource・context・now・interval・debounce＝Go 並み）・Recipe→CSS トークン（sunao/theme）・Recipe→props コード生成・5 カード型**も実装。**カレンダーと [Owner Inbox](https://claude.ai/code/artifact/fc4a364a-caf9-4081-915d-220cdbcd8293) を公開**。33/33 test green）
-**→ [フレームワークのいいところ取り洗い出し](docs/framework-cherrypick.md)**（React/Vue/Svelte/Solid/Angular/Qwik/Astro を north-star で採否判定。収束した勝ち筋4つ＋各社固有＋sunao への採る/捨てる/条件付き）
-**→ [フレームワークのダメなところ洗い出し](docs/framework-pitfalls.md)**（各社の失敗・地雷を guardrail 化。横断アンチパターン6つ＋sunao 自身の弱点も正直に＋禁止リスト）
-**→ [レバレッジ地図](docs/leverage-map.md)**（作りまくると複利で効く場所の ROI ランキング。最優先＝型付き契約×診断×量産ガードレール。作っても無駄な場所も明示）
-**→ [向かうべき道](docs/direction.md)**（目的地＝AI が型付き契約だけ書けば compiler が小さい・決定論・壊れない出力を保証。フェーズ A〜D＋戦略の推奨(b)＋最初の一歩）
-**→ [Recipe ブリッジ](docs/recipe-bridge.md)**（direction B 実装。sunao と repo の条件 E/F を接続。閉じた語彙 props(enum)・OwnerCard 連結・repo schema との drift 検査）
-**→ [他言語・FW からの借用](docs/borrowings.md)**（machine(XState)・store(Elm/Redux+時間旅行)・decode(Zod)・match(Rust)・produce(Immer)・boundary(Erlang)・provide/inject(SwiftUI context)・SWR。すべて fail-closed/決定論に寄せて再現）
-
-**4 実験の芯（実測）**: 速度は道具で 1〜2 桁動く（EXP-1 61x, EXP-2 IPC 形態 16x）が、
-**出力サイズは道具ではほぼ動かない**（EXP-1 raw 1.6x / EXP-4 minify 1.05x）。
-**サイズを 2〜3 桁動かすのは「依存を足すか」だけ**（EXP-3 全体 lodash = 自作の 753x）。決定論は全道具・全段で ✓。
-→ 軽さのレバーは transpiler 選択でなく**依存の判断**。個人で書く価値があるのは「速い変換器」でなく
-**依存の判断を fail-closed で効かせる小さな build ステップ**（方針 doc 参照）。
-
-## 動かす
+## クイックスタート
 
 ```bash
 cd frontendlab
-npm install            # 計測対象の transpiler（pin 済み）をここだけに入れる
-npm run exp1           # = node measure.mjs --exp transpiler-orders
+npm install
+npm run new -- apps/todo      # 雛形（App.sunao / main.js / index.html / README）
+npm run dev -- --entry apps/todo/main.js   # 保存→自動リロード
+npm run verify                # check（決定論/予算/契約）＋ fmt ＋ test を 1 ゲートで
 ```
 
-- `fixtures/` … 固定入力（TS+JSX の 1 コンポーネント相当）
-- `measure.mjs` … build-and-weigh ハーネス（raw/gzip バイト・変換時間の中央値・出力 hash）
-- `results/raw/` … 受領書 JSON（バージョン・環境つき）
-- `docs/` … 凍結仮説と結果の読み物
+- **AI/エージェントで作業するなら**: まず [`AGENTS.md`](AGENTS.md)（覚えることは 3 つ・自己修正ループ）。
+- **API を 1 枚で**: [`docs/reference.md`](docs/reference.md)（文法・runtime・footgun・決定論/予算）。
+- **設計の変遷と思想**: [`docs/sunao.md`](docs/sunao.md)。
+
+## 覚えることは 3 つだけ
+
+1. **状態は signal** — `const n = signal(0)`。読むのは `n()`、書くのは `n.set(x)` / `n.update(fn)`。
+2. **宣言必須（fail-closed）** — テンプレが使う名前は `return {}` / `props` / `expose` に。無ければ build で止まる（「もしかして」提案つき）。
+3. **困ったら `npm run doctor` / `npm run manifest`** — 機械可読 JSON で診断・部品契約を確認。
+
+## ディレクトリ
+
+| 場所 | 中身 |
+|---|---|
+| [`sunao/`](sunao/) | 本体（依存ゼロ）: compile / runtime / expr（自前式パーサ）/ esbuild-plugin / theme / format / recipe-vocab |
+| [`cli/`](cli/) | コマンド: build / dev / check / create / prerender / format / diagnose / doctor / manifest / lsp / budget-gate / gen-recipe-vocab |
+| [`examples/`](examples/) | 動くデモ兼 few-shot: app-ui（対話・DnD・カレンダー・ルーティング・FLIP）/ seo（SSG→hydrate）/ static-ui |
+| [`docs/`](docs/) | reference.md（AI 向け 1 枚）/ sunao.md（変遷）/ borrowings.md ほか設計 doc |
+| `tests/` | unit + 実機(Playwright) + LSP。`tests/fixtures/` はテスト専用入力 |
+| `bench/` | sunao vs Vue3 の実測（受領書つき） |
+| `editor/` | 構文ハイライト + VSCode 拡張 |
+| [`research/`](research/README.md) | 生みの親の計測実験（トランスパイラ/バンドラ）。sunao 本体とは無関係 |
+
+## north-star
+
+**「AIが好きそうなコンパイラ」** に近づける。速い道具を選ぶのが目的ではなく、
+AI にとって扱いやすい compiler の性質を、測れる軸に落として一つずつ満たす:
+
+- 決定論（同入力 → 同出力）／出力の予測可能性・軽さ（桁で暴れない）
+- fail-closed（未知入力はエラーで止まる）／低 context（少ない前提で正しく使える）
+- 型付き・宣言的な入力（Recipe 的）／エラーが直し方を教える（機械可読診断）
+
+## 設計 doc（sunao の背骨）
+
+**→ [方針: 個人用途に閉じたプラグイン](docs/plugin-policy.md)** ・ **[いいところ取り洗い出し](docs/framework-cherrypick.md)** ・ **[ダメなところ洗い出し](docs/framework-pitfalls.md)** ・ **[レバレッジ地図](docs/leverage-map.md)** ・ **[向かうべき道](docs/direction.md)** ・ **[Recipe ブリッジ](docs/recipe-bridge.md)** ・ **[他言語・FW からの借用](docs/borrowings.md)**

@@ -26,7 +26,7 @@
 コンパイラの構造化診断を **throw せず JSON** で出す。エディタ/LSP/CI がそのまま使える。
 
 ```bash
-node tools/diagnose.mjs fixtures/seo/Landing.sunao --pretty
+node cli/diagnose.mjs fixtures/seo/Landing.sunao --pretty
 # → [{ filename, diagnostics: [{ severity:'error'|'warning', code, message, line, column, suggestions?, ident? }] }]
 # error（fail-closed）が 1 件でもあれば exit 1
 ```
@@ -34,7 +34,7 @@ node tools/diagnose.mjs fixtures/seo/Landing.sunao --pretty
 プログラムからは:
 
 ```js
-import { diagnose } from '../plugins/sunao/compile.mjs';
+import { diagnose } from '../sunao/compile.mjs';
 const { diagnostics } = diagnose(source, { filename: 'X.sunao' });
 ```
 
@@ -43,7 +43,7 @@ const { diagnostics } = diagnose(source, { filename: 'X.sunao' });
 
 ## 3. LSP サーバ（依存ゼロ・実装済み）
 
-`tools/lsp.mjs` … **stdio JSON-RPC の Language Server を手書き**（依存ゼロ＝「巨大な依存に頼らない」思想の体現）。頭脳は compiler の `diagnose()`/`symbols()`。
+`cli/lsp.mjs` … **stdio JSON-RPC の Language Server を手書き**（依存ゼロ＝「巨大な依存に頼らない」思想の体現）。頭脳は compiler の `diagnose()`/`symbols()`。
 
 提供する機能:
 - **publishDiagnostics** … 編集ごとに診断（error=fail-closed / warning=()呼び忘れ）を range/severity つきで送る。
@@ -53,9 +53,9 @@ const { diagnostics } = diagnose(source, { filename: 'X.sunao' });
   - 属性位置 → `v-if`/`v-for`/`v-model`/`flip`/`:`/`@`。
 - **hover** … 識別子が signal（呼んで読む）/ prop（accessor）/ component / local のどれかを説明。
 
-起動: `npm run lsp`（または `node tools/lsp.mjs`）。エディタからは stdio で接続する。
+起動: `npm run lsp`（または `node cli/lsp.mjs`）。エディタからは stdio で接続する。
 
-**エディタへの繋ぎ方（VSCode 例）**: `vscode-languageclient` で `node tools/lsp.mjs` を stdio 起動し、`.sunao` を languageId に紐付けるだけ（クライアント側は薄い定型）。
+**エディタへの繋ぎ方（VSCode 例）**: `vscode-languageclient` で `node cli/lsp.mjs` を stdio 起動し、`.sunao` を languageId に紐付けるだけ（クライアント側は薄い定型）。
 
 **検証**: `tests/lsp.test.mjs` が **プロトコルを直接叩いて**（エディタ不要）initialize/診断/補完/hover を検証。中身はエディタ無しで担保している。
 

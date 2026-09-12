@@ -1,6 +1,6 @@
 /**
  * sunao doctor — プロジェクト全体を 1 発で **機械可読 JSON** 検診（AI の自己修正ループ）。
- *   node tools/doctor.mjs [--pretty]      # 既定は fixtures 配下 全 .sunao
+ *   node tools/doctor.mjs [--pretty]      # 既定は examples 配下 全 .sunao
  *   npm run doctor
  *
  * 出力: { ok, errors, warnings, files:[{file, diagnostics:[{severity,code,message,line,column,fix?}]}],
@@ -26,7 +26,7 @@ function walk(dir, out = []) {
   return out;
 }
 
-const targets = args.length ? args : walk('fixtures');
+const targets = args.length ? args : walk('examples');
 const files = [];
 const registry = new Map(); // tag -> props schema
 const usages = [];

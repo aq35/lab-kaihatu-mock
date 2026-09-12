@@ -14,7 +14,7 @@ const EXE = process.env.PW_CHROMIUM ?? '/opt/pw-browsers/chromium';
 test('ブラウザ: クリックで count が増え、DOM が更新される', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
   const r = await esbuild.build({
-    entryPoints: ['fixtures/app-ui/main.js'],
+    entryPoints: ['examples/app-ui/main.js'],
     bundle: true, minify: true, format: 'esm', write: false,
     plugins: [sunao()], logLevel: 'silent',
   });
@@ -70,7 +70,7 @@ test('ブラウザ: クリックで count が増え、DOM が更新される', {
 
 test('ブラウザ: Deploy Console — 状態機械/store/context/resource を組んだ実アプリ', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/deploy-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/deploy-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const js = Buffer.from(r.outputFiles[0].contents);
   const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
   const server = http.createServer((req, res) => {
@@ -106,7 +106,7 @@ test('ブラウザ: Deploy Console — 状態機械/store/context/resource を�
 
 test('ブラウザ: Owner Inbox — 非同期取得(5枚)・時計・palette 切替・承認', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/owner-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/owner-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const js = Buffer.from(r.outputFiles[0].contents);
   const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
   const server = http.createServer((req, res) => {
@@ -140,7 +140,7 @@ test('ブラウザ: Owner Inbox — 非同期取得(5枚)・時計・palette 切
 
 test('ブラウザ: keyed 並び替え&DnD が node 同一性と in-item 状態を保つ', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/sortable-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/sortable-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const js = Buffer.from(r.outputFiles[0].contents);
   const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
   const server = http.createServer((req, res) => {
@@ -181,7 +181,7 @@ test('ブラウザ: keyed 並び替え&DnD が node 同一性と in-item 状態�
 
 test('ブラウザ: カレンダーが実機で動く（月移動・日付選択）', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/calendar-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/calendar-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const js = Buffer.from(r.outputFiles[0].contents);
   const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
   const server = http.createServer((req, res) => {
@@ -219,7 +219,7 @@ test('ブラウザ: カレンダーが実機で動く（月移動・日付選択
 
 test('ブラウザ: Priority Board — scoped style 注入・FLIP アニメ・優先度巡回', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/board-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/board-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const js = Buffer.from(r.outputFiles[0].contents);
   const html = `<!doctype html><meta charset="utf-8"><style>html,body{margin:0}</style><div id="app"></div><script type="module" src="/main.js"></script>`;
   const server = http.createServer((req, res) => {
@@ -274,14 +274,14 @@ test('ブラウザ: SEO ページを prerender→hydrate（中身入りHTML・�
   const { chromium } = await import('playwright');
   const { renderPage, assembleHTML } = await import('../cli/prerender.mjs');
   // 1) server prerender で中身入り HTML
-  const page = await renderPage('fixtures/seo/Landing.sunao');
+  const page = await renderPage('examples/seo/Landing.sunao');
   assert.match(page.html, /AI が好きそうなコンパイラ/, 'SSR HTML に H1 の中身');
   assert.match(page.html, /クローラは JavaScript を実行しなくても/, 'SEO 本文が SSR HTML に入る');
   const doc = assembleHTML(page, { client: true });
   assert.match(doc, /<title>sunao/, 'title tag');
   assert.match(doc, /property="og:title"/, 'OG メタ');
   // 2) client bundle
-  const r = await esbuild.build({ entryPoints: ['fixtures/seo/landing-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/seo/landing-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const js = Buffer.from(r.outputFiles[0].contents);
   // SSR 骨格ノードに印を付けてから hydrate（作り直しなら印が消える）
   const stamped = doc.replace('<script type="module"', `<script>for (const n of document.querySelectorAll('main.lp,h1.h1,output.cval,.feat')) n.__ssr = true;</script><script type="module"`);

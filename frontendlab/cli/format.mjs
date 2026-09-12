@@ -2,7 +2,7 @@
  * sunao fmt — .sunao を決定論的に整形（冪等）。
  *   node format.mjs --check [files...]   # 差分があれば列挙して exit 1（既定・全 .sunao）
  *   node format.mjs --write <file...>    # 実際に書き換える
- *   npm run fmt                          # = --check（全 fixtures/bench）
+ *   npm run fmt                          # = --check（全 examples/bench）
  */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -21,7 +21,7 @@ function walk(dir, out = []) {
   return out;
 }
 
-const targets = files.length ? files : [...walk('fixtures'), ...walk('bench')];
+const targets = files.length ? files : [...walk('examples'), ...walk('bench')];
 let changed = 0;
 for (const f of targets) {
   const src = readFileSync(f, 'utf8');

@@ -7,8 +7,8 @@
 ```
 repo 側: contracts/presentation-recipe.schema.json（閉じた語彙の Recipe）
         experiments/e-compiler/compiler.mjs（compile(cards, recipe) -> {html, css, recipeHash}）
-sunao 側: plugins/sunao/（型付き props・enum・決定論・fail-closed）
-接続の実証: fixtures/app-ui/OwnerCard.sunao（Recipe を閉じた語彙 props で受ける対話カード）
+sunao 側: sunao/（型付き props・enum・決定論・fail-closed）
+接続の実証: examples/app-ui/OwnerCard.sunao（Recipe を閉じた語彙 props で受ける対話カード）
            tests: OwnerCard の語彙 == repo schema（drift 検査）
 ```
 
@@ -49,7 +49,7 @@ repo の中心命題「AI が UI を安全に作る」の上で意味を持つ�
 
 ## 次 → **v0.6 で 3 つとも着手**
 
-1. ✅ **Recipe → props コード生成**: `tools/gen-recipe-vocab.mjs` が両 schema から `recipe-vocab.mjs`
+1. ✅ **Recipe → props コード生成**: `cli/gen-recipe-vocab.mjs` が両 schema から `recipe-vocab.mjs`
    （`RECIPE_PROPS`/`RECIPE_KINDS`）を生成。OwnerCard は `import from 'sunao/recipe'`＝**単一の真実・drift 不能**。
 2. 🔶 **見た目の統合（CSS トークン）**: `compile()` の DOM 再利用 hydration までは行かず、Recipe compiler と
    **同値の PALETTE(oklch) を `sunao/theme` に持ち**、`recipeStyle(recipe)` で決定論的に配色。見た目は Recipe 由来・対話は sunao。

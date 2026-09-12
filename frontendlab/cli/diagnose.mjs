@@ -1,7 +1,7 @@
 /**
  * sunao diagnose — .sunao の診断を **機械可読 JSON** で出す（エディタ/LSP/CI が消費）。
- *   node cli/diagnose.mjs [file.sunao ...]        # 指定ファイル（無ければ fixtures 配下 全部）
- *   node cli/diagnose.mjs --pretty fixtures/seo/Landing.sunao
+ *   node cli/diagnose.mjs [file.sunao ...]        # 指定ファイル（無ければ examples 配下 全部）
+ *   node cli/diagnose.mjs --pretty examples/seo/Landing.sunao
  *
  * 出力: [{ filename, diagnostics:[{severity, code, message, line, column, ...}] }]
  * error（fail-closed）が 1 件でもあれば exit 1。warning は exit に影響しない。
@@ -23,7 +23,7 @@ function walk(dir, out = []) {
   return out;
 }
 
-const targets = files.length ? files : walk('fixtures');
+const targets = files.length ? files : walk('examples');
 const report = targets.map((f) => diagnose(readFileSync(f, 'utf8'), { filename: relative('.', f) }));
 const errors = report.reduce((n, r) => n + r.diagnostics.filter((d) => d.severity === 'error').length, 0);
 

@@ -11,9 +11,9 @@
 ## 自己修正ループ（これを回す）
 
 ```bash
-node tools/doctor.mjs --pretty        # 全 .sunao の診断＋クロス契約を JSON で（error か契約違反で exit 1）
+node cli/doctor.mjs --pretty          # 全 .sunao の診断＋クロス契約を JSON で（error か契約違反で exit 1）
 #   各 diagnostic は {severity, code, message, line, column, fix?}。fix があればそれに置換すれば直る。
-node tools/manifest.mjs --pretty      # 各部品の契約 JSON（props{type,required,enum}/slots/uses/signals）
+node cli/manifest.mjs --pretty        # 各部品の契約 JSON（props{type,required,enum}/slots/uses/signals）
 #   → <Child :prop=/> を **ソースを読まずに** 正しく組める
 ```
 
@@ -24,12 +24,12 @@ node tools/manifest.mjs --pretty      # 各部品の契約 JSON（props{type,req
 | 目的 | コマンド |
 |---|---|
 | 新規アプリ雛形 | `npm run new -- apps/foo` |
-| 開発（保存で自動リロード） | `node dev.mjs --entry apps/foo/main.js` |
+| 開発（保存で自動リロード） | `node cli/dev.mjs --entry apps/foo/main.js` |
 | 検診（AI 向け JSON） | `npm run doctor` / `npm run manifest` |
-| 整形 | `npm run fmt`（`node format.mjs --write <file>` で修正） |
+| 整形 | `npm run fmt`（`node cli/format.mjs --write <file>` で修正） |
 | 一括ゲート | `npm run verify` |
-| 本番ビルド | `node build.mjs --entry … --out …` |
-| SEO(SSG→hydrate) | `node prerender.mjs --entry … --out … --client …` |
+| 本番ビルド | `node cli/build.mjs --entry … --out …` |
+| SEO(SSG→hydrate) | `node cli/prerender.mjs --entry … --out … --client …` |
 | LSP（エディタが stdio 接続） | `npm run lsp` |
 
 ## 落とし穴（footgun）— 機械が止める/警告する
@@ -48,4 +48,8 @@ node tools/manifest.mjs --pretty      # 各部品の契約 JSON（props{type,req
 
 ## 実装の地図
 
-`plugins/sunao/`= compile / runtime / esbuild-plugin / theme / format。ルート `*.mjs`= build/dev/prerender/check/create/format。`tools/`= lsp / doctor / manifest / diagnose。`fixtures/`= デモ。`tests/`= unit+browser+lsp。
+- **`sunao/`** = framework 本体（第三者依存ゼロ）: `compile` / `runtime` / `expr`（自前式パーサ）/ `esbuild-plugin` / `theme` / `format` / `recipe-vocab`。
+- **`cli/`** = コマンド一式: `build` / `dev` / `check` / `create` / `prerender` / `format` / `diagnose` / `doctor` / `manifest` / `lsp` / `budget-gate` / `gen-recipe-vocab`。
+- **`examples/`** = 動くデモ兼 few-shot 正例: `app-ui/`（対話・DnD・カレンダー・ルーティング・スロット・FLIP）/ `seo/`（SSG→hydrate）/ `static-ui/`（静的）。
+- **`docs/`** = sunao ドキュメント（`reference.md` が AI 向け 1 枚）。**`tests/`** = unit+browser+lsp（`tests/fixtures/` はテスト専用入力）。**`bench/`** = Vue 比較。**`editor/`** = VSCode 拡張。
+- **`research/`** = frontendlab の生みの親（トランスパイラ/バンドラ計測実験）。sunao 本体とは無関係なので普段は触らない。

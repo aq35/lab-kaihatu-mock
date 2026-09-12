@@ -1,6 +1,6 @@
 /**
  * sunao dev server — 保存→自動リビルド→ブラウザ自動リロード（esbuild watch + serve）。
- *   node dev.mjs [--entry fixtures/app-ui/board-main.js] [--port 8000]
+ *   node dev.mjs [--entry examples/app-ui/board-main.js] [--port 8000]
  *
  * EXP の結論どおり bundler は esbuild に任せ、dev は「反復ループを速く」だけを足す薄い層。
  * source map は inline（実行時エラーが .sunao の <script> 行へ戻る）。
@@ -12,7 +12,7 @@ import { sunao } from '../sunao/esbuild-plugin.mjs';
 const args = process.argv.slice(2);
 // フラグの値が欠落 / 次が別フラグなら既定に戻す（--entry を末尾に置いても壊れない）。
 const opt = (n, d) => { const i = args.indexOf(n); if (i === -1) return d; const v = args[i + 1]; return v == null || v.startsWith('--') ? d : v; };
-const ENTRY = opt('--entry', 'fixtures/app-ui/board-main.js');
+const ENTRY = opt('--entry', 'examples/app-ui/board-main.js');
 const _port = Number(opt('--port', '8000'));
 const PORT = Number.isInteger(_port) && _port > 0 && _port < 65536 ? _port : 8000; // 不正 port は既定に
 const SERVEDIR = 'dist/dev';

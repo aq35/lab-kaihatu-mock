@@ -1,6 +1,6 @@
 /**
  * sunao manifest — 全 .sunao の **契約を JSON** で出す（AI/ツールが子の使い方を低 context で掴む）。
- *   node tools/manifest.mjs [file ...] [--pretty]   # 無指定なら fixtures 配下
+ *   node tools/manifest.mjs [file ...] [--pretty]   # 無指定なら examples 配下
  *   npm run manifest -- --pretty
  * 出力: [{ file, name, props:[{name,type,required,enum}], slots, uses, signals }]
  */
@@ -21,6 +21,6 @@ function walk(dir, out = []) {
   return out;
 }
 
-const targets = files.length ? files : walk('fixtures');
+const targets = files.length ? files : walk('examples');
 const report = targets.map((f) => manifest(readFileSync(f, 'utf8'), relative('.', f)));
 process.stdout.write(JSON.stringify(report, null, pretty ? 2 : 0) + '\n');

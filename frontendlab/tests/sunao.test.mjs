@@ -29,7 +29,7 @@ test('reactivity: effect re-runs on signal change', () => {
 });
 
 test('compile はテンプレートを決定論的に出力する（同入力→同 hash）', () => {
-  const src = readFileSync('fixtures/app-ui/Counter.sunao', 'utf8');
+  const src = readFileSync('examples/app-ui/Counter.sunao', 'utf8');
   const a = compileSFC(src, { runtime: RUNTIME });
   const b = compileSFC(src, { runtime: RUNTIME });
   assert.equal(sha(a), sha(b));
@@ -201,7 +201,7 @@ test('B bridge: OwnerCard の閉じた語彙が repo の presentation-recipe.sch
   const SCHEMA = '../contracts/presentation-recipe.schema.json';
   if (!existsSync(SCHEMA)) { return; } // repo 外では skip（接続は repo 内でのみ意味を持つ）
   const schema = JSON.parse(readFileSync(SCHEMA, 'utf8'));
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/OwnerCard.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/OwnerCard.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const dir = mkdtempSync(join(tmpdir(), 'oc-'));
   try {
     const f = join(dir, 'OC.mjs');
@@ -231,7 +231,7 @@ async function prerenderSFC(sfcPath) {
 }
 
 test('SSG: prerender が中身入り HTML・収集 CSS・meta を返す（SEO）', async () => {
-  const page = await prerenderSFC('fixtures/seo/Landing.sunao');
+  const page = await prerenderSFC('examples/seo/Landing.sunao');
   assert.match(page.html, /AI が好きそうなコンパイラ/, 'H1 の中身が HTML に焼かれる');
   assert.match(page.html, /fail-closed コンパイラ/, '特徴リストの中身が入る（クローラが JS 無しで読める）');
   assert.match(page.html, /<output[^>]*class="cval"[^>]*>0<\/output>/, '対話要素も初期値でサーバ描画');
@@ -242,7 +242,7 @@ test('SSG: prerender が中身入り HTML・収集 CSS・meta を返す（SEO）
 
 test('SSG: server モードで now/interval を使う部品も hang せず描画（タイマー漏れ無し）', async () => {
   // これ自体が「Node で prerender してもプロセスが固まらない」ことの回帰ガード。
-  const page = await prerenderSFC('fixtures/app-ui/DeployConsole.sunao');
+  const page = await prerenderSFC('examples/app-ui/DeployConsole.sunao');
   assert.ok(page.html.length > 0, 'DeployConsole が文字列描画される');
 });
 
@@ -448,7 +448,7 @@ test('エディタ支援: diagnose() は error/warning を throw せず LSP 風�
   assert.ok(w.diagnostics.some((d) => d.severity === 'warning' && d.code === 'SUNAO_CALL_FORGOTTEN'));
   assert.ok(!w.diagnostics.some((d) => d.severity === 'error'), '正しい SFC に error は無い');
   // 正常な SFC: 診断ゼロ
-  const ok = diagnose(readFileSync('fixtures/app-ui/Counter.sunao', 'utf8'));
+  const ok = diagnose(readFileSync('examples/app-ui/Counter.sunao', 'utf8'));
   assert.equal(ok.diagnostics.filter((d) => d.severity === 'error').length, 0);
 });
 
@@ -577,7 +577,7 @@ test('④ 合成: import されていないコンポーネント参照は止ま�
 });
 
 test('④ 合成(e2e): 親が子を型付き props で描画する', async () => {
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/Parent.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/Parent.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
@@ -630,7 +630,7 @@ test('unmount: createRoot dispose で内部 effect が止まる（keyed の一�
 });
 
 test('slots: 親の子要素が子の <slot> に差し込まれる', async () => {
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/SlotHost.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/SlotHost.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
@@ -653,7 +653,7 @@ test('③ factory: node cli/check.mjs が全部品で通る（exit 0）', () => 
 });
 
 test('実例: カレンダーが作れる（コンパイル・描画・月移動・日付選択）', async () => {
-  const r = await esbuild.build({ entryPoints: ['fixtures/app-ui/Calendar.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const r = await esbuild.build({ entryPoints: ['examples/app-ui/Calendar.sunao'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
@@ -692,7 +692,7 @@ test('compile: 許可された文法は通る', () => {
 
 test('renderToString: 状態スナップショットで正しい HTML（決定論）', async () => {
   // コンパイル済みモジュールを一時ファイルに書いて import して描画
-  const src = readFileSync('fixtures/app-ui/Counter.sunao', 'utf8');
+  const src = readFileSync('examples/app-ui/Counter.sunao', 'utf8');
   const mod = compileSFC(src, { runtime: RUNTIME });
   const dir = mkdtempSync(join(tmpdir(), 'mv-'));
   try {
@@ -712,7 +712,7 @@ test('renderToString: 状態スナップショットで正しい HTML（決定�
 });
 
 test('reactivity + render: setup 経由で状態を進めると HTML が変わる', async () => {
-  const src = readFileSync('fixtures/app-ui/Counter.sunao', 'utf8');
+  const src = readFileSync('examples/app-ui/Counter.sunao', 'utf8');
   const mod = compileSFC(src, { runtime: RUNTIME });
   const dir = mkdtempSync(join(tmpdir(), 'mv-'));
   try {
@@ -886,7 +886,7 @@ test('v0.13 差分ガード: 実 fixtures の全式で自前パーサ＝Babel（
   const B = _babelAnalyzerFrom(babel);
   const walkDir = (d, out = []) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) { if (!['node_modules', 'dist', '.git'].includes(e.name)) walkDir(p, out); } else if (p.endsWith('.sunao')) out.push(p); } return out; };
   const exprs = new Set();
-  for (const f of walkDir(resolve('fixtures'))) {
+  for (const f of walkDir(resolve('examples'))) {
     const s = readFileSync(f, 'utf8');
     for (const m of s.matchAll(/\{\{([\s\S]*?)\}\}/g)) exprs.add(m[1].trim());
     for (const m of s.matchAll(/[:@][\w-]+\s*=\s*"([^"]*)"/g)) exprs.add(m[1].trim());
