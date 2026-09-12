@@ -62,3 +62,23 @@ python3 fonts/build-round.py fonts/sunao-round   # → .ttf / .woff2
 
 > 正直: 表示用（見出し・ロゴ）としては十分な丸ゴシック。プロの本文書体のような
 > 光学補正・カーニング・ヒンティングや、日本語（約 7,000+ 字形）は別次元。一部の字は v1 の粗さが残る。
+
+
+## sunao Rounded（読める丸ゴシック・OFL subset＝推奨）
+
+自前ジオメトリ版（sunao Round）は「読みにくい」ので、**読みやすさ優先**の選択肢。
+プロ設計の **Comfortaa（SIL OFL 1.1, © Johan Aakerlund）** を、必要な文字だけに **subset ＋ 自前ホスト**した。
+
+```
+python3 fonts/subset-ofl.py    # Comfortaa を DL→subset→リネーム→sunao-rounded.woff2 を再生成
+```
+
+- ラテン大小＋数字＋記号を weight500 で固定し **WOFF2 6.5KB**。`rounded-demo.html`（base64・オフライン）で実描画。
+- **ライセンス順守**: `fonts/OFL-Comfortaa.txt` を同梱。OFL の Reserved Font Name 順守のため
+  派生物は `sunao Rounded` にリネーム済み。原典クレジット: **Comfortaa by Johan Aakerlund (SIL OFL 1.1)**。
+- 日本語グリフは Comfortaa に無いので、和文は CSS の次のフォールバックに落ちる（Latin だけ丸ゴシック）。
+  和文も丸くしたいなら **Zen Maru Gothic / Kosugi Maru（いずれも OFL）** を同様に subset する。
+
+### 3 つの生成フォントの使い分け（正直）
+- **sunao Icons / Pixel / Round** = 「コードで一から作れる」実証（アイコン・ドット文字・曲線文字）。軽いが表示用。
+- **sunao Rounded** = 「読みやすさが要るならプロの OFL を subset」＝実務の正解。**自作 ≠ 常に最適**、を正直に。

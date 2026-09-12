@@ -1157,3 +1157,10 @@ test('fonts: 曲線フォント(sunao Round)が有効な WOFF2＋グリフを持
   assert.ok(buf.length < 8192, `軽量: ${buf.length}B`);
   assert.match(readFileSync(resolve('fonts/round-demo.html'), 'utf8'), /SUNAO/);
 });
+
+test('fonts: OFL subset(sunao Rounded)が有効な WOFF2＋ライセンス同梱', () => {
+  const buf = readFileSync(resolve('fonts/sunao-rounded.woff2'));
+  assert.equal(buf.slice(0, 4).toString('latin1'), 'wOF2', 'WOFF2 signature');
+  assert.ok(buf.length < 20000, `subset で軽量: ${buf.length}B`);
+  assert.match(readFileSync(resolve('fonts/OFL-Comfortaa.txt'), 'utf8'), /SIL OPEN FONT LICENSE/i, 'ライセンス同梱');
+});
