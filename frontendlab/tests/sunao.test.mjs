@@ -1143,3 +1143,10 @@ test('fonts: 生成した自作アイコンフォントが有効な WOFF2（sign
   const html = readFileSync(resolve('fonts/demo.html'), 'utf8');
   assert.match(html, /@font-face/); assert.match(html, /base64,/, 'data URI 埋め込みで自己完結');
 });
+
+test('fonts: 生成した文字フォント(sunao Pixel)が有効な WOFF2＋ASCII 割当', () => {
+  const buf = readFileSync(resolve('fonts/sunao-pixel.woff2'));
+  assert.equal(buf.slice(0, 4).toString('latin1'), 'wOF2', 'WOFF2 signature');
+  assert.ok(buf.length < 8192, `軽量: ${buf.length}B`);
+  assert.match(readFileSync(resolve('fonts/pixel-demo.html'), 'utf8'), /SUNAO/, 'デモに実テキスト');
+});
