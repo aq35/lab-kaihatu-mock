@@ -497,3 +497,47 @@ test('ブラウザ: gallery テンプレが phone〜desktop で崩れない（�
     assert.ok(desk.cols > phone.cols, `幅が広いほど列が増える (${phone.cols} → ${desk.cols})`);
   } finally { await browser.close(); server.close(); }
 });
+
+test('ブラウザ: wiki テンプレ — 検索フィルタ・見出し採番・折りたたみ・ページ切替・崩れなし', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({ entryPoints: ['templates/wiki/main.js'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = '<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><div id=app></div><script type=module src=/main.js></script>';
+  const server = http.createServer((req, res) => { if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); } else { res.setHeader('content-type', 'text/html'); res.end(html); } });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1000, height: 820 } });
+    await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.sec');
+    const all = await page.locator('.sec').count();
+    assert.ok(all >= 2, 'セクションが複数');
+    // 見出し採番（先頭は "1." で始まる）
+    assert.match((await page.locator('.sh').first().textContent()).trim(), /^▾?\s*1\./, '見出しに採番');
+    // ページ内検索でフィルタ
+    await page.fill('.toc-q', '__NOMATCH_XYZ__');
+    await page.waitForSelector('.doc-empty');
+    assert.equal(await page.locator('.sec').count(), 0, '一致なしで 0 件');
+    await page.fill('.toc-q', 'signal');
+    await page.waitForFunction(() => document.querySelectorAll('.sec').length > 0);
+    assert.ok(await page.locator('.sec').count() >= 1, 'キーワードで絞り込み');
+    await page.fill('.toc-q', '');
+    await page.waitForFunction((n) => document.querySelectorAll('.sec').length === n, all);
+    // 折りたたみ
+    const before = await page.locator('.stext').count();
+    await page.locator('.sh').first().click();
+    assert.equal(await page.locator('.stext').count(), before - 1, '折りたたみで本文が 1 つ減る');
+    // ページ切替
+    await page.locator('.tab').nth(1).click();
+    await page.waitForTimeout(200);
+    // 崩れなし（PC）
+    assert.ok((await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0, 'PC 横あふれ 0');
+    // 崩れなし（スマホ）
+    const m = await browser.newPage({ viewport: { width: 375, height: 780 } });
+    await m.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'domcontentloaded' });
+    await m.waitForSelector('.sec');
+    assert.ok((await m.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0, 'スマホ横あふれ 0');
+    await m.close();
+  } finally { await browser.close(); server.close(); }
+});

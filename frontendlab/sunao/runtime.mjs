@@ -254,7 +254,7 @@ const escText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').re
 export function renderToString(vnode) {
   if (vnode == null || vnode === false || vnode === true) return '';
   if (typeof vnode === 'function') return renderToString(vnode());
-  if (vnode.__keyed) return vnode.list.map((it) => renderToString(vnode.renderFn(it))).join('');
+  if (vnode.__keyed) return vnode.list.map((it, i) => renderToString(vnode.renderFn(it, i))).join('');
   if (typeof vnode === 'string' || typeof vnode === 'number') return escText(vnode);
   if (Array.isArray(vnode)) return vnode.map(renderToString).join('');
   const { tag, props, children } = vnode;
@@ -400,11 +400,13 @@ function reconcileKeyed(parent, end, prev, desc, doc, itemsRoot) {
   if (flip) for (const [k, rec] of prev) if (rec.node.getBoundingClientRect) oldRects.set(k, rec.node.getBoundingClientRect());
   const next = new Map();
   const order = [];
+  let idx = 0;
   for (const item of desc.list) {
     const k = desc.keyFn(item);
     order.push(k);
     if (prev && prev.has(k)) next.set(k, prev.get(k)); // 既存ノードを再利用（effect も保持）
-    else { const root = createRoot(() => createNode(desc.renderFn(item), doc), itemsRoot); next.set(k, { node: root.value, dispose: root.dispose, isNew: true }); }
+    else { const at = idx; const root = createRoot(() => createNode(desc.renderFn(item, at), doc), itemsRoot); next.set(k, { node: root.value, dispose: root.dispose, isNew: true }); } // index は生成時順（keyed は位置でなく key で同一視するため、再利用ノードの index は据え置き）
+    idx++;
   }
   if (prev) for (const [k, rec] of prev) { // 消えたキーを破棄（flip なら leave アニメ後に）
     if (next.has(k)) continue;

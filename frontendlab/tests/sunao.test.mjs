@@ -13,6 +13,7 @@ import { RECIPE_PROPS, RECIPE_KINDS } from '../sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../sunao/compile.mjs';
 import { formatSFC } from '../sunao/format.mjs';
 import { manifest, autofix, scanSignals } from '../sunao/compile.mjs';
+import { h, keyed, renderToString } from '../sunao/runtime.mjs';
 import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -1126,4 +1127,11 @@ test('scaffold: 全テンプレが 展開→ビルド できる（テンプレ�
       assert.ok(r.outputFiles[0].contents.length > 0, `${t}: バンドルできる`);
     }
   } finally { rmSync(tmp, { recursive: true, force: true }); }
+});
+
+test('v0.15 keyed v-for が index を renderFn に渡す（回帰: 以前 undefined→NaN）', () => {
+  const vnode = keyed([{ id: 'a' }, { id: 'b' }, { id: 'c' }], (x) => x.id, (x, i) => h('li', {}, [String(i + 1) + ':' + x.id]));
+  const html = renderToString(vnode);
+  assert.match(html, /1:a/); assert.match(html, /2:b/); assert.match(html, /3:c/);
+  assert.doesNotMatch(html, /NaN/);
 });
