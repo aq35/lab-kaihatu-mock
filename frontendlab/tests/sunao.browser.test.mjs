@@ -472,3 +472,28 @@ test('ブラウザ: video 例 — フィード→視聴の routing と <video> �
     server.close();
   }
 });
+
+test('ブラウザ: gallery テンプレが phone〜desktop で崩れない（横あふれ 0・列数が幅追従）', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({ entryPoints: ['templates/gallery/main.js'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = '<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><div id=app></div><script type=module src=/main.js></script>';
+  const server = http.createServer((req, res) => { if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); } else { res.setHeader('content-type', 'text/html'); res.end(html); } });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  const at = async (w) => {
+    const pg = await browser.newPage({ viewport: { width: w, height: 800 } });
+    await pg.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
+    await pg.waitForSelector('.card');
+    const m = await pg.evaluate(() => ({ overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, cols: new Set([...document.querySelectorAll('.card')].map((c) => Math.round(c.getBoundingClientRect().left))).size }));
+    await pg.close(); return m;
+  };
+  try {
+    const phone = await at(360), desk = await at(1280);
+    assert.ok(phone.overflow <= 0, `phone 幅で横あふれしない (got ${phone.overflow}px)`);
+    assert.ok(phone.cols >= 2, `phone 幅で 2 列以上 (got ${phone.cols})`);
+    assert.ok(desk.overflow <= 0, `desktop 幅で横あふれしない (got ${desk.overflow}px)`);
+    assert.ok(desk.cols > phone.cols, `幅が広いほど列が増える (${phone.cols} → ${desk.cols})`);
+  } finally { await browser.close(); server.close(); }
+});

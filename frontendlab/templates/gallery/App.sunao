@@ -80,7 +80,9 @@ $fg: oklch(24% 0.02 280);
 .filterbar { display: flex; align-items: center; gap: .6rem; margin-bottom: .8rem; }
 .chip { background: #eef; border-radius: 999px; padding: .2rem .7rem; font-size: .85rem; }
 .clr { font: inherit; border: 0; background: none; cursor: pointer; color: #778; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 1.1rem; }
+/* auto-fill + minmax でスマホ 2 列〜デスクトップ多列まで崩れず追従（8rem=約2列@375px）。 */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: .8rem; }
+@media (min-width: 40rem) { .grid { gap: 1.1rem; } }
 .card { text-align: left; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
 .thumb { aspect-ratio: 1 / 1; border-radius: 12px; }
 .meta { display: flex; flex-direction: column; gap: .1rem; margin-top: .45rem; }
