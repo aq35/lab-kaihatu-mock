@@ -19,6 +19,19 @@ node cli/manifest.mjs --pretty        # 各部品の契約 JSON（props{type,req
 
 書いたら **`npm run verify`**（= `check` 決定論/予算/契約 ＋ `fmt` ＋ `test`）を必ず通す。1 つでも赤なら直す。
 
+## context の載せ方（sunao を正しく書かせる型）
+
+sunao は**学習データが無い**（世間の AI は sunao を知らない）。ので **in-context の正例と API で埋める**のが前提。
+この順で **必要な分だけ**載せると精度が出る（低 context 設計を活かす）:
+
+1. **常に**: この `AGENTS.md`（3 つの規則＋落とし穴）＋ [`docs/reference.md`](docs/reference.md)（全 API 1 枚）。
+2. **書くパターンに応じて 1〜2 例だけ**: [`examples/README.md`](examples/README.md) の「パターン → 見る例」表から選び、その `.sunao` を丸ごと載せる（例: DnD なら `examples/app-ui/Sortable.sunao`、非同期なら `OwnerCardDemo.sunao`）。全部は載せない。
+3. **子部品を組むなら**: `node cli/manifest.mjs <child>.sunao --pretty` の JSON（props/enum/slots）だけ（ソース本体は不要）。
+4. **書いた後**: `node cli/doctor.mjs --pretty` → 各 diagnostic の `fix` で直す → `npm run verify` が緑になるまで。
+
+> 要は「reference（何が書けるか）＋ 近い正例 1〜2（どう書くか）＋ doctor（どこが違うか）」の 3 点セット。
+> これで学習データ非依存でも初手から動くコードに寄る。
+
 ## よく使うコマンド
 
 | 目的 | コマンド |

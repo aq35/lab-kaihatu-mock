@@ -932,3 +932,18 @@ test('v0.13 差分ガード: 難式で自前は Babel と食い違わない（�
   assert.ok(_mineAnalyzer('async () => await save(x)'), 'async アローは AST 解析される');
   assert.deepEqual(_mineAnalyzer('async () => await save(x)'), { used: ['save', 'x'], calls: ['save'] });
 });
+
+// ---- examples few-shot index が実ファイルと同期している（drift 検出・fail-closed）----
+test('examples: README index が全 .sunao を網羅し、参照先が実在する', async () => {
+  const { readdirSync } = await import('node:fs');
+  const base = resolve('examples');
+  const walk = (d, out = []) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) walk(p, out); else out.push(p); } return out; };
+  const rel = (p) => p.slice(base.length + 1);
+  const sfcs = walk(base).filter((f) => f.endsWith('.sunao')).map(rel); // 例: app-ui/Counter.sunao
+  const readme = readFileSync(join(base, 'README.md'), 'utf8');
+  // 1) 全ての例 .sunao が index に掲載されている（載せ忘れ検出）
+  for (const r of sfcs) assert.ok(readme.includes(r), `examples/README.md に未掲載の例: ${r}`);
+  // 2) index が参照する例ファイル（.sunao/.js）が実在する（リンク切れ検出）
+  const refs = new Set([...readme.matchAll(/[`/]((?:examples\/)?[\w-]+\/[\w-]+\.(?:sunao|js))/g)].map((m) => m[1].replace(/^examples\//, '')));
+  for (const r of refs) assert.ok(existsSync(join(base, r)), `README が参照する例が存在しない: ${r}`);
+});
