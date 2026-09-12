@@ -400,3 +400,35 @@ test('ブラウザ: windowedVar 可変高仮想化（実測補正・実DOMは可
     } finally { await browser.close(); server.close(); }
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('ブラウザ: onMount は DOM 挿入後に走る（setup 時は未挿入）', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const src = `<template><div><input class="fld" :value="v()"><span class="seen">{{ seen() }}</span></div></template>
+    <script>export default { setup(){
+      const v = signal('hi'); const seen = signal('no');
+      // setup 時点では .fld はまだ DOM に無い → onMount で初めて取れる
+      onMount(() => { const el = document.querySelector('.fld'); seen.set(el ? 'yes:'+el.value : 'null'); });
+      return { v, seen };
+    } }</script>`;
+  const dir = mkdtempSync(join(tmpdir(), 'om-'));
+  try {
+    writeFileSync(join(dir, 'App.sunao'), src);
+    writeFileSync(join(dir, 'main.js'), `import { mount } from 'sunao'; import App from './App.sunao'; mount(App, document.getElementById('app'));`);
+    const b = await esbuild.build({ entryPoints: [join(dir, 'main.js')], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+    const js = Buffer.from(b.outputFiles[0].contents);
+    const html = `<!doctype html><meta charset=utf-8><div id="app"></div><script type="module" src="/main.js"></script>`;
+    const server = http.createServer((req, res) => { if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); } else { res.setHeader('content-type', 'text/html'); res.end(html); } });
+    await new Promise((ok) => server.listen(0, ok));
+    const port = server.address().port;
+    const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+    try {
+      const page = await browser.newPage();
+      await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'load' });
+      await page.waitForTimeout(50);
+      assert.equal(await page.textContent('.seen'), 'yes:hi', 'onMount は DOM 挿入後に走り .fld を読めた');
+    } finally { await browser.close(); server.close(); }
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

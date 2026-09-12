@@ -87,6 +87,14 @@ export function batch(fn) {
   }
 }
 
+// mount 後（DOM 挿入後）に走らせたい処理を登録（focus / 実測 / windowedVar.attach など）。
+// setup は DOM 前に走るので、DOM を触る初期化はここへ。mount/hydrate が挿入後に flush する。
+let _mountQueue = null;
+export function onMount(fn) {
+  if (_mountQueue) _mountQueue.push(fn);
+  else if (typeof queueMicrotask !== 'undefined') queueMicrotask(fn); // mount 文脈外は best-effort
+}
+
 // 現在の scope に後始末を登録（scope 破棄で自動実行）。timer/fetch のキャンセルに使う。
 export function onCleanup(fn) {
   const owner = activeSub || activeOwner;
@@ -487,10 +495,13 @@ export function mount(component, el, doc = (typeof document !== 'undefined' ? do
   if (component.static) { el.innerHTML = component.render(); return { ctx: {}, dispose() {} }; }
   _provides = new Map();
   let ctx = {};
+  const prevQ = _mountQueue; _mountQueue = []; // 木の onMount を集める（ネスト component 含む）
   const root = createRoot(() => {
     ctx = component.setup ? component.setup() : {};
     el.appendChild(createNode(component.render(ctx), doc));
   });
+  const q = _mountQueue; _mountQueue = prevQ;
+  for (const fn of q) { try { fn(); } catch (e) { console.error(e); } } // DOM 挿入後に flush
   return { ctx, dispose: () => { root.dispose(); el.textContent = ''; } };
 }
 
@@ -544,12 +555,15 @@ export function hydrate(component, el, doc = (typeof document !== 'undefined' ? 
   if (component.static) return { ctx: {}, dispose() {} }; // 完全な静的 HTML＝対話なし
   _provides = new Map();
   let ctx = {};
+  const prevQ = _mountQueue; _mountQueue = [];
   const root = createRoot(() => {
     ctx = component.setup ? component.setup() : {};
     const vnode = component.render(ctx);
     if (el.children.length === 0) { el.appendChild(createNode(vnode, doc)); return; } // サーバ HTML 不在 → 通常 mount
     hydrateChildren(el, Array.isArray(vnode) ? vnode : [vnode], doc);
   });
+  const q = _mountQueue; _mountQueue = prevQ;
+  for (const fn of q) { try { fn(); } catch (e) { console.error(e); } }
   return { ctx, dispose: () => { root.dispose(); el.textContent = ''; } };
 }
 

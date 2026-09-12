@@ -12,6 +12,7 @@ import { recipeStyle } from '../plugins/sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../plugins/sunao/compile.mjs';
 import { formatSFC } from '../plugins/sunao/format.mjs';
+import { manifest } from '../plugins/sunao/compile.mjs';
 import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -289,6 +290,20 @@ test('② 仮想化 windowed(): 可視 slice・offsetY・total、スクロール
   assert.throws(() => windowed(items, { rowHeight: 20 }), /height/, 'height 必須（fail-closed）');
 });
 
+test('DX: manifest() が部品契約を機械可読に（props/enum/slots/uses）', () => {
+  const src = '<template><div><slot></slot><Child :name="a()"/></div></template>' +
+    '<script>import Child from "./Child.sunao";\nexport default { name:"Host", props:{ palette:{ enum:["calm","editorial"], required:true }, size:{ type:"number" } }, setup(){ const a=signal(0); return { a }; } }</script>';
+  const m = manifest(src, 'Host.sunao');
+  assert.equal(m.name, 'Host');
+  const pal = m.props.find((p) => p.name === 'palette');
+  assert.deepEqual(pal.enum, ['calm', 'editorial'], 'enum を配列で');
+  assert.equal(pal.required, true);
+  assert.equal(m.props.find((p) => p.name === 'size').type, 'number');
+  assert.equal(m.slots, true, '<slot> を検出');
+  assert.ok(m.uses.some((u) => u.tag === 'Child'), '使用 component を列挙');
+  assert.ok(m.signals.includes('a'), 'signal を列挙');
+});
+
 test('audit(compiler): 静的早道が directive/bind を漏らさない（v-if=false・:id）', () => {
   const a = compileSFC('<template><p v-if="false">SECRET</p></template>', { runtime: RUNTIME });
   assert.doesNotMatch(a, /static: true/, 'v-if は定数 HTML 化しない');
@@ -423,6 +438,14 @@ test('エディタ支援: diagnose() は error/warning を throw せず LSP 風�
   // 正常な SFC: 診断ゼロ
   const ok = diagnose(readFileSync('fixtures/app-ui/Counter.sunao', 'utf8'));
   assert.equal(ok.diagnostics.filter((d) => d.severity === 'error').length, 0);
+});
+
+test('DX: diagnose の fix ヒント（() 呼び忘れ→name()・未知ディレクティブ→候補）', () => {
+  const w = diagnose('<template><b>{{ count }}</b></template><script>export default { setup(){ const count = signal(0); return { count }; } }</script>');
+  const cf = w.diagnostics.find((d) => d.code === 'SUNAO_CALL_FORGOTTEN');
+  assert.equal(cf.fix, 'count()', 'signal 呼び忘れの fix は name()');
+  const e = diagnose('<template><div v-bogus="x">y</div></template>');
+  assert.equal(e.diagnostics.find((d) => d.severity === 'error').fix, 'v-if', '未知ディレクティブは最有力候補を fix に');
 });
 
 test('④ source map: sourcemap:true で inline map が付き、script 行へ対応する', () => {

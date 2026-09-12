@@ -628,15 +628,19 @@ export function diagnose(source, { filename = 'component.sunao' } = {}) {
   } catch (e) {
     if (e instanceof CompileError) {
       const d = e.diagnostic;
-      diagnostics.push({ severity: 'error', code: d.code, message: d.message, line: d.loc?.line ?? 1, column: d.loc?.column ?? 1, suggestions: d.suggestions || [] });
+      // 機械可読な fix ヒント（AI の自己修正用）: 未宣言参照/未知ディレクティブは最有力候補を fix に。
+      const fix = (d.code === 'SUNAO_UNDECLARED_REF' || d.code === 'SUNAO_UNKNOWN_DIRECTIVE') && d.suggestions && d.suggestions[0] ? d.suggestions[0] : null;
+      diagnostics.push({ severity: 'error', code: d.code, message: d.message, line: d.loc?.line ?? 1, column: d.loc?.column ?? 1, suggestions: d.suggestions || [], fix });
     } else {
-      diagnostics.push({ severity: 'error', code: 'SUNAO_ERROR', message: e.message, line: 1, column: 1, suggestions: [] });
+      diagnostics.push({ severity: 'error', code: 'SUNAO_ERROR', message: e.message, line: 1, column: 1, suggestions: [], fix: null });
     }
   }
   for (const w of warningsOf(source)) {
     const idx = w.ident ? source.indexOf(w.ident) : -1; // ベストエフォートの位置
     const loc = idx >= 0 ? posAt(source, idx) : null;
-    diagnostics.push({ severity: 'warning', code: w.code, message: w.message, line: loc?.line ?? 1, column: loc?.column ?? 1, ident: w.ident });
+    // () 呼び忘れは `name()` が fix（signal/関数は呼んで読む）。
+    const fix = w.code === 'SUNAO_CALL_FORGOTTEN' && w.ident ? `${w.ident}()` : null;
+    diagnostics.push({ severity: 'warning', code: w.code, message: w.message, line: loc?.line ?? 1, column: loc?.column ?? 1, ident: w.ident, fix });
   }
   return { filename, diagnostics };
 }
@@ -749,7 +753,9 @@ export function analyze(source) {
             else if (c === ',' && d === 0) break;
             val += c;
           }
-          props[mm[1]] = { required: /required\s*:\s*true/.test(val), type: (/\btype\s*:\s*['"](\w+)['"]/.exec(val) || [])[1] || null };
+          const enumM = /enum\s*:\s*\[([^\]]*)\]/.exec(val);
+          const en = enumM ? enumM[1].split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean) : null;
+          props[mm[1]] = { required: /required\s*:\s*true/.test(val), type: (/\btype\s*:\s*['"](\w+)['"]/.exec(val) || [])[1] || null, enum: en };
           i = j;
           continue;
         }
@@ -772,6 +778,25 @@ export function analyze(source) {
   };
   walk(parseTemplate(template));
   return { name: nameM ? nameM[1] : null, props, uses };
+}
+
+/**
+ * 部品の契約を **機械可読**に（AI がソースを読まず `<Child/>` を正しく組めるように）。
+ *   { name, file?, props:[{name,type,required,enum}], slots(bool), events:[], uses:[{tag,props}], signals:[] }
+ * 編集中で壊れていても throw しない（best-effort）。
+ */
+export function manifest(source, file = null) {
+  try {
+    const { template, script } = extractBlocks(source);
+    const a = analyze(source);
+    const props = Object.entries(a.props).map(([name, s]) => ({ name, type: s.type || null, required: !!s.required, enum: s.enum || null }));
+    const sy = symbols(source);
+    const slots = /<slot[\s/>]/.test(template); // 既定 slot を受け取るか
+    // @event 系はコンポーネントには未対応なので events は空（将来 emit を入れたらここに）。
+    return { name: a.name || (file ? file.replace(/.*\//, '').replace(/\.sunao$/, '') : null), file, props, slots, uses: a.uses, signals: sy.signals };
+  } catch {
+    return { name: null, file, props: [], slots: false, uses: [], signals: [] };
+  }
 }
 
 // ---- source map（line-level・<script> 用） ----
@@ -870,7 +895,7 @@ export function compileSFC(source, { runtime = './runtime.mjs', sourcemap = fals
   }
   const scriptBody = hasExport ? script.replace(/export\s+default/, 'const __component =') : `${script}\nconst __component = {};`;
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
-  const importLine = `import { h, signal, effect, computed, batch, component, keyed, windowed, windowedVar, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n`;
+  const importLine = `import { h, signal, effect, computed, batch, component, keyed, windowed, windowedVar, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, onMount, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n`;
   const out = (
     importLine +
     `${scriptBody}\n` +

@@ -16,11 +16,14 @@
     "prerender": "node prerender.mjs",
     "check": "node check.mjs",
     "diagnose": "node tools/diagnose.mjs",
+    "doctor": "node tools/doctor.mjs",
+    "manifest": "node tools/manifest.mjs",
     "fmt": "node format.mjs --check",
     "lsp": "node tools/lsp.mjs",
     "gen": "node tools/gen-recipe-vocab.mjs",
     "bench": "node bench/build-bench.mjs && node bench/run-bench.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "verify": "node check.mjs && node format.mjs --check && node --test tests/*.test.mjs"
   },
   "devDependencies": {
     "@babel/core": "8.0.5",
