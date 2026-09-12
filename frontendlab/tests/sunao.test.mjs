@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import esbuild from 'esbuild';
-import { signal, effect, computed, batch, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, windowed, renderComponentToString } from '../plugins/sunao/runtime.mjs';
+import { signal, effect, computed, batch, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, windowed, windowedVar, renderComponentToString } from '../plugins/sunao/runtime.mjs';
 import { recipeStyle } from '../plugins/sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../plugins/sunao/compile.mjs';
@@ -233,6 +233,27 @@ test('② 仮想化 windowed(): 可視 slice・offsetY・total、スクロール
   vp.onScroll({ target: { scrollTop: 1e9 } });
   assert.equal(vp.visible()[vp.visible().length - 1].id, 9999, '末尾で clamp');
   assert.throws(() => windowed(items, { rowHeight: 20 }), /height/, 'height 必須（fail-closed）');
+});
+
+test('② 可変高仮想化 windowedVar(): estimate→実測補正で total/visible/top が正しく動く', () => {
+  const items = signal(Array.from({ length: 1000 }, (_, i) => ({ id: i })));
+  const vp = windowedVar(items, { estimate: 50, height: 200, overscan: 1 });
+  assert.equal(vp.total(), 1000 * 50, '初期は estimate 総和');
+  let v = vp.visible();
+  assert.equal(v[0].index, 0);
+  assert.equal(v[0].top, 0);
+  assert.ok(v.length >= 4 && v.length <= 8, '可視ぶん（数件）だけ');
+  // 実測補正: 先頭 10 件を 100px に（推定 50 の倍）
+  for (let i = 0; i < 10; i++) vp.measure(i, 100);
+  assert.equal(vp.total(), 10 * 100 + 990 * 50, '実測ぶんが total に反映');
+  // 120px スクロール → 実測(100px)基準で index 1 付近から
+  vp.onScroll({ target: { scrollTop: 120 } });
+  v = vp.visible();
+  assert.equal(v[0].index, 0, 'overscan=1 で 1 手前（index1 の 1 手前=0）');
+  // top が実測の累積（index 2 の top = 100+100 = 200）
+  const two = v.find((x) => x.index === 2);
+  assert.equal(two.top, 200, 'top は実測高さの累積オフセット');
+  assert.throws(() => windowedVar(items, {}), /height/);
 });
 
 test('式パーサ(AST): arrow/分割の仮引数は ctx 参照にしない・shorthand は拾う（regex の誤収集を修正）', () => {

@@ -765,7 +765,7 @@ export function compileSFC(source, { runtime = './runtime.mjs', sourcemap = fals
   }
   const scriptBody = script.replace(/export\s+default/, 'const __component =');
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
-  const importLine = `import { h, signal, effect, computed, batch, component, keyed, windowed, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n`;
+  const importLine = `import { h, signal, effect, computed, batch, component, keyed, windowed, windowedVar, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n`;
   const out = (
     importLine +
     `${scriptBody}\n` +

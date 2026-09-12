@@ -349,3 +349,54 @@ test('ブラウザ: per-item signal の更新が DOM に反映される（reacti
     } finally { await browser.close(); server.close(); }
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('ブラウザ: windowedVar 可変高仮想化（実測補正・実DOMは可視ぶん・末尾まで到達）', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const src = `<template><div class="vp" @scroll="vp.onScroll($event)" :style="'height:300px;overflow:auto'">
+      <div class="spacer" :style="'height:'+vp.total()+'px;position:relative'">
+        <div class="row" v-for="v in vp.visible()" :key="v.item.id" :data-vindex="v.index"
+             :style="'position:absolute;left:0;right:0;top:'+v.top+'px;height:'+v.item.h+'px'">{{ v.item.text }}</div>
+      </div></div></template>
+    <script>export default { setup(){
+      const items = signal(Array.from({length:1000},(_,i)=>({id:i, text:'#'+i, h: 24 + (i%6)*16}))); // 高さがバラバラ(24..104)
+      const vp = windowedVar(items, { estimate: 30, height: 300 });
+      return { vp, items };
+    } }</script>`;
+  const dir = mkdtempSync(join(tmpdir(), 'vw-'));
+  try {
+    writeFileSync(join(dir, 'App.sunao'), src);
+    writeFileSync(join(dir, 'main.js'), `import { mount } from 'sunao'; import App from './App.sunao'; const {ctx}=mount(App, document.getElementById('app')); ctx.vp.attach(document.querySelector('.vp')); window.__vp=ctx.vp; window.domRows=()=>document.querySelectorAll('.row').length; window.total=()=>ctx.vp.total();`);
+    const b = await esbuild.build({ entryPoints: [join(dir, 'main.js')], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+    const js = Buffer.from(b.outputFiles[0].contents);
+    const html = `<!doctype html><meta charset=utf-8><style>*{box-sizing:border-box}</style><div id="app"></div><script type="module" src="/main.js"></script>`;
+    const server = http.createServer((req, res) => { if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); } else { res.setHeader('content-type', 'text/html'); res.end(html); } });
+    await new Promise((ok) => server.listen(0, ok));
+    const port = server.address().port;
+    const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+    try {
+      const page = await browser.newPage();
+      await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'load' });
+      await page.waitForTimeout(250); // attach の rAF 実測を待つ
+      const domRows = await page.evaluate(() => window.domRows());
+      assert.ok(domRows > 0 && domRows < 40, `実 DOM は可視ぶんだけ（${domRows} 行、1000 ではない）`);
+      const totalEstimate = 1000 * 30;
+      const total = await page.evaluate(() => window.total());
+      assert.notEqual(total, totalEstimate, '実測で total が estimate から補正される');
+      // 行が縦に重ならない（top が広義単調増加）
+      const tops = await page.$$eval('.row', (els) => els.map((e) => parseFloat(e.style.top)).sort((a, b) => a - b));
+      const heights = await page.$$eval('.row', (els) => els.map((e) => e.getBoundingClientRect().height));
+      assert.ok(tops.every((t, i) => i === 0 || t >= tops[i - 1]), 'top は単調増加');
+      // 末尾までスクロール（estimate ベースなので 2 パスで収束: 途中の実測で総高さが補正される）
+      for (let pass = 0; pass < 3; pass++) {
+        await page.evaluate(() => { const el = document.querySelector('.vp'); el.scrollTop = el.scrollHeight; el.dispatchEvent(new Event('scroll')); });
+        await page.waitForTimeout(150);
+      }
+      const maxIdx = await page.$$eval('.row', (els) => Math.max(...els.map((e) => +e.dataset.vindex)));
+      assert.equal(maxIdx, 999, '収束後、末尾（index 999）まで到達');
+      assert.ok(await page.evaluate(() => window.domRows()) < 40, 'スクロール後も実 DOM は可視ぶん');
+    } finally { await browser.close(); server.close(); }
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

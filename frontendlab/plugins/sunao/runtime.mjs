@@ -139,6 +139,73 @@ export function windowed(items, { rowHeight, height, overscan = 4 } = {}) {
   };
 }
 
+// 可変高の仮想化: 行の高さがバラバラなリスト（チャット/フィード/コメント）向け。
+// Fenwick(BIT) で累積オフセットを O(log N)。初期は estimate、描画後に ResizeObserver で実測して補正。
+// 使い方（各行を絶対配置。v = {item, index, top}）:
+//   const vp = windowedVar(items, { estimate: 60, height: 500 });
+//   template:
+//     <div class="vp" @scroll="vp.onScroll($event)" :style="'height:500px;overflow:auto'">
+//       <div :style="'height:'+vp.total()+'px;position:relative'">
+//         <div v-for="v in vp.visible()" :key="v.item.id" :data-vindex="v.index"
+//              :style="'position:absolute;left:0;right:0;top:'+v.top+'px'"> …v.item… </div>
+//   mount 後に vp.attach(viewportEl) を呼ぶと実測で高さが補正される（呼ばなくても estimate で動く）。
+function makeBIT(n, init) {
+  const t = new Float64Array(n + 1);
+  const add = (i, d) => { for (i++; i <= n; i += i & -i) t[i] += d; };
+  const sum = (i) => { let s = 0; for (; i > 0; i -= i & -i) s += t[i]; return s; }; // [0, i) の和
+  for (let i = 0; i < n; i++) add(i, init);
+  // offset を含む item の index（= offset 未満に完全に収まる item 数）
+  const findIndex = (target) => {
+    let pos = 0, acc = 0, r = 1; while (r * 2 <= n) r *= 2;
+    for (let k = r; k >= 1; k >>= 1) { if (pos + k <= n && acc + t[pos + k] <= target) { pos += k; acc += t[pos]; } }
+    return pos;
+  };
+  return { add, sum, findIndex, total: () => sum(n) };
+}
+export function windowedVar(items, { estimate = 40, height, overscan = 4 } = {}) {
+  if (!height) throw new Error('windowedVar() は height（px）が必要です');
+  const list = typeof items === 'function' ? items : () => items;
+  const scrollTop = signal(0);
+  const version = signal(0); // 実測で高さが変わったら bump → visible/total 再計算
+  let n = -1, bit = null, heights = null;
+  const ensure = () => { const len = list().length; if (len !== n) { n = len; heights = new Float64Array(n).fill(estimate); bit = makeBIT(n, estimate); } };
+  const measure = (index, px) => {
+    ensure();
+    if (index < 0 || index >= n || !(px > 0)) return;
+    const d = px - heights[index];
+    if (Math.abs(d) < 0.5) return;
+    heights[index] = px; bit.add(index, d); version.set(version.peek() + 1);
+  };
+  const start = () => { ensure(); version(); return Math.max(0, bit.findIndex(scrollTop()) - overscan); };
+  const visible = () => {
+    ensure(); version();
+    const s = start(), arr = list(), limit = scrollTop() + height;
+    const out = []; let acc = bit.sum(s), i = s;
+    while (i < n) {
+      out.push({ item: arr[i], index: i, top: acc });
+      const bottom = acc + heights[i]; acc = bottom; i++;
+      if (bottom > limit) { let ex = overscan; while (i < n && ex-- > 0) { out.push({ item: arr[i], index: i, top: acc }); acc += heights[i]; i++; } break; }
+    }
+    return out;
+  };
+  const total = () => { ensure(); version(); return bit.total(); };
+  const attach = (viewportEl) => {
+    if (!viewportEl || typeof ResizeObserver === 'undefined') return () => {};
+    const ro = new ResizeObserver((entries) => { for (const e of entries) { const idx = +e.target.dataset.vindex; if (!Number.isNaN(idx)) measure(idx, e.target.getBoundingClientRect().height); } });
+    let observed = new Set();
+    const sync = () => {
+      const els = viewportEl.querySelectorAll('[data-vindex]'); const now = new Set();
+      for (const el of els) { now.add(el); if (!observed.has(el)) ro.observe(el); measure(+el.dataset.vindex, el.getBoundingClientRect().height); }
+      for (const el of observed) if (!now.has(el)) ro.unobserve(el);
+      observed = now;
+    };
+    const eff = effect(() => { visible(); if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(sync); else sync(); });
+    onCleanup(() => ro.disconnect());
+    return () => { ro.disconnect(); eff.dispose?.(); };
+  };
+  return { onScroll: (e) => scrollTop.set(e.target.scrollTop), total, visible, measure, attach };
+}
+
 // 派生値（Svelte $derived / Vue computed / Solid createMemo 相当）。読むと購読。
 export function computed(fn) {
   const s = signal(undefined);

@@ -73,7 +73,19 @@ const vp = windowed(items, { rowHeight: 28, height: 400 });
 // template: <div @scroll="vp.onScroll($event)" :style="'height:400px;overflow:auto'">
 //   <div :style="'height:'+vp.total()+'px'"><div :style="'transform:translateY('+vp.offsetY()+'px)'">
 //     <div v-for="row in vp.visible()" :key="row.id">…
-// 固定 rowHeight・固定 height（可変高は非対応＝正直な最小）
+// 固定 rowHeight・固定 height
+```
+
+**可変高リスト**（チャット/フィード/コメント＝行高がバラバラ）は `windowedVar()`:
+```js
+const vp = windowedVar(items, { estimate: 60, height: 500 }); // BIT で O(log N) オフセット
+// template: 各行を絶対配置。v = { item, index, top }
+//   <div @scroll="vp.onScroll($event)" :style="'height:500px;overflow:auto'">
+//     <div :style="'height:'+vp.total()+'px;position:relative'">
+//       <div v-for="v in vp.visible()" :key="v.item.id" :data-vindex="v.index"
+//            :style="'position:absolute;left:0;right:0;top:'+v.top+'px'">…v.item…
+// mount 後に vp.attach(viewportEl) を呼ぶと ResizeObserver で実測補正（estimate→correct）。
+// 注: estimate ベースなので初期スクロール位置は近似（実測で収束）。可変高は attach 必須。
 ```
 
 ### 描画・マウント / SSR / hydration
