@@ -38,3 +38,18 @@ python3 fonts/specimen.py     # 名作を DL→subset→見本 specimen.html を
 - **ライセンス全文（OFL.txt）を必ず同梱**し、原典作者をクレジットする。
 - **Reserved Font Name** を持つフォント（例: Comfortaa）は、改変・subset して配布するなら**その名前を使わずリネーム**する。
 - 和文は字数が多く、**本文用に全字入れると重い**（数 MB）。UI/見出しで**使う文字だけ subset** するか、本文は端末フォント（system-ui / Noto）に任せるのが現実的。
+
+
+## 追加編（`specimen2.html` / `specimen2.py`・22 書体）
+
+さらに系統を広げた名作（すべて OFL）。実物は `fonts/specimen2.html`、一括生成は `python3 fonts/specimen2.py`。
+
+**欧文**: Montserrat(幾何) / Raleway(細身) / Oswald(コンデンス見出し) / Josefin Sans(華奢) / Space Grotesk(近未来) /
+Lora(可読セリフ) / EB Garamond(古典セリフ) / Bitter(スラブ) / Bebas Neue(極細長・大文字) / Abril Fatface(高コントラスト装飾) /
+Lobster(スクリプト) / Caveat(手書き) / Great Vibes(筆記体) / Space Mono(レトロ等幅)。
+
+**和文**: Kaisei Decol(やわ明朝) / Klee One(教科書体) / Yomogi(やさしい手書き) / Yuji Syuku(筆・楷書) /
+Hachi Maru Pop(丸ポップ) / DotGothic16(ドット) / Rampart One(立体見出し) / Reggae One(極太)。
+
+> これで欧文14＋和文8（前回9と合わせ計31書体）を実サンプルで確認済み。google/fonts の `ofl/` にまだ数百ある。
+> 用途を言ってくれれば「この 3 択」まで絞る。
