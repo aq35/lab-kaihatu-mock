@@ -18,7 +18,6 @@
         </button>
       </div>
     </div>
-
     <!-- 日の詳細ビュー（#/day/:date、フロントエンドルーティング） -->
     <div class="day-view" v-if="dayParam()">
       <header class="day-head">
@@ -36,6 +35,7 @@
     </div>
   </div>
 </template>
+
 <script>
 export default {
   name: 'Calendar',

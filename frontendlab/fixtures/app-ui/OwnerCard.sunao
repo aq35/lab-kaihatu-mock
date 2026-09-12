@@ -3,9 +3,18 @@
     <span class="k-kind">{{ kindLabel() }}</span>
     <h3 class="k-title">{{ title() }}</h3>
     <dl class="k-facts">
-      <div class="k-fact"><dt>内容</dt><dd>{{ effect() }}</dd></div>
-      <div class="k-fact" v-if="scope()"><dt>範囲</dt><dd>{{ scope() }}</dd></div>
-      <div class="k-fact" v-if="risk()"><dt>リスク</dt><dd>{{ risk() }}</dd></div>
+      <div class="k-fact">
+        <dt>内容</dt>
+        <dd>{{ effect() }}</dd>
+      </div>
+      <div class="k-fact" v-if="scope()">
+        <dt>範囲</dt>
+        <dd>{{ scope() }}</dd>
+      </div>
+      <div class="k-fact" v-if="risk()">
+        <dt>リスク</dt>
+        <dd>{{ risk() }}</dd>
+      </div>
     </dl>
     <div class="k-actions" v-if="!decided() && isApproval()">
       <button class="k-btn primary" @click="approve">承認する</button>
@@ -17,6 +26,7 @@
     <p class="k-done" v-if="decided()">→ {{ decidedLabel() }}</p>
   </article>
 </template>
+
 <script>
 import { RECIPE_PROPS, RECIPE_KINDS } from 'sunao/recipe';
 import { recipeStyle, KIND_ACCENT, KIND_LABEL } from 'sunao/theme';

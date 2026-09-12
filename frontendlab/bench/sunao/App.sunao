@@ -1,11 +1,16 @@
 <template>
-  <table class="t"><tbody>
-    <tr v-for="row in rows()" :key="row.id" :class="row.id === selected() ? 'selected' : ''">
-      <td class="id">{{ row.id }}</td>
-      <td class="lbl"><a>{{ row.label() }}</a></td>
-    </tr>
-  </tbody></table>
+  <table class="t">
+    <tbody>
+      <tr v-for="row in rows()" :key="row.id" :class="row.id === selected() ? 'selected' : ''">
+        <td class="id">{{ row.id }}</td>
+        <td class="lbl">
+          <a>{{ row.label() }}</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </template>
+
 <script>
 const A = ['pretty','large','fancy','silent','warm','quiet','clean','odd','cheap','red','green','blue'];
 const N = ['table','chair','house','car','book','road','pony','mouse','keyboard','panel'];

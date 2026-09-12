@@ -17,6 +17,7 @@
 
 // 式の自由変数解析に使う（build 時のみ・アプリ bundle には入らない）。@babel/core の推移依存。
 import { parseExpression as _babelParseExpression } from '@babel/parser';
+import { createRequire } from 'node:module'; // sass を lazy require するため（build 時のみ）
 
 /**
  * 構造化診断つきコンパイルエラー。文字列でも診断オブジェクトでも作れる（後方互換）。
@@ -69,9 +70,24 @@ const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input'
 export function extractBlocks(source) {
   const tpl = /<template>([\s\S]*?)<\/template>/.exec(source);
   const scr = /<script>([\s\S]*?)<\/script>/.exec(source);
-  const sty = /<style[^>]*>([\s\S]*?)<\/style>/.exec(source);
+  const sty = /<style([^>]*)>([\s\S]*?)<\/style>/.exec(source);
   if (!tpl) throw new CompileError({ code: 'SUNAO_NO_TEMPLATE', message: 'SFC に <template> がありません。' });
-  return { template: tpl[1].trim(), script: scr ? scr[1].trim() : '', style: sty ? sty[1].trim() : '' };
+  const styleAttrs = sty ? sty[1] : '';
+  const langM = /\blang\s*=\s*["']?([\w-]+)/.exec(styleAttrs);
+  return { template: tpl[1].trim(), script: scr ? scr[1].trim() : '', style: sty ? sty[2].trim() : '', styleLang: langM ? langM[1].toLowerCase() : null };
+}
+
+// SCSS/SASS を CSS に（sass は build 時のみ・lazy require＝使わない SFC には読み込まない）。
+let _sass = null;
+function compileStyleLang(src, lang, template) {
+  if (!lang || lang === 'css') return src;
+  if (lang !== 'scss' && lang !== 'sass') fail('SUNAO_STYLE_LANG', `<style lang="${lang}"> は未対応です（css / scss / sass）。`, {});
+  if (!_sass) { const require = createRequire(import.meta.url); _sass = require('sass'); }
+  try {
+    return _sass.compileString(src, { syntax: lang === 'sass' ? 'indented' : 'scss' }).css;
+  } catch (e) {
+    fail('SUNAO_SCSS_ERROR', `${lang.toUpperCase()} のコンパイルに失敗: ${e.message.split('\n')[0]}`, {});
+  }
 }
 
 // 開きタグの終端 '>' を、引用符内を無視して探す（属性値の => や a > b で誤爆しない）。
@@ -561,8 +577,7 @@ export function symbols(source) {
     const scr = /<script>([\s\S]*?)<\/script>/.exec(source);
     const script = scr ? scr[1] : '';
     for (const m of script.matchAll(/import\s+([A-Z]\w*)\s+from/g)) out.components.push(m[1]);
-    out.signals = [...scanSignals(script)].filter((n) => !/^[A-Z]/.test(n) || true); // signals ∪ props（scanSignals は props も含む）
-    // props キー（トップレベル）
+    // props キー（トップレベル）を先に確定
     const propsBody = balancedBlock(script, 'props');
     if (propsBody) {
       let depth = 0;
@@ -572,6 +587,9 @@ export function symbols(source) {
         else if (depth === 0) { const mm = /^([A-Za-z_$][\w$]*)\s*:/.exec(propsBody.slice(i)); if (mm) { out.props.push(mm[1]); i += mm[0].length - 1; } }
       }
     }
+    // signals は「呼んで読む」束縛のみ（scanSignals は props も含むので props を除く）
+    const props = new Set(out.props);
+    out.signals = [...scanSignals(script)].filter((n) => !props.has(n));
     // expose:[...]
     const ex = /expose\s*:\s*\[([^\]]*)\]/.exec(script);
     if (ex) ex[1].split(',').forEach((s) => { const n = s.trim().replace(/^['"]|['"]$/g, ''); if (n) out.exposed.push(n); });
@@ -740,10 +758,10 @@ function scriptSourceMap(source, out, scriptBody, importLines, filename) {
 
 /** SFC → ES モジュール文字列。sourcemap:true で inline line-level map を付ける（filename は .sunao 名）。 */
 export function compileSFC(source, { runtime = './runtime.mjs', sourcemap = false, filename = 'component.sunao' } = {}) {
-  const { template, script, style } = extractBlocks(source);
+  const { template, script, style, styleLang } = extractBlocks(source);
 
   let scopeAttr = null, scopedCss = null;
-  if (style) { const s = scopeStyles(style, ''); scopeAttr = s.attr; scopedCss = s.scoped; }
+  if (style) { const css = compileStyleLang(style, styleLang, template); const s = scopeStyles(css, ''); scopeAttr = s.attr; scopedCss = s.scoped; }
 
   // ④ import されたコンポーネント（大文字始まり）を把握。
   const components = new Set();

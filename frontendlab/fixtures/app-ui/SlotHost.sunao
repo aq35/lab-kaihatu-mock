@@ -3,6 +3,7 @@
     <p class="slotted">スロット差し込み: {{ msg() }}</p>
   </Card>
 </template>
+
 <script>
 import Card from './Card.sunao';
 export default { setup() { const msg = signal('こんにちは'); return { msg }; } };

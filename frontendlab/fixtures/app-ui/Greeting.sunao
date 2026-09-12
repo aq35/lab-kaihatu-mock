@@ -1,6 +1,7 @@
 <template>
   <p class="greet">{{ emoji() }} こんにちは、{{ name() }} さん（{{ count() }} 回目）</p>
 </template>
+
 <script>
 export default {
   name: 'Greeting',

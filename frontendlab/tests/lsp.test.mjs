@@ -122,6 +122,33 @@ test('LSP: hover が signal を「呼んで読む」と説明', async () => {
   } finally { c.kill(); }
 });
 
+test('LSP: 定義ジャンプ — count の使用位置から <script> の宣言へ', async () => {
+  const c = makeClient();
+  try {
+    await c.request('initialize', { capabilities: {} });
+    c.notify('textDocument/didOpen', { textDocument: { uri: 'file:///f.sunao', text: SFC } });
+    const pos = { line: 2, character: 11 }; // {{ count }} の count
+    const loc = await c.request('textDocument/definition', { textDocument: { uri: 'file:///f.sunao' }, position: pos });
+    assert.ok(loc && loc.uri === 'file:///f.sunao', 'Location を返す');
+    // 宣言 `const count = signal(0)` の行を指す
+    const declLine = SFC.split('\n').findIndex((l) => /const count = signal/.test(l));
+    assert.equal(loc.range.start.line, declLine, '宣言行にジャンプ');
+  } finally { c.kill(); }
+});
+
+test('LSP: documentSymbol — signal/prop/component を宣言位置つきで列挙', async () => {
+  const c = makeClient();
+  try {
+    await c.request('initialize', { capabilities: {} });
+    c.notify('textDocument/didOpen', { textDocument: { uri: 'file:///g.sunao', text: SFC } });
+    const syms = await c.request('textDocument/documentSymbol', { textDocument: { uri: 'file:///g.sunao' } });
+    const byName = Object.fromEntries(syms.map((s) => [s.name, s]));
+    assert.ok(byName.count && byName.count.kind === 12, 'count は signal(Function)');
+    assert.ok(byName.title && byName.title.kind === 8, 'title は prop(Field)');
+    assert.ok(byName.count.range && byName.count.range.start, 'range つき');
+  } finally { c.kill(); }
+});
+
 test('LSP: タグ位置の補完は component/HTML 要素', async () => {
   const c = makeClient();
   try {

@@ -11,6 +11,7 @@ import { signal, effect, computed, batch, component, validateProps, matchRoute, 
 import { recipeStyle } from '../plugins/sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../plugins/sunao/compile.mjs';
+import { formatSFC } from '../plugins/sunao/format.mjs';
 import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -62,6 +63,42 @@ test('⑤ v-model: :value + @input へ純粋 desugar される', () => {
   assert.match(r.render, /"value": \(\) => \(name\)\(\)/);
   assert.match(r.render, /"onInput": \(e\) => \(name\)\.set\(e\.target\.value\)/);
   assert.ok(r.used.includes('name'));
+});
+
+test('fmt: formatSFC は冪等・content 非破壊・整形後もコンパイルできる', () => {
+  const messy = `<template>\n<div class="a"  >\n<!-- c -->\n<b>{{  x()  }}</b>\n<ul><li v-for="r in rows()" :key="r.id"><span>{{ r.n }}</span></li></ul>\n</div>\n</template>\n<script>\nexport default { setup(){ const x = signal(0); const rows = signal([]); return { x, rows }; } }\n</script>\n<style lang="scss">.a{ .b{color:red} }</style>`;
+  const once = formatSFC(messy);
+  assert.equal(formatSFC(once), once, '冪等');
+  assert.match(once, /<b>\{\{ x\(\) \}\}<\/b>/, '要素を含まない子は 1 行 inline');
+  assert.match(once, /<!-- c -->/, 'コメント保持');
+  assert.match(once, /:key="r\.id"/, '属性保持');
+  assert.match(once, /<style lang="scss">/, 'style lang 保持');
+  assert.doesNotThrow(() => compileSFC(once, { runtime: RUNTIME }), '整形後もコンパイルできる');
+});
+
+test('scaffold: npm run new が雛形を出し、そのままビルドできる', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'scaf-'));
+  const app = join(dir, 'todo');
+  try {
+    execFileSync('node', ['create.mjs', app], { stdio: 'ignore' });
+    for (const f of ['App.sunao', 'main.js', 'index.html', 'README.md']) assert.ok(existsSync(join(app, f)), `${f} が生成される`);
+    // 生成物がそのまま esbuild+sunao で通る（scss 含む）
+    const r = await esbuild.build({ entryPoints: [join(app, 'main.js')], bundle: true, minify: true, format: 'iife', write: false, plugins: [sunao()], logLevel: 'silent' });
+    assert.ok(r.outputFiles[0].contents.length > 0, 'バンドルできる');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('SCSS: <style lang="scss"> がネスト/変数/& を CSS 化して scope される', () => {
+  const src = '<template><div class="card"><b class="t">hi</b></div></template>' +
+    '<style lang="scss">$c: red; .card { padding: 8px; .t { color: $c; &:hover { color: blue } } }</style>';
+  const mod = compileSFC(src, { runtime: RUNTIME });
+  assert.match(mod, /\.card \.t\[data-s[0-9a-z]+\]/, 'ネストが展開され scope される');
+  assert.match(mod, /color: red/, '$変数が解決される');
+  assert.match(mod, /\.t\[data-s[0-9a-z]+\]:hover/, '& が展開される');
+  // 未対応 lang は fail-closed
+  assert.throws(() => compileSFC('<template><p>x</p></template><style lang="less">.a{}</style>', { runtime: RUNTIME }), /未対応/);
 });
 
 test('⑤ scoped styles: 要素に scope 属性、CSS が scope 限定される（最小）', () => {

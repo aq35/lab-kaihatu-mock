@@ -12,9 +12,11 @@
     "gate": "node plugins/budget-gate.mjs --budget budget.json",
     "build": "node build.mjs",
     "dev": "node dev.mjs",
+    "new": "node create.mjs",
     "prerender": "node prerender.mjs",
     "check": "node check.mjs",
     "diagnose": "node tools/diagnose.mjs",
+    "fmt": "node format.mjs --check",
     "lsp": "node tools/lsp.mjs",
     "gen": "node tools/gen-recipe-vocab.mjs",
     "bench": "node bench/build-bench.mjs && node bench/run-bench.mjs",
@@ -28,10 +30,11 @@
     "@swc/core": "1.16.2",
     "@vue/compiler-dom": "3.5.42",
     "esbuild": "0.28.2",
-    "vue": "3.5.42",
     "lodash": "4.18.1",
     "lodash-es": "4.18.1",
     "oxc-minify": "0.149.0",
-    "oxc-transform": "0.149.0"
+    "oxc-transform": "0.149.0",
+    "sass": "1.104.0",
+    "vue": "3.5.42"
   }
 }

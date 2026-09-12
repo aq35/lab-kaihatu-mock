@@ -5,6 +5,7 @@
     <Greeting name="Bob" emoji="🙂" :count="n()" />
   </section>
 </template>
+
 <script>
 import Greeting from './Greeting.sunao';
 export default {

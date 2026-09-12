@@ -1,12 +1,7 @@
 <template>
   <div class="sortable">
     <ul class="list">
-      <li class="row" v-for="t in items()" :key="t.id"
-          draggable="true"
-          :class="dragId() === t.id ? 'dragging' : ''"
-          @dragstart="drag(t.id)"
-          @dragover="$event.preventDefault()"
-          @drop="drop(t.id)">
+      <li class="row" v-for="t in items()" :key="t.id" draggable="true" :class="dragId() === t.id ? 'dragging' : ''" @dragstart="drag(t.id)" @dragover="$event.preventDefault()" @drop="drop(t.id)">
         <input type="checkbox" class="chk">
         <span class="handle">⠿</span>
         <span class="name">{{ t.name }}</span>
@@ -14,6 +9,7 @@
     </ul>
   </div>
 </template>
+
 <script>
 export default {
   setup() {

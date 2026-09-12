@@ -1,6 +1,7 @@
 <template>
   <span class="dc-badge" :class="cls()">{{ label() }}</span>
 </template>
+
 <script>
 export default {
   name: 'StatusBadge',

@@ -48,6 +48,7 @@ export default {
 | `flip` | FLIP アニメ | `:key` つき v-for に付けると並び替え/enter/leave が滑る |
 | `v-model="sig"` | 双方向糖衣 | `:value + @input`。`sig` は signal |
 | `class` + `:class` | class 合成 | 両方書くと結合される |
+| `<style lang="scss">` | SCSS/SASS | sass で CSS 化してから scoped（`css`/`scss`/`sass`。他は fail-closed） |
 | `<Child :p="x"/>` | 子部品 | **import 必須**（大文字始まり = 部品） |
 | `<slot>` / `<slot>default</slot>` | 差し込み | 親の子要素を描画（無ければ default） |
 
@@ -155,6 +156,8 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 
 ## SSR / SSG / SEO / 開発
 
+- **`npm run new -- apps/foo`** … 新規アプリ雛形（App.sunao/main.js/index.html/README）。すぐ `dev`/`build` できる。
+- **`npm run fmt`** … `.sunao` 整形チェック（冪等・content 非破壊。`node format.mjs --write <file>` で修正）。
 - **`npm run dev [-- --entry X.js --port 8000]`** … esbuild watch + serve。**保存→自動リビルド→ブラウザ自動リロード**。sourcemap は inline（実行時エラーが .sunao の `<script>` 行へ戻る＝line-level）。
 - **`npm run prerender -- --entry page.sunao --out dist/x.html [--client main.js]`** … ページを **実 HTML へ prerender**（title/description/canonical/OG メタ＋scoped CSS を inline＋`#app` に中身を焼く）。`--client` があれば hydrate 用 bundle も出す。
 - **SEO の考え方**:
@@ -167,10 +170,10 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 
 - **`node tools/diagnose.mjs [file ...] [--pretty]`** … `.sunao` の診断を**機械可読 JSON**で出す（error は fail-closed で exit 1、warning は exit に影響なし）。
 - **`diagnose(source, {filename})`**（`compile.mjs`）… throw せず `{ diagnostics:[{severity, code, message, line, column, suggestions?, ident?}] }` を返す＝LSP の `publishDiagnostics` の中身。
-- **`node tools/lsp.mjs`（`npm run lsp`）** … **依存ゼロの LSP サーバ**（stdio JSON-RPC を手書き）。診断（publishDiagnostics）・補完（式位置=signal/prop/return を `name()` 挿入・タグ位置=component・属性位置=ディレクティブ）・hover（signal は呼んで読む 等）。頭脳は `diagnose()`/`symbols()`。エディタ無しで `tests/lsp.test.mjs` がプロトコルを直接叩いて検証。
-- **`editor/sunao.tmLanguage.json` + `language-configuration.json`** … VSCode 用の構文ハイライト（`editor/README.md` に LSP との繋ぎ方）。
+- **`node tools/lsp.mjs`（`npm run lsp`）** … **依存ゼロの LSP サーバ**（stdio JSON-RPC を手書き）。診断（publishDiagnostics）・補完（式位置=signal/prop/return を `name()` 挿入・タグ位置=component・属性位置=ディレクティブ）・hover・**定義ジャンプ**・**アウトライン(documentSymbol)**。頭脳は `diagnose()`/`symbols()`。エディタ無しで `tests/lsp.test.mjs` がプロトコルを直接叩いて検証。
+- **`editor/vscode/`** … VSCode 拡張（F5 で LSP に繋がる）。`editor/sunao.tmLanguage.json` + `language-configuration.json` が構文ハイライト。導入は `GETTING_STARTED.md` / `editor/vscode/README.md`。
 - 式解析は **@babel/parser の AST**（build 時のみ・アプリ bundle には入らない）。arrow/分割の仮引数を正しくスコープするので、`items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。
-- 未実装（正直）: 定義ジャンプ/リネーム/シグネチャヘルプ（土台 `symbols()` はある）・VSCode 拡張のパッケージ配布。
+- 未実装（正直）: リネーム/シグネチャヘルプ（土台 `symbols()` はある）・`.vsix` パッケージ配布。
 
 ## 決定論・予算（factory）
 

@@ -3,16 +3,12 @@
     <header class="hero">
       <p class="eyebrow">個人用途のフロントエンド・ツールチェーン</p>
       <h1 class="h1">sunao — AI が好きそうなコンパイラ</h1>
-      <p class="lead">
-        宣言的・fail-closed・決定論・小さい。Vue 風の SFC を build 時に決定論的な JS へコンパイルし、
-        極小のリアクティブ runtime で動かす。未知の書き方は静かに壊れず、コンパイルエラーになる。
-      </p>
+      <p class="lead">宣言的・fail-closed・決定論・小さい。Vue 風の SFC を build 時に決定論的な JS へコンパイルし、 極小のリアクティブ runtime で動かす。未知の書き方は静かに壊れず、コンパイルエラーになる。</p>
       <div class="cta">
         <a class="btn primary" href="#features">特徴を見る</a>
         <a class="btn" href="#seo">SEO について</a>
       </div>
     </header>
-
     <section id="features" class="section">
       <h2 class="h2">特徴</h2>
       <ul class="cards">
@@ -22,17 +18,19 @@
         </li>
       </ul>
     </section>
-
     <section id="seo" class="section">
       <h2 class="h2">なぜ SEO に強いか</h2>
       <p class="p">
-        このページ自体が sunao で書かれ、ビルド時に <strong>実 HTML へ prerender</strong> されている。
-        つまりクローラは JavaScript を実行しなくても、上の見出し・本文・特徴リストをそのまま読める。
-        対話が必要な部分だけを client で hydrate するので、初期 HTML は常に「中身入り」になる。
+        このページ自体が sunao で書かれ、ビルド時に
+        <strong>実 HTML へ prerender</strong>
+        されている。 つまりクローラは JavaScript を実行しなくても、上の見出し・本文・特徴リストをそのまま読める。 対話が必要な部分だけを client で hydrate するので、初期 HTML は常に「中身入り」になる。
       </p>
       <div class="counter" data-hydrate="counter">
-        <p class="ctext">これは hydrate される対話要素。サーバHTMLでは <b>{{ count() }}</b> と描画され、
-          読み込み後はボタンが効く。</p>
+        <p class="ctext">
+          これは hydrate される対話要素。サーバHTMLでは
+          <b>{{ count() }}</b>
+          と描画され、 読み込み後はボタンが効く。
+        </p>
         <div class="crow">
           <button class="btn" @click="dec()">−</button>
           <output class="cval">{{ count() }}</output>
@@ -40,7 +38,6 @@
         </div>
       </div>
     </section>
-
     <footer class="foot">
       <p>© 2026 sunao lab — フレームワークを作り直さず、入力の型・fail-closed・決定論・低 context だけを足す。</p>
     </footer>

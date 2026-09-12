@@ -73,6 +73,8 @@ function handle(msg) {
           textDocumentSync: 1, // Full
           completionProvider: { triggerCharacters: ['.', ':', '@', '{', '<', ' ', '"'] },
           hoverProvider: true,
+          definitionProvider: true,
+          documentSymbolProvider: true,
         },
         serverInfo: { name: 'sunao-lsp', version: '0.1.0' },
       });
@@ -91,6 +93,8 @@ function handle(msg) {
     case 'textDocument/didClose': docs.delete(params.textDocument.uri); return;
     case 'textDocument/completion': return reply(id, complete(params));
     case 'textDocument/hover': return reply(id, hover(params));
+    case 'textDocument/definition': return reply(id, definition(params));
+    case 'textDocument/documentSymbol': return reply(id, documentSymbol(params));
     default: if (id != null) reply(id, null);
   }
 }
@@ -183,4 +187,44 @@ function hover(params) {
   else if (sy.returns.includes(word) || sy.exposed.includes(word)) md = `**${word}** — setup が公開した値/関数。`;
   else return null;
   return { contents: { kind: 'markdown', value: md }, range: { start: posAt(text, start), end: posAt(text, end) } };
+}
+
+// ---- 宣言位置（go-to-definition / documentSymbol の頭脳） ----
+function scriptRange(text) {
+  const m = /<script>/.exec(text); if (!m) return [0, text.length];
+  const s = m.index + m[0].length; const e = text.indexOf('</script>', s);
+  return [s, e === -1 ? text.length : e];
+}
+function findDecl(text, word) {
+  const [s, e] = scriptRange(text); const script = text.slice(s, e);
+  const esc = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const re of [new RegExp(`\\bimport\\s+(${esc})\\b`), new RegExp(`\\b(?:const|let|var)\\s+(${esc})\\b`), new RegExp(`(?:^|[\\s{,])(${esc})\\s*:`, 'm')]) {
+    const m = re.exec(script);
+    if (m) return s + m.index + m[0].indexOf(word);
+  }
+  return -1;
+}
+function definition(params) {
+  const uri = params.textDocument.uri, text = docs.get(uri) || '';
+  const { word } = wordAt(text, offsetAt(text, params.position));
+  if (!word) return null;
+  const off = findDecl(text, word);
+  if (off < 0) return null;
+  return { uri, range: { start: posAt(text, off), end: posAt(text, off + word.length) } };
+}
+function documentSymbol(params) {
+  const uri = params.textDocument.uri, text = docs.get(uri) || '';
+  const sy = symbols(text);
+  const out = [];
+  const add = (name, kind, detail) => {
+    const off = findDecl(text, name); if (off < 0) return;
+    const range = { start: posAt(text, off), end: posAt(text, off + name.length) };
+    out.push({ name, detail, kind, range, selectionRange: range });
+  };
+  const sig = new Set(sy.signals), prop = new Set(sy.props);
+  for (const n of sy.signals) add(n, 12 /*Function*/, 'signal');
+  for (const n of sy.props) if (!sig.has(n)) add(n, 8 /*Field*/, 'prop');
+  for (const n of sy.components) add(n, 5 /*Class*/, 'component');
+  for (const n of sy.returns) if (!sig.has(n) && !prop.has(n)) add(n, 13 /*Variable*/, 'return');
+  return out;
 }

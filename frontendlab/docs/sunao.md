@@ -151,6 +151,22 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 > 規模ではなく「統合・決定論・fail-closed・教えるエラー」という **Cargo 的な一貫性**を、依存ゼロで通した。
 > 未実装（正直）: 定義ジャンプ/リネーム（土台 `symbols()` はある）・VSCode 拡張の配布・swap の LIS 化。
 
+## v0.12 で実装した「開発者体験（VSCode・SCSS・scaffold・formatter・LSP発展）」
+
+「vscode で開発／DX 向上／LSP 発展／整理／展開しやすく／SCSS／formatter／どう起動するか」への回答。**同じ思想のまま道具を増やした**。
+
+| 要望 | 実装 | 検証 |
+|---|---|---|
+| **VSCode で開発** | `editor/vscode/`（package.json＋extension.js）。`vscode-languageclient` で `tools/lsp.mjs` に stdio 接続。F5 で起動 | JSON/JS 妥当性・LSP 本体は protocol テスト |
+| **LSP 発展** | 定義ジャンプ・アウトライン(documentSymbol) を追加。`symbols()` を signal/prop 分離に修正 | `tests/lsp.test.mjs` 7/7 |
+| **展開しやすく** | `npm run new -- apps/foo`（App.sunao/main.js/index.html/README を出力・即 build 可） | 生成→バンドル通過を単体で |
+| **SCSS 連携** | `<style lang="scss">`（sass で CSS 化してから scoped。他 lang は fail-closed） | ネスト/変数/& を単体で |
+| **formatter** | `npm run fmt`（`format.mjs`・冪等・content 非破壊・template 再インデント・script/style は保持） | 冪等/非破壊/整形後コンパイル可・全 fixtures 整形済み |
+| **起動手順/整理** | `GETTING_STARTED.md`（dev/build/new/fmt/prerender/lsp・VSCode 繋ぎ・リポジトリ地図） | — |
+
+依存追加は build 時のみ（`sass`）＋拡張側のみ（`vscode-languageclient`）＝アプリ bundle には一切入らない。
+これで **compile / dev / prerender / diagnose / check / bench / lsp / new / fmt** が同じ思想で一続きになった。
+
 ## v0.2 の柱（維持）
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
@@ -208,7 +224,7 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 - v0.1（~1.9KB）より対話 runtime は増えた（細粒度 + 所有権/破棄のコード分）。代わりに更新が最小 DOM に限定。
 - **②の効果が一番はっきり**: 対話しない画面は runtime を引かず **8x 小**。EXP-3 の「使った分だけ」を構造で保証。
 
-## テスト（`npm test`、69 件すべて green）
+## テスト（`npm test`、74 件すべて green）
 
 reactivity / computed / 決定論（compile・render）/ fail-closed（未知ディレクティブ・空補間・タグ不整合・
 未宣言参照・**型付き props 3 種・未 import コンポーネント**）/ render 正当性（v-if・v-for・補間・イベント）/

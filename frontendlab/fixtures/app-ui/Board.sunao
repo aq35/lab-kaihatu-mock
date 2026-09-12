@@ -20,16 +20,13 @@
         <button class="t primary" @click="add()">+ 追加</button>
       </div>
     </header>
-
     <div class="stat">
       <span>{{ tasks().length }} 件</span>
       <span class="hi">{{ hiCount() }} urgent</span>
       <span class="muted">クリックで昇格 / ✕ で削除 / ↑↓ で移動 — すべて FLIP で滑る</span>
     </div>
-
     <ul class="grid">
-      <li class="cell" v-for="(t, i) in tasks()" :key="t.id" flip
-          :class="'p-' + t.prio()">
+      <li class="cell" v-for="(t, i) in tasks()" :key="t.id" flip :class="'p-' + t.prio()">
         <article class="tk" @click="bump(t)">
           <div class="tkbar">
             <span class="badge">{{ label(t.prio()) }}</span>

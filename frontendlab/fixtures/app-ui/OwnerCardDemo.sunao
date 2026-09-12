@@ -10,12 +10,10 @@
     </div>
     <p class="oc-sync" v-if="feed.loading()">同期中…</p>
     <p class="oc-sync err" v-if="feed.error()">同期に失敗しました</p>
-    <OwnerCard
-      v-for="c in cards()" :key="c.id"
-      :kind="c.kind" :title="c.title" :effect="c.effect" :scope="c.scope" :risk="c.risk"
-      :palette="palette()" density="comfortable" cardShape="left-rule" />
+    <OwnerCard v-for="c in cards()" :key="c.id" :kind="c.kind" :title="c.title" :effect="c.effect" :scope="c.scope" :risk="c.risk" :palette="palette()" density="comfortable" cardShape="left-rule" />
   </div>
 </template>
+
 <script>
 import OwnerCard from './OwnerCard.sunao';
 import { themeCSS, recipeStyle } from 'sunao/theme';

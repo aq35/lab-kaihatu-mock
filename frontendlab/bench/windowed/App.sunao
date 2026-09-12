@@ -3,12 +3,14 @@
     <div class="spacer" :style="'height:' + vp.total() + 'px;position:relative'">
       <div class="win" :style="'transform:translateY(' + vp.offsetY() + 'px)'">
         <div class="row" v-for="row in vp.visible()" :key="row.id">
-          <span class="id">{{ row.id }}</span><span>{{ row.label }}</span>
+          <span class="id">{{ row.id }}</span>
+          <span>{{ row.label }}</span>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 <script>
 export default {
   name: 'Windowed',
@@ -21,6 +23,7 @@ export default {
   },
 };
 </script>
+
 <style>
 .vp { border: 1px solid #ddd; font: 13px system-ui; }
 .row { height: 28px; display: flex; gap: 12px; align-items: center; padding: 0 10px; box-sizing: border-box; border-bottom: 1px solid #f0f0f0; }

@@ -1,0 +1,31 @@
+{
+  "name": "sunao-vscode",
+  "displayName": "sunao",
+  "description": "sunao (.sunao) の構文ハイライト＋LSP（診断・補完・ホバー・定義ジャンプ）",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:sunao"],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "sunao",
+        "aliases": ["sunao", "Sunao"],
+        "extensions": [".sunao"],
+        "configuration": "../language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "sunao",
+        "scopeName": "source.sunao",
+        "path": "../sunao.tmLanguage.json"
+      }
+    ]
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

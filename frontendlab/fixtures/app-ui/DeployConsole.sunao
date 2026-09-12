@@ -5,19 +5,29 @@
       <StatusBadge />
       <span class="dc-clock">{{ clock() }}</span>
     </div>
-
     <div class="k-card">
       <span class="k-kind">最新ビルド</span>
       <p class="dc-sync" v-if="build.loading()">取得中…</p>
       <p class="dc-sync err" v-if="build.error()">取得に失敗しました</p>
       <dl class="k-facts" v-if="ready()">
-        <div class="k-fact"><dt>commit</dt><dd>{{ b().commit }}</dd></div>
-        <div class="k-fact"><dt>branch</dt><dd>{{ b().branch }}</dd></div>
-        <div class="k-fact"><dt>author</dt><dd>{{ b().author }}</dd></div>
-        <div class="k-fact"><dt>変更</dt><dd>{{ b().filesChanged }} files</dd></div>
+        <div class="k-fact">
+          <dt>commit</dt>
+          <dd>{{ b().commit }}</dd>
+        </div>
+        <div class="k-fact">
+          <dt>branch</dt>
+          <dd>{{ b().branch }}</dd>
+        </div>
+        <div class="k-fact">
+          <dt>author</dt>
+          <dd>{{ b().author }}</dd>
+        </div>
+        <div class="k-fact">
+          <dt>変更</dt>
+          <dd>{{ b().filesChanged }} files</dd>
+        </div>
       </dl>
     </div>
-
     <div class="k-card">
       <span class="k-kind">状態 — {{ stateLabel() }}</span>
       <p class="dc-elapsed" v-if="flow.matches('deploying')">経過 {{ elapsed() }} 秒…</p>
@@ -28,7 +38,6 @@
         <button class="k-btn" v-if="flow.matches('succeeded') || flow.matches('failed')" @click="reset">リセット</button>
       </div>
     </div>
-
     <div class="k-card">
       <span class="k-kind">操作ログ（{{ log().length }}）— 時間旅行</span>
       <ul class="dc-log">
@@ -40,13 +49,13 @@
         <button class="k-btn" @click="redo">やり直す →</button>
       </div>
     </div>
-
     <div class="oc-switch">
       <span class="oc-switch-label">Recipe.palette</span>
       <button class="oc-chip" v-for="p in palettes" :key="p" :class="p === palette() ? 'on' : ''" @click="setP(p)">{{ p }}</button>
     </div>
   </div>
 </template>
+
 <script>
 import StatusBadge from './StatusBadge.sunao';
 import { themeCSS, recipeStyle } from 'sunao/theme';
