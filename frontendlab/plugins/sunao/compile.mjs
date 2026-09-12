@@ -90,6 +90,20 @@ function compileStyleLang(src, lang, template) {
   }
 }
 
+// 補間 {{ の対応する }} を探す（文字列/テンプレートリテラルとネストした波括弧を跨ぐ）。
+// 例: {{ label || '}}' }} や {{ {a:1}.a }} を正しく閉じる。from は '{{' の直後。
+function findInterpEnd(html, from) {
+  let q = null, depth = 0;
+  for (let j = from; j < html.length; j++) {
+    const ch = html[j];
+    if (q) { if (ch === '\\') j++; else if (ch === q) q = null; continue; }
+    if (ch === '"' || ch === "'" || ch === '`') { q = ch; continue; }
+    if (ch === '{') depth++;
+    else if (ch === '}') { if (depth === 0 && html[j + 1] === '}') return j; depth--; }
+  }
+  return -1;
+}
+
 // 開きタグの終端 '>' を、引用符内を無視して探す（属性値の => や a > b で誤爆しない）。
 function findTagEnd(html, from) {
   let q = null;
@@ -109,26 +123,24 @@ function parseTemplate(html) {
   const stack = [root];
   const top = () => stack[stack.length - 1];
 
-  const pushText = (raw, base) => {
-    let last = 0;
-    const re = /\{\{([\s\S]*?)\}\}/g;
-    let m;
-    while ((m = re.exec(raw))) {
-      const before = raw.slice(last, m.index);
-      if (before.trim()) top().children.push({ type: 'text', value: before.replace(/\s+/g, ' ') });
-      const expr = m[1].trim();
-      if (!expr) fail('SUNAO_EMPTY_INTERP', '空の補間 {{ }} は書けません。式を入れてください。', { src: html, index: base + m.index });
-      top().children.push({ type: 'interp', expr, start: base + m.index });
-      last = m.index + m[0].length;
-    }
-    const rest = raw.slice(last);
-    if (rest.trim()) top().children.push({ type: 'text', value: rest.replace(/\s+/g, ' ') });
-  };
+  const pushPlain = (raw) => { if (raw.trim()) top().children.push({ type: 'text', value: raw.replace(/\s+/g, ' ') }); };
 
   while (i < html.length) {
     const lt = html.indexOf('<', i);
-    if (lt === -1) { pushText(html.slice(i), i); break; }
-    if (lt > i) pushText(html.slice(i, lt), i);
+    const mustache = html.indexOf('{{', i);
+    // {{ が < より先なら補間を先に消費（式中の `<`（比較）を tag と誤認しない・M2）。
+    if (mustache !== -1 && (lt === -1 || mustache < lt)) {
+      if (mustache > i) pushPlain(html.slice(i, mustache));
+      const end = findInterpEnd(html, mustache + 2); // 文字列/ネスト波括弧を跨いで対応する }} を探す（M1）
+      if (end === -1) fail('SUNAO_INTERP_UNCLOSED', '補間 {{ が閉じていません（}} がありません）。', { src: html, index: mustache });
+      const expr = html.slice(mustache + 2, end).trim();
+      if (!expr) fail('SUNAO_EMPTY_INTERP', '空の補間 {{ }} は書けません。式を入れてください。', { src: html, index: mustache });
+      top().children.push({ type: 'interp', expr, start: mustache });
+      i = end + 2;
+      continue;
+    }
+    if (lt === -1) { pushPlain(html.slice(i)); break; }
+    if (lt > i) pushPlain(html.slice(i, lt));
     if (html.startsWith('<!--', lt)) {
       const end = html.indexOf('-->', lt);
       if (end === -1) fail('SUNAO_COMMENT_UNCLOSED', 'コメントが閉じていません（--> がありません）。', { src: html, index: lt });
@@ -164,12 +176,13 @@ function parseTemplate(html) {
 
 function parseAttrs(str, tag, html, base) {
   const attrs = [];
-  const re = /([:@]?[\w-]+)(?:\s*=\s*"([^"]*)")?/g;
+  // 値は "…" / '…' の両対応（findTagEnd は単引用も尊重するのでここも合わせる）。
+  const re = /([:@]?[\w-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/g;
   let m;
   while ((m = re.exec(str))) {
     if (!m[0].trim()) continue;
     const name = m[1];
-    const value = m[2] ?? '';
+    const value = m[2] ?? m[3] ?? '';
     if (name.startsWith('v-') && !ALLOWED_DIRECTIVES.has(name)) {
       const sug = nearest(name, [...ALLOWED_DIRECTIVES]);
       fail('SUNAO_UNKNOWN_DIRECTIVE',
@@ -226,18 +239,17 @@ function walkFreeIdents(node, scopes, used, calls) {
       for (const p of node.params || []) collectBindingNames(p, s);
       if (node.id && node.id.type === 'Identifier') s.add(node.id.name);
       scopes.push(s);
+      // 仮引数の既定値は外側/兄弟 scope を参照しうる → 自由変数として拾う（M4: (a = greeting) => a の greeting）
+      for (const p of node.params || []) if (p && p.type === 'AssignmentPattern') walkFreeIdents(p.right, scopes, used, calls);
       walkFreeIdents(node.body, scopes, used, calls);
       scopes.pop();
       return;
     }
     case 'CallExpression':
     case 'OptionalCallExpression':
-      // 呼ばれた名前（callee が Identifier / a.b()）を calls に記録（() 呼び忘れ判定用）。
-      if (calls) {
-        const c = node.callee;
-        if (c && c.type === 'Identifier') calls.add(c.name);
-        else if (c && (c.type === 'MemberExpression') && c.property && c.property.type === 'Identifier' && !c.computed && c.object.type === 'Identifier') calls.add(c.object.name);
-      }
+      // 呼ばれた名前（callee が Identifier のみ）を calls に記録（() 呼び忘れ判定用）。
+      // a.b() の object `a` は記録しない（L1: {{ user.getName() }} で user を「呼んだ」扱いにしない）。
+      if (calls && node.callee && node.callee.type === 'Identifier') calls.add(node.callee.name);
       break; // 既定の子走査へ
   }
   // 既定: 全子ノード/配列を再帰。
@@ -365,6 +377,9 @@ function genNode(node, bound, ctx) {
   }
   // element or component（大文字始まり = コンポーネント）
   const isComponent = /^[A-Z]/.test(node.tag);
+  // ディレクティブ / :bind / @event / flip / コンポーネントを含む要素は「定数 HTML」に serialize できない
+  //（v-if の評価・v-for 展開・:x のリライトが要る）。static 早道に載せない（生の属性が漏れるのを防ぐ）。
+  if (isComponent || node.attrs.some((a) => a.name.startsWith(':') || a.name.startsWith('@') || a.name === 'flip' || ALLOWED_DIRECTIVES.has(a.name))) ctx.staticSerializable = false;
   const vIf = node.attrs.find((a) => a.name === 'v-if');
   const vFor = node.attrs.find((a) => a.name === 'v-for');
   const vModel = node.attrs.find((a) => a.name === 'v-model');
@@ -593,9 +608,8 @@ export function symbols(source) {
     // expose:[...]
     const ex = /expose\s*:\s*\[([^\]]*)\]/.exec(script);
     if (ex) ex[1].split(',').forEach((s) => { const n = s.trim().replace(/^['"]|['"]$/g, ''); if (n) out.exposed.push(n); });
-    // setup の return { ... } の名前
-    const rt = /return\s*\{([^{}]*)\}/.exec(script);
-    if (rt) for (const m of rt[1].matchAll(/([A-Za-z_$][\w$]*)/g)) out.returns.push(m[1]);
+    // setup の return { ... } の名前（balanced＝ネスト object でも壊れない）
+    out.returns = returnNames(script);
   } catch {}
   const uniq = (a) => [...new Set(a)];
   for (const k of Object.keys(out)) out[k] = uniq(out[k]);
@@ -634,12 +648,25 @@ function scopeStyles(css, scopeAttr) {
   let h = 5381;
   for (let i = 0; i < css.length; i++) h = ((h << 5) + h + css.charCodeAt(i)) >>> 0;
   const attr = `data-s${h.toString(36)}`;
-  const scoped = css.replace(/([^{}]+)\{/g, (m, sel) => {
-    // @media 等の at-rule プレリュードはそのまま（中の規則が再帰的に処理される）。
-    if (sel.trim().startsWith('@')) return m;
-    return sel.split(',').map((s) => scopeSelector(s.trim(), attr)).join(', ') + ' {';
-  });
-  return { attr, scoped };
+  // depth 追跡のスキャナ（SCSS は先に flat CSS 化済み＝ネストは at-rule のみ）。
+  // @keyframes の中の step（0% / from / to）は **セレクタでない**ので scope しない（H3: 壊れて animation が消える）。
+  let out = '', prelude = '';
+  const stack = []; // true = @keyframes の中（直下の子は step なので触らない）
+  for (let i = 0; i < css.length; i++) {
+    const ch = css[i];
+    if (ch === '{') {
+      const sel = prelude.trim();
+      const inKeyframes = stack.length > 0 && stack[stack.length - 1];
+      if (sel.startsWith('@')) { out += prelude + '{'; stack.push(/^@(-\w+-)?keyframes\b/.test(sel)); }
+      else if (inKeyframes) { out += prelude + '{'; stack.push(false); } // step selector はそのまま
+      else { out += sel.split(',').map((s) => scopeSelector(s.trim(), attr)).join(', ') + ' {'; stack.push(false); }
+      prelude = '';
+    } else if (ch === '}') {
+      out += prelude + '}'; prelude = ''; stack.pop();
+    } else prelude += ch;
+  }
+  out += prelude;
+  return { attr, scoped: out };
 }
 // 複合セレクタ列の「最後の単純セレクタ群」に [attr] を挿入（疑似要素/クラスの前）。
 function scopeSelector(sel, attr) {
@@ -674,6 +701,30 @@ function balancedBlock(script, keyword) {
   }
   return null;
 }
+// `return { ... }` の **トップレベルのキー名**を balanced に取り出す（ネストした {…} でも壊れない）。
+// 旧実装は /return\s*\{([^{}]*)\}/ でネスト object があると空になり、未宣言参照を誤検出していた。
+function returnNames(script) {
+  const m = /\breturn\s*\{/.exec(script);
+  if (!m) return [];
+  const open = m.index + m[0].length - 1;
+  let depth = 0, body = null;
+  for (let i = open; i < script.length; i++) {
+    if (script[i] === '{') depth++;
+    else if (script[i] === '}' && --depth === 0) { body = script.slice(open + 1, i); break; }
+  }
+  if (body == null) return [];
+  const names = [];
+  let d = 0, seg = '';
+  const take = (s) => { const km = /^\s*([A-Za-z_$][\w$]*)\s*[:,]?/.exec(s); if (km && !s.trim().startsWith('...')) names.push(km[1]); };
+  for (const ch of body) {
+    if (ch === '{' || ch === '(' || ch === '[') { d++; seg += ch; }
+    else if (ch === '}' || ch === ')' || ch === ']') { d--; seg += ch; }
+    else if (ch === ',' && d === 0) { take(seg); seg = ''; }
+    else seg += ch;
+  }
+  if (seg.trim()) take(seg);
+  return names;
+}
 
 export function analyze(source) {
   const { template, script } = extractBlocks(source);
@@ -698,7 +749,7 @@ export function analyze(source) {
             else if (c === ',' && d === 0) break;
             val += c;
           }
-          props[mm[1]] = { required: /required\s*:\s*true/.test(val), type: (/['"](\w+)['"]/.exec(val) || [])[1] || null };
+          props[mm[1]] = { required: /required\s*:\s*true/.test(val), type: (/\btype\s*:\s*['"](\w+)['"]/.exec(val) || [])[1] || null };
           i = j;
           continue;
         }
@@ -788,8 +839,7 @@ export function compileSFC(source, { runtime = './runtime.mjs', sourcemap = fals
       }
     }
   }
-  const returnM = /return\s*\{([^{}]*)\}/.exec(script);
-  if (returnM) for (const m of returnM[1].matchAll(/([A-Za-z_$][\w$]*)/g)) declared.add(m[1]);
+  for (const n of returnNames(script)) declared.add(n);
 
   if (declared.size) {
     const unknown = compiled.used.filter((u) => !declared.has(u));
@@ -812,10 +862,13 @@ export function compileSFC(source, { runtime = './runtime.mjs', sourcemap = fals
     );
   }
 
-  if (!/export\s+default/.test(script)) {
+  // script が無い / export default が無いが static でもない（例: <script> 省略で v-if="false" や
+  // 静的 v-for を使う）→ 空コンポーネントを合成して dynamic 経路に載せる（描画は state 不要）。
+  const hasExport = /export\s+default/.test(script);
+  if (!hasExport && /\bsetup\b/.test(script)) {
     throw new CompileError({ code: 'SUNAO_NO_EXPORT', message: '<script> は `export default { setup() {...} }` を持つ必要があります（静的コンポーネントは <script> 省略可）。' });
   }
-  const scriptBody = script.replace(/export\s+default/, 'const __component =');
+  const scriptBody = hasExport ? script.replace(/export\s+default/, 'const __component =') : `${script}\nconst __component = {};`;
   const stylesLine = scopedCss ? `__component.styles = ${JSON.stringify(scopedCss)};\n` : '';
   const importLine = `import { h, signal, effect, computed, batch, component, keyed, windowed, windowedVar, useRoute, navigate, matchRoute, setRouteGuard, onCleanup, now, interval, timeout, debounce, throttle, context, go, resource, provide, inject, machine, store, decode, match, produce, boundary } from ${JSON.stringify(runtime)};\n`;
   const out = (

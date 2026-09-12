@@ -272,6 +272,57 @@ test('② 仮想化 windowed(): 可視 slice・offsetY・total、スクロール
   assert.throws(() => windowed(items, { rowHeight: 20 }), /height/, 'height 必須（fail-closed）');
 });
 
+test('audit(compiler): 静的早道が directive/bind を漏らさない（v-if=false・:id）', () => {
+  const a = compileSFC('<template><p v-if="false">SECRET</p></template>', { runtime: RUNTIME });
+  assert.doesNotMatch(a, /static: true/, 'v-if は定数 HTML 化しない');
+  assert.doesNotMatch(a, /v-if/, '生の v-if 属性が漏れない');
+  const b = compileSFC('<template><div :id="\'main\'">hi</div></template>', { runtime: RUNTIME });
+  assert.doesNotMatch(b, /:id=/, ':bind は属性としてリライト（生で漏れない）');
+});
+
+test('audit(compiler): setup return がネスト object でも未宣言参照を誤検出しない', () => {
+  const src = '<template><p>{{ count() }}</p></template>' +
+    '<script>export default { props:{title:{}}, setup(){ const count = signal(0); return { count, meta: { x: 1 } }; } }</script>';
+  assert.doesNotThrow(() => compileSFC(src, { runtime: RUNTIME }));
+});
+
+test('audit(compiler): @keyframes の step は scope されない（animation が壊れない）', () => {
+  const mod = compileSFC('<template><p class="a">x</p></template><style>@keyframes spin { 0% { opacity: 0 } 100% { opacity: 1 } }</style>', { runtime: RUNTIME });
+  assert.match(mod, /0% \{/, 'step selector はそのまま');
+  assert.doesNotMatch(mod, /0%\[data-s/, 'step に scope 属性を付けない');
+  assert.match(mod, /@keyframes spin/);
+});
+
+test('audit(compiler): 補間の < と 文字列内 }} を正しく扱う', () => {
+  assert.doesNotThrow(() => compileTemplate('<p>{{ n() < 10 ? "few" : "many" }}</p>', { signals: new Set(['n']) }), '< 比較');
+  const r = compileTemplate('<p>{{ label() || "}}" }}</p>', { signals: new Set(['label']) });
+  assert.match(r.render, /label\(\) \|\| "\}\}"/, '文字列内の }} を跨いで対応');
+  const o = compileTemplate('<p>{{ ({a:1}).a }}</p>', {});
+  assert.match(o.render, /\(\{a:1\}\)\.a/, 'ネスト波括弧を跨ぐ');
+});
+
+test('audit(compiler): 単引用符の属性値を保持', () => {
+  const r = compileTemplate("<input type='text' class='big'>", {});
+  assert.match(r.render, /"type": "text"/);
+  assert.match(r.render, /"class": "big"/);
+});
+
+test('audit(compiler): arrow 既定値の外部参照は自由変数として拾う', () => {
+  const r = compileTemplate('<p>{{ ((a = greeting) => a)() }}</p>', {});
+  assert.ok(r.used.includes('greeting'), '既定値 greeting を ctx から destructure');
+});
+
+test('audit(compiler): member 呼び出しの object を「呼んだ」扱いにしない（誤 () 警告なし）', () => {
+  // user.getName() があっても、{{ user() }} でなく {{ user.name }} なら user への呼び忘れ警告は出ない
+  const r = compileTemplate('<div>{{ user.getName() }}<b>{{ user.name }}</b></div>', { signals: new Set() });
+  assert.equal(r.warnings.length, 0);
+});
+
+test('audit(compiler): analyze の type は type: 以外の quoted 値を拾わない', () => {
+  const a = analyze('<template><p>{{ msg() }}</p></template><script>export default { name:"X", props:{ msg:{ default:"hello" } }, setup(){return{}} }</script>');
+  assert.equal(a.props.msg.type, null);
+});
+
 test('audit: 破棄済み effect は伝播中に復活しない（ゾンビ防止）', () => {
   const show = signal(true);
   let creates = 0, runs = 0;
