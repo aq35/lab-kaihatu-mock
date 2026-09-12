@@ -860,3 +860,75 @@ test('v0.13 expr.mjs は第三者 import を一切持たない（依存ゼロ）
   const csrc = readFileSync(resolve('plugins/sunao/compile.mjs'), 'utf8');
   assert.ok(!/@babel\/parser/.test(csrc.replace(/^.*依存ゼロ.*$/gm, '')), 'compile.mjs は @babel/parser を import しない');
 });
+
+// ---- v0.13: 文法ドリフト検出ガード（@babel/parser があるときだけ走る差分テスト）----
+// core は依存ゼロ（@babel/parser 無しでも動く）。dev で babel が居れば「自前 vs Babel」を突き合わせ、
+// 将来 JS 文法が増えて自前が Babel とズレた瞬間に赤くする。無ければ skip。
+function _babelAnalyzerFrom(babel) {
+  const opt = { plugins: ['optionalChaining', 'nullishCoalescingOperator'], errorRecovery: false };
+  return (src) => {
+    let a;
+    try { a = babel.parseExpression(src, opt); }
+    catch { try { a = babel.parseExpression(`(()=>{\n${src}\n})`, opt); } catch { return null; } }
+    const u = new Set(), c = new Set(); _walk(a, [new Set()], u, c);
+    return { used: [...u].sort(), calls: [...c].sort() };
+  };
+}
+function _mineAnalyzer(src) {
+  let a; try { a = parseExpressionString(src); } catch { try { a = parseProgramString(src); } catch { return null; } }
+  const u = new Set(), c = new Set(); _walk(a, [new Set()], u, c);
+  return { used: [...u].sort(), calls: [...c].sort() };
+}
+
+test('v0.13 差分ガード: 実 fixtures の全式で自前パーサ＝Babel（文法ドリフト検出）', async (t) => {
+  let babel; try { babel = await import('@babel/parser'); } catch { t.skip('@babel/parser 未導入（core は依存ゼロ）'); return; }
+  const { readdirSync } = await import('node:fs');
+  const B = _babelAnalyzerFrom(babel);
+  const walkDir = (d, out = []) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) { if (!['node_modules', 'dist', '.git'].includes(e.name)) walkDir(p, out); } else if (p.endsWith('.sunao')) out.push(p); } return out; };
+  const exprs = new Set();
+  for (const f of walkDir(resolve('fixtures'))) {
+    const s = readFileSync(f, 'utf8');
+    for (const m of s.matchAll(/\{\{([\s\S]*?)\}\}/g)) exprs.add(m[1].trim());
+    for (const m of s.matchAll(/[:@][\w-]+\s*=\s*"([^"]*)"/g)) exprs.add(m[1].trim());
+    for (const m of s.matchAll(/[:@][\w-]+\s*=\s*'([^']*)'/g)) exprs.add(m[1].trim());
+    for (const m of s.matchAll(/v-(?:if|else-if|show|for)\s*=\s*"([^"]*)"/g)) { let e = m[1].trim(); e = e.replace(/^\(?[\w,\s]+\)?\s+in\s+/, ''); exprs.add(e); }
+  }
+  exprs.delete('');
+  let checked = 0;
+  for (const e of exprs) {
+    const b = B(e); if (!b) continue; // Babel が式として解析できたものだけを ground truth に
+    const m = _mineAnalyzer(e);
+    assert.ok(m, `自前が解析不能（実 fixtures の式なのに regex 落ち）: ${e}`);
+    assert.deepEqual(m.used, b.used, `used 不一致: ${e}`);
+    assert.deepEqual(m.calls, b.calls, `calls 不一致: ${e}`);
+    checked++;
+  }
+  assert.ok(checked >= 50, `突き合わせた式が少なすぎ（fixtures 変化？）: ${checked}`);
+});
+
+test('v0.13 差分ガード: 難式で自前は Babel と食い違わない（ズレるくらいなら安全に regex 落ち）', async (t) => {
+  let babel; try { babel = await import('@babel/parser'); } catch { t.skip('@babel/parser 未導入'); return; }
+  const B = _babelAnalyzerFrom(babel);
+  const HARD = [
+    'a + b * c - d / e % f', 'x ** y ** z', 'a < b && c > d || e === f', 'a ?? b',
+    'cond ? f() : g()', 'a ? b ? c : d : e', 'obj?.a?.b?.c', 'arr?.[i]?.(x)',
+    'items.filter(x => x.on).map(y => y.id)', '(a, b) => a + b(c)', '({x, y}) => x + y + z',
+    '({a = def, b: {c = d}}) => a + c', 'fn(...args, last)', '[...xs, y]', '{ ...spread, k: v() }',
+    '`${a}${b()}${c ? d : e}`', 'new Foo(bar, baz())', 'new ns.Cls().m()', 'typeof x === "s"',
+    'void f()', 'delete o.k', '-x + +y - ~z', '!a && !!b', 'a instanceof B', '"k" in obj',
+    'f(a)(b)(c)', 'a.b.c.d.e', 'arr[0][1][2]', 'list.reduce((acc, it) => acc + it.v, 0)',
+    '$event.key === "Enter" && submit()', 'style({ color: c(), size: `${n()}px` })',
+    'cond && arr.forEach(e => sink(e))', 's.split(",").map(t => t.trim()).filter(Boolean)',
+    'async () => await save(x)', 'async (a, b) => a() + b',
+  ];
+  for (const e of HARD) {
+    const b = B(e), m = _mineAnalyzer(e);
+    if (b && m) { // 両方 AST が出たときだけ比較＝silent-wrong を検出。片方 regex 落ちは安全側なので許容
+      assert.deepEqual(m.used, b.used, `used 不一致: ${e}`);
+      assert.deepEqual(m.calls, b.calls, `calls 不一致: ${e}`);
+    }
+  }
+  // async/await は v0.13 で AST 対応済み（regex に落ちない）
+  assert.ok(_mineAnalyzer('async () => await save(x)'), 'async アローは AST 解析される');
+  assert.deepEqual(_mineAnalyzer('async () => await save(x)'), { used: ['save', 'x'], calls: ['save'] });
+});

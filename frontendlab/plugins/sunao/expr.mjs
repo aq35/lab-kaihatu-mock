@@ -5,20 +5,23 @@
  * 出力は **Babel 互換の AST サブセット**（node.type と子キーだけ）なので、
  * compile.mjs の walkFreeIdents / collectBindingNames / exprHasCall は無改変で動く。
  *
- * 対応: 識別子/リテラル(数値・文字列・真偽・null・undefined)/テンプレートリテラル/
+ * 対応文法（＝テンプレの式に書ける範囲。ここを増やせば文法が増える）:
+ *   識別子/リテラル(数値・文字列・真偽・null・undefined)/テンプレートリテラル/
  *   配列・オブジェクト（shorthand・computed key・method・spread）/括弧/
- *   アロー関数（式本体・ブロック本体）/関数式/new/
- *   メンバ(. ?. [] ?.[])・呼び出し(() ?.())/単項(! - + ~ typeof void delete ++ --)/
+ *   アロー関数（式本体・ブロック本体・**async**）/関数式/new/
+ *   メンバ(. ?. [] ?.[])・呼び出し(() ?.())/単項(! - + ~ typeof void delete **await** ++ --)/
  *   二項・論理(** * / % + - << >> >>> < > <= >= in instanceof == != === !== & ^ | && || ??)/
  *   三項/代入/カンマ列/spread/
  *   文（ブロック本体用）: return・const/let/var・if・式文・空文。
+ * 非対応（→ regex フォールバックに安全に落ちる。必要なら都度ここへ足す）:
+ *   generator/yield・正規表現リテラル・ラベル文・class 式・decorator 等。
  *
  * ここで解析できない稀な式は throw → 呼び出し側が正規表現フォールバックに落とす（安全網は不変）。
  */
 
 // ---- トークナイザ ----
 const KEYWORD_OPS = new Set(['in', 'instanceof']);
-const UNARY_WORDS = new Set(['typeof', 'void', 'delete']);
+const UNARY_WORDS = new Set(['typeof', 'void', 'delete', 'await']);
 // 3/2 文字の記号（長い順）。
 const PUNCT3 = ['===', '!==', '>>>', '...', '**=', '<<=', '>>=', '&&=', '||=', '??=', '>>>='];
 const PUNCT2 = ['=>', '==', '!=', '<=', '>=', '&&', '||', '??', '**', '<<', '>>', '++', '--', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '?.'];
@@ -391,6 +394,24 @@ class Parser {
   // ---- アロー関数 ----
   tryParseArrow() {
     const t = this.peek();
+    // async アロー: async x => ... / async (params) => ...
+    if (t.t === 'name' && t.v === 'async') {
+      const t1 = this.peek(1);
+      if (t1.t === 'name' && !KEYWORD_OPS.has(t1.v) && this.peek(2).t === 'punct' && this.peek(2).v === '=>') {
+        this.next(); const id = this.next(); this.next();
+        return this.finishArrow([{ type: 'Identifier', name: id.v }], true);
+      }
+      if (t1.t === 'punct' && t1.v === '(') {
+        const close = this.matchParen(this.p + 1);
+        const after = close >= 0 ? this.toks[close + 1] : null;
+        if (after && after.t === 'punct' && after.v === '=>') {
+          this.next(); // async
+          const params = this.parseParams();
+          this.eat('=>');
+          return this.finishArrow(params, true);
+        }
+      }
+    }
     // x => ...
     if (t.t === 'name' && !KEYWORD_OPS.has(t.v) && !UNARY_WORDS.has(t.v) && this.peek(1).t === 'punct' && this.peek(1).v === '=>') {
       this.next(); this.next();
@@ -410,11 +431,11 @@ class Parser {
     }
     return null;
   }
-  finishArrow(params) {
+  finishArrow(params, isAsync = false) {
     let body;
     if (this.isPunct('{')) body = this.parseBlock();
     else body = this.parseAssign();
-    return { type: 'ArrowFunctionExpression', params, body };
+    return { type: 'ArrowFunctionExpression', params, body, async: isAsync };
   }
   // p 位置（'(') に対応する ')' のインデックスを返す（無ければ -1）。
   matchParen(p) {

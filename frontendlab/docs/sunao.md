@@ -179,6 +179,17 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 
 いま **sunao の core（`compile.mjs` / `runtime.mjs` / `expr.mjs`）は第三者依存ゼロ**。`sass` は `lang="scss"` 時のみ lazy require、`esbuild` はホストのバンドラ（Vite に対する vue と同じ関係）、`vue`/`@vue/compiler-dom` は bench の比較対象、`vscode-languageclient` は拡張側だけ。runtime（ブラウザに出る側）は元から依存ゼロ。
 
+**「文法が増えたら？」への回答**（自前化の唯一の実コスト＝JS 文法追従を自分で持つ、への対策）:
+
+| 対策 | 中身 |
+|---|---|
+| **壊れ方が安全側** | 未知構文は crash せず regex フォールバック＝「多めに拾う（動的扱い）」に倒れる＝更新漏れ方向には外れない。ビルドは止まらない |
+| **文法ドリフト検出ガード** | `@babel/parser` が居る dev では **自前 vs Babel の差分テスト**を実行（実 fixtures 全式＝完全一致／難式＝silent-wrong 検出）。**ズレた瞬間に赤くなる**。core に無ければ skip＝依存ゼロは維持 |
+| **明文化＋先回り** | `expr.mjs` 冒頭に対応/非対応文法を列挙。一番来そうな **async アロー/`await`** は先に AST 対応（`@click="async ()=>await save()"` も解析される） |
+| **拡張が安い** | 新演算子＝Pratt テーブルに 1 行、新単項＝集合に 1 語。Babel と違いリリース待ち不要 |
+
+実証: 実 fixtures 116 式は Babel と**完全一致・regex 落ちゼロ**、難式 53 で **silent-wrong 0**（テスト 92→101 green）。
+
 ## v0.2 の柱（維持）
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）
