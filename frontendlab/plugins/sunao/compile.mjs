@@ -15,8 +15,8 @@
  * それ以外の v-* は CompileError（fail-closed）。
  */
 
-// 式の自由変数解析に使う（build 時のみ・アプリ bundle には入らない）。@babel/core の推移依存。
-import { parseExpression as _babelParseExpression } from '@babel/parser';
+// 式の自由変数解析に使う（build 時のみ・アプリ bundle には入らない）。依存ゼロの自前パーサ。
+import { parseExpressionString, parseProgramString } from './expr.mjs';
 import { createRequire } from 'node:module'; // sass を lazy require するため（build 時のみ）
 
 /**
@@ -194,7 +194,7 @@ function parseAttrs(str, tag, html, base) {
   return attrs;
 }
 
-// ---- 式解析ヘルパ（AST ベース: @babel/parser で自由変数を正しく解析） ----
+// ---- 式解析ヘルパ（AST ベース: 依存ゼロの自前パーサ expr.mjs で自由変数を正しく解析） ----
 // 破棄する AST ノードのメタキー。
 const _AST_META = new Set(['type', 'start', 'end', 'loc', 'range', 'extra', 'leadingComments', 'trailingComments', 'innerComments', 'comments']);
 // 束縛パターン（arrow/function の仮引数・分割代入）から名前を集める。
@@ -260,18 +260,16 @@ function walkFreeIdents(node, scopes, used, calls) {
     else if (v && typeof v === 'object' && typeof v.type === 'string') walkFreeIdents(v, scopes, used, calls);
   }
 }
-// 式を parse（式→文の順に試す）。calls に呼ばれた識別子も集める。失敗時は regex fallback。
+// 式を parse（式→文列の順に試す）。calls に呼ばれた識別子も集める。失敗時は regex fallback。
 function analyzeExpr(expr, bound, used, calls) {
-  let ast = null;
-  try { ast = _parseExpression(String(expr)); }
-  catch {
-    try { ast = _parseExpression(`(()=>{\n${expr}\n})`); } // イベントの文列（a(); b()）等
-    catch { collectIdentsRegex(expr, bound, used); if (calls) noteCalledRegex(expr, calls); return; }
-  }
+  const ast = _parseExpressionOrProgram(String(expr));
+  if (!ast) { collectIdentsRegex(expr, bound, used); if (calls) noteCalledRegex(expr, calls); return; }
   walkFreeIdents(ast, [new Set(bound)], used, calls);
 }
-function _parseExpression(src) {
-  return _babelParseExpression(src, { plugins: ['optionalChaining', 'nullishCoalescingOperator'], errorRecovery: false });
+// 1 式として parse、ダメなら文列（a(); b()）として parse。両方失敗なら null。
+function _parseExpressionOrProgram(src) {
+  try { return parseExpressionString(src); }
+  catch { try { return parseProgramString(src); } catch { return null; } }
 }
 // 旧・正規表現版（AST が使えない式のフォールバック。非回帰用）。
 function collectIdentsRegex(expr, bound, used) {
@@ -299,9 +297,8 @@ function refsCtx(expr, bound) {
 }
 // 式に呼び出しが含まれるか（signal は「呼んで読む」ので、call があれば reactive とみなす）。
 function exprHasCall(expr) {
-  let ast;
-  try { ast = _parseExpression(String(expr)); }
-  catch { try { ast = _parseExpression(`(()=>{\n${expr}\n})`); } catch { return /[\w$)\]]\s*\(/.test(String(expr)); } }
+  const ast = _parseExpressionOrProgram(String(expr));
+  if (!ast) return /[\w$)\]]\s*\(/.test(String(expr));
   let found = false;
   (function w(n) {
     if (found || !n || typeof n !== 'object') return;

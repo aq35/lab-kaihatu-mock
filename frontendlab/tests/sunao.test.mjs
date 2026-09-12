@@ -790,3 +790,73 @@ test('① warningsOf: SFC 全体から警告を非致命で取り出す', () => 
   // コンパイルエラーになる SFC でも警告取得は throw しない（ベストエフォート）
   assert.deepEqual(warningsOf('<template><div v-bogus="x"></div></template>'), []);
 });
+
+// ---- v0.13: 依存ゼロの自前式パーサ expr.mjs（@babel/parser 置換）----
+import { parseExpressionString, parseProgramString } from '../plugins/sunao/expr.mjs';
+
+// テスト用に compile.mjs と同じ意味論の walker を最小再現し、free-var / call を確かめる。
+const _META = new Set(['type', 'start', 'end', 'loc', 'range', 'extra']);
+const _GLOB = new Set(['Math', 'JSON', 'Object', 'Array', 'String', 'Number', 'Boolean', 'Date', 'console', 'window', 'document', '$event', 'event', 'parseInt', 'parseFloat', 'isNaN', 'NaN', 'Infinity', 'undefined']);
+function _bind(node, set) {
+  if (!node || typeof node !== 'object') return;
+  switch (node.type) {
+    case 'Identifier': set.add(node.name); return;
+    case 'AssignmentPattern': _bind(node.left, set); return;
+    case 'RestElement': _bind(node.argument, set); return;
+    case 'ArrayPattern': for (const e of node.elements) _bind(e, set); return;
+    case 'ObjectPattern': for (const p of node.properties) p.type === 'RestElement' ? _bind(p.argument, set) : _bind(p.value, set); return;
+  }
+}
+function _walk(node, scopes, used, calls) {
+  if (!node || typeof node !== 'object') return;
+  const declared = (n) => scopes.some((s) => s.has(n));
+  switch (node.type) {
+    case 'Identifier': if (!declared(node.name) && !_GLOB.has(node.name)) used.add(node.name); return;
+    case 'MemberExpression': case 'OptionalMemberExpression': _walk(node.object, scopes, used, calls); if (node.computed) _walk(node.property, scopes, used, calls); return;
+    case 'ObjectProperty': case 'Property': if (node.computed) _walk(node.key, scopes, used, calls); _walk(node.value, scopes, used, calls); return;
+    case 'ArrowFunctionExpression': case 'FunctionExpression': case 'ObjectMethod': case 'FunctionDeclaration': {
+      const s = new Set(); for (const p of node.params || []) _bind(p, s); if (node.id && node.id.type === 'Identifier') s.add(node.id.name);
+      scopes.push(s); for (const p of node.params || []) if (p && p.type === 'AssignmentPattern') _walk(p.right, scopes, used, calls);
+      _walk(node.body, scopes, used, calls); scopes.pop(); return;
+    }
+    case 'CallExpression': case 'OptionalCallExpression': if (calls && node.callee && node.callee.type === 'Identifier') calls.add(node.callee.name); break;
+  }
+  for (const k in node) { if (_META.has(k)) continue; const v = node[k]; if (Array.isArray(v)) { for (const c of v) _walk(c, scopes, used, calls); } else if (v && typeof v === 'object' && typeof v.type === 'string') _walk(v, scopes, used, calls); }
+}
+function _an(src, bound = []) {
+  let ast; try { ast = parseExpressionString(src); } catch { ast = parseProgramString(src); }
+  const used = new Set(), calls = new Set(); _walk(ast, [new Set(bound)], used, calls);
+  return { used: [...used].sort(), calls: [...calls].sort() };
+}
+
+test('v0.13 expr: member callee は call に記録しない（user.getName()）', () => {
+  assert.deepEqual(_an('user.getName()'), { used: ['user'], calls: [] });
+});
+test('v0.13 expr: identifier callee のみ call 記録（label(t.prio())）', () => {
+  assert.deepEqual(_an('label(t.prio())'), { used: ['label', 't'], calls: ['label'] });
+});
+test('v0.13 expr: object literal のキーは自由変数でない / shorthand は辿る', () => {
+  assert.deepEqual(_an('{a:1}.a'), { used: [], calls: [] });
+  assert.deepEqual(_an('{ x }'), { used: ['x'], calls: [] });
+  assert.deepEqual(_an('{ [k]: v }'), { used: ['k', 'v'], calls: [] });
+});
+test('v0.13 expr: arrow 仮引数はスコープされ、既定値の外側参照は拾う', () => {
+  assert.deepEqual(_an('items.map(x => x.n)'), { used: ['items'], calls: [] });
+  assert.deepEqual(_an('(a = greeting) => a'), { used: ['greeting'], calls: [] });
+});
+test('v0.13 expr: optional chaining / テンプレリテラル / 文列', () => {
+  assert.deepEqual(_an('a?.b?.c()'), { used: ['a'], calls: [] });
+  assert.deepEqual(_an('`hi ${name()} ${x}`'), { used: ['name', 'x'], calls: ['name'] });
+  assert.deepEqual(_an('a(); b()'), { used: ['a', 'b'], calls: ['a', 'b'] });
+});
+test('v0.13 expr: 解析不能な稀式は throw（呼び出し側は regex にフォールバック）', () => {
+  assert.throws(() => parseExpressionString('@@@'));
+});
+test('v0.13 expr.mjs は第三者 import を一切持たない（依存ゼロ）', () => {
+  const src = readFileSync(resolve('plugins/sunao/expr.mjs'), 'utf8');
+  const imports = [...src.matchAll(/^\s*import\s.+?from\s+['"]([^'"]+)['"]/gm)].map((m) => m[1]);
+  assert.deepEqual(imports, [], 'expr.mjs は import を持たない');
+  // compile.mjs も core は自前パーサ＋node標準のみ（@babel/parser 不使用）
+  const csrc = readFileSync(resolve('plugins/sunao/compile.mjs'), 'utf8');
+  assert.ok(!/@babel\/parser/.test(csrc.replace(/^.*依存ゼロ.*$/gm, '')), 'compile.mjs は @babel/parser を import しない');
+});

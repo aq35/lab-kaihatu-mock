@@ -9,7 +9,7 @@
 ```
 再現: cd frontendlab && npm run build && npm run check && npm test
 開発: npm run dev（保存→自動リロード）/ npm run prerender -- --entry fixtures/seo/Landing.sunao --out dist/seo/index.html --client fixtures/seo/landing-main.js
-実装: plugins/sunao/{runtime,compile,esbuild-plugin}.mjs / build.mjs / dev.mjs / prerender.mjs / check.mjs
+実装: plugins/sunao/{runtime,compile,expr,esbuild-plugin}.mjs / build.mjs / dev.mjs / prerender.mjs / check.mjs
 デモ: fixtures/app-ui/（対話・合成・カレンダー・並び替えDnD・ルーティング・スロット・FLIPボード）, fixtures/seo/（SSG→hydrate）, fixtures/static-ui/（静的）
 参照: docs/reference.md（AI 向け・低 context の API 表）
 受領書: results/raw/build-app-ui.json
@@ -100,7 +100,7 @@
 
 | 大物 | 実装 | テスト・実測 |
 |---|---|---|
-| **式パーサの堅牢化** | `collectIdents` を **@babel/parser の AST 自由変数解析**に置換（`@babel/core` の推移依存＝新規依存なし・build 時のみ・アプリ bundle には入らない）。MemberExpression / ObjectProperty(shorthand/computed) / arrow・分割の仮引数スコープを正しく処理。パース失敗時は文列ラップ→regex fallback で非回帰 | **regex の誤収集を修正**: `items.map(x => x.a)` の `x` を ctx 参照と誤検出しない＝**arrow 仮引数の誤・未宣言参照エラーが消える**。単体 green |
+| **式パーサの堅牢化** | `collectIdents` を **AST 自由変数解析**に置換（当時は `@babel/parser`＝`@babel/core` の推移依存。**v0.13 で自前 `expr.mjs` に置換し core を依存ゼロ化**）。MemberExpression / ObjectProperty(shorthand/computed) / arrow・分割の仮引数スコープを正しく処理。パース失敗時は文列→regex fallback で非回帰 | **regex の誤収集を修正**: `items.map(x => x.a)` の `x` を ctx 参照と誤検出しない＝**arrow 仮引数の誤・未宣言参照エラーが消える**。単体 green |
 | **診断の機械可読エクスポート** | `diagnose(source)`＝throw せず `{diagnostics:[{severity,code,message,line,column,...}]}`（LSP の publishDiagnostics 相当）。`node tools/diagnose.mjs`（`npm run diagnose`）で JSON 出力、error があれば exit 1 | 壊れた SFC→error、`()` 忘れ→warning、正常→0 を単体 green |
 | **構文ハイライト** | `editor/sunao.tmLanguage.json` + `language-configuration.json`（VSCode）。template(`{{}}`/`:bind`/`@event`/`v-*`/`flip`) / script(JS) / style(CSS) を色分け。`editor/README.md` に導入手順 | JSON 妥当性を確認（エディタ実機はこの環境で検証不能＝正直に明記） |
 
@@ -166,6 +166,18 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 
 依存追加は build 時のみ（`sass`）＋拡張側のみ（`vscode-languageclient`）＝アプリ bundle には一切入らない。
 これで **compile / dev / prerender / diagnose / check / bench / lsp / new / fmt** が同じ思想で一続きになった。
+
+## v0.13 で実装した「依存は捨てる（core を第三者依存ゼロに）」
+
+「依存は捨てました」への回答。**式解析を担っていた唯一の core 依存 `@babel/parser` を撤去**し、自前の Pratt パーサ `plugins/sunao/expr.mjs`（**import 一切なし**）に置換した。「思想としてのエコシステム」の徹底 — core は自分だけで閉じる。
+
+| 対象 | before | after | 検証 |
+|---|---|---|---|
+| **式の自由変数解析** | `@babel/parser` の `parseExpression`（top-level static import＝無いと compile.mjs ごと落ちる） | 自前 `expr.mjs`（tokenizer＋Pratt）が **Babel 互換の AST サブセット**を出す。`walkFreeIdents`/`collectBindingNames`/`exprHasCall` は**無改変**で動く | member vs call callee・shorthand/computed key・arrow/分割の仮引数スコープ・optional chaining・テンプレリテラル・文列 `a(); b()` を Babel と一致（単体 25 ケース＋既存 92 テスト green） |
+| **フォールバック** | 文列ラップ→regex | 1式→文列(program)→regex（安全網は維持・parse 不能な稀式のみ regex） | 既存の非回帰テスト green |
+| **package.json** | `@babel/parser` を devDependency に明示 | 撤去（`@babel/core` 等は transpiler 実験の被験体として残置） | `npm run verify` green |
+
+いま **sunao の core（`compile.mjs` / `runtime.mjs` / `expr.mjs`）は第三者依存ゼロ**。`sass` は `lang="scss"` 時のみ lazy require、`esbuild` はホストのバンドラ（Vite に対する vue と同じ関係）、`vue`/`@vue/compiler-dom` は bench の比較対象、`vscode-languageclient` は拡張側だけ。runtime（ブラウザに出る側）は元から依存ゼロ。
 
 ## v0.2 の柱（維持）
 

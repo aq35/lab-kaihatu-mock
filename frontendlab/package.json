@@ -27,7 +27,6 @@
   },
   "devDependencies": {
     "@babel/core": "8.0.5",
-    "@babel/parser": "8.0.5",
     "@babel/preset-react": "8.0.1",
     "@babel/preset-typescript": "8.0.1",
     "@swc/core": "1.16.2",

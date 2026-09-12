@@ -177,7 +177,7 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 - **`node tools/lsp.mjs`（`npm run lsp`）** … **依存ゼロの LSP サーバ**（stdio JSON-RPC を手書き）。診断（publishDiagnostics）・補完（式位置=signal/prop/return を `name()` 挿入・タグ位置=component・属性位置=ディレクティブ）・hover・**定義ジャンプ**・**アウトライン(documentSymbol)**。頭脳は `diagnose()`/`symbols()`。エディタ無しで `tests/lsp.test.mjs` がプロトコルを直接叩いて検証。
 - **LSP 補完は manifest 連携** … `<Child |>` で子部品の props（type/required/enum を detail）、`:enumProp="|"` で enum 値を候補に（import を解決して子 .sunao を読む）。
 - **`editor/vscode/`** … VSCode 拡張（F5 で LSP に繋がる）。`editor/sunao.tmLanguage.json` + `language-configuration.json` が構文ハイライト。導入は `GETTING_STARTED.md` / `editor/vscode/README.md`。
-- 式解析は **@babel/parser の AST**（build 時のみ・アプリ bundle には入らない）。arrow/分割の仮引数を正しくスコープするので、`items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。
+- 式解析は **依存ゼロの自前パーサ `plugins/sunao/expr.mjs`**（build 時のみ・アプリ bundle には入らない）。Babel 互換 AST を出す Pratt パーサで、arrow/分割の仮引数を正しくスコープするので `items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。パース不能な稀式は regex fallback（安全網）。**sunao の core（compile/runtime）は第三者依存なし**（`sass` は `lang="scss"` 時のみ lazy、`esbuild` はホストのバンドラ）。
 - 未実装（正直）: リネーム/シグネチャヘルプ（土台 `symbols()` はある）・`.vsix` パッケージ配布。
 
 ## 決定論・予算（factory）
