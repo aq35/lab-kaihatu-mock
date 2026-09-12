@@ -47,7 +47,9 @@ function makeSub(fn) {
     deps: new Set(),      // このeffectが購読しているsignalのsubs集合
     children: null,       // 遅延: 実行中に作られた子effect（葉なら null のまま）
     cleanups: null,       // 遅延: 後始末（timer/fetch abort 等。無ければ null）
+    disposed: false,      // 破棄済みなら run しない（伝播中に消えた sub の復活＝ゾンビを防ぐ）
     run() {
+      if (sub.disposed) return; // 通知スナップショットに残った破棄済み sub を再実行しない
       sub.cleanup();
       const prevSub = activeSub, prevOwner = activeOwner;
       activeSub = sub; activeOwner = sub;
@@ -59,7 +61,7 @@ function makeSub(fn) {
       for (const set of sub.deps) set.delete(sub);
       sub.deps.clear();
     },
-    dispose() { sub.cleanup(); },
+    dispose() { sub.disposed = true; sub.cleanup(); },
   };
   return sub;
 }
@@ -165,10 +167,20 @@ function makeBIT(n, init) {
 export function windowedVar(items, { estimate = 40, height, overscan = 4 } = {}) {
   if (!height) throw new Error('windowedVar() は height（px）が必要です');
   const list = typeof items === 'function' ? items : () => items;
+  const creationOwner = activeSub || activeOwner; // 生成時（setup）の scope。attach の後始末をここに繋ぐ
   const scrollTop = signal(0);
   const version = signal(0); // 実測で高さが変わったら bump → visible/total 再計算
   let n = -1, bit = null, heights = null;
-  const ensure = () => { const len = list().length; if (len !== n) { n = len; heights = new Float64Array(n).fill(estimate); bit = makeBIT(n, estimate); } };
+  const ensure = () => {
+    const len = list().length;
+    if (len === n) return;
+    const old = heights;
+    heights = new Float64Array(len).fill(estimate);
+    if (old) for (let i = 0, m = Math.min(len, old.length); i < m; i++) heights[i] = old[i]; // 実測値を保持（append/remove で全捨てしない）
+    bit = makeBIT(len, 0);
+    for (let i = 0; i < len; i++) if (heights[i]) bit.add(i, heights[i]);
+    n = len;
+  };
   const measure = (index, px) => {
     ensure();
     if (index < 0 || index >= n || !(px > 0)) return;
@@ -200,8 +212,11 @@ export function windowedVar(items, { estimate = 40, height, overscan = 4 } = {})
       observed = now;
     };
     const eff = effect(() => { visible(); if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(sync); else sync(); });
-    onCleanup(() => ro.disconnect());
-    return () => { ro.disconnect(); eff.dispose?.(); };
+    const dispose = () => { ro.disconnect(); eff.dispose?.(); };
+    // attach は mount 後（activeOwner=null）に呼ぶのが普通なので、生成時 scope に後始末を繋ぐ＝dispose() で確実に片付く
+    if (creationOwner) (creationOwner.cleanups || (creationOwner.cleanups = [])).push(dispose);
+    else onCleanup(dispose);
+    return dispose;
   };
   return { onScroll: (e) => scrollTop.set(e.target.scrollTop), total, visible, measure, attach };
 }
@@ -506,7 +521,12 @@ function hydrateChildren(parentDom, childVnodes, doc) {
     if (v && typeof v === 'object' && v.tag) {
       const d = domEls[ei++];
       if (d && d.tagName && d.tagName.toLowerCase() === v.tag.toLowerCase()) hydrateNode(v, d, doc);
-      else parentDom.appendChild(createNode(v, doc)); // ズレ/欠落は新規生成でフォールバック
+      else {
+        // ズレ/欠落: 新規ノードを **正しい位置** に挿入し、ズレた既存ノードは置換（末尾追加＝順序崩壊を防ぐ）
+        const fresh = createNode(v, doc);
+        if (d) parentDom.replaceChild(fresh, d);
+        else parentDom.appendChild(fresh);
+      }
     }
   }
 }
@@ -689,7 +709,7 @@ export function machine(def) {
   const state = signal(def.initial);
   const send = (event, payload) => {
     const st = def.states[state.peek()];
-    const t = st && st.on && st.on[event];
+    const t = st && st.on && Object.prototype.hasOwnProperty.call(st.on, event) ? st.on[event] : undefined; // prototype を歩かない
     if (!t) throw new Error(`machine: 状態 "${state.peek()}" で未定義のイベント "${event}"（許可: ${st && st.on ? Object.keys(st.on).join(', ') : 'なし'}）`);
     const target = typeof t === 'string' ? t : t.target;
     if (!def.states[target]) throw new Error(`machine: 未定義の遷移先 "${target}"`);
@@ -698,7 +718,7 @@ export function machine(def) {
   };
   const read = () => state();
   read.send = send;
-  read.can = (event) => !!(def.states[state.peek()]?.on?.[event]);
+  read.can = (event) => { const on = def.states[state.peek()]?.on; return !!(on && Object.prototype.hasOwnProperty.call(on, event) && on[event]); };
   read.matches = (s) => state() === s;
   return read;
 }
@@ -745,8 +765,9 @@ export function decode(schema, value, path = '$') {
 
 // Rust の match（網羅）。`_` が無く未対応の値なら fail-closed。
 //   match(kind, { A:()=>1, B:2, _:()=>0 })
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 export function match(value, cases) {
-  const c = (value in cases) ? cases[value] : cases._;
+  const c = hasOwn(cases, value) ? cases[value] : (hasOwn(cases, '_') ? cases._ : undefined); // prototype を歩かない
   if (c === undefined) throw new Error(`match: 未対応の値 "${value}"（許可: ${Object.keys(cases).join(', ')}）`);
   return typeof c === 'function' ? c(value) : c;
 }

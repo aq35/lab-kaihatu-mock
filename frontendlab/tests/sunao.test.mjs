@@ -272,6 +272,31 @@ test('② 仮想化 windowed(): 可視 slice・offsetY・total、スクロール
   assert.throws(() => windowed(items, { rowHeight: 20 }), /height/, 'height 必須（fail-closed）');
 });
 
+test('audit: 破棄済み effect は伝播中に復活しない（ゾンビ防止）', () => {
+  const show = signal(true);
+  let creates = 0, runs = 0;
+  effect(() => { if (show()) { creates++; effect(() => { show(); runs++; }); } });
+  show.set(false); show.set(true); show.set(false); show.set(true);
+  assert.equal(runs, creates, '子 effect の実行回数=生成回数（復活・累積しない）');
+});
+
+test('audit: match/machine は prototype チェーンを歩かない', () => {
+  assert.throws(() => match('toString', { ok: () => 1 }), /未対応/, 'toString は _ 無しで throw');
+  assert.equal(match('toString', { ok: () => 1, _: () => 'fb' }), 'fb', '_ にフォールバック');
+  const m = machine({ initial: 'idle', states: { idle: { on: { GO: 'run' } }, run: { on: {} } } });
+  assert.equal(m.can('toString'), false, 'can(toString) は false');
+  assert.throws(() => m.send('hasOwnProperty'), /未定義のイベント/, 'prototype キーは未定義イベント');
+});
+
+test('audit: windowedVar は length 変化で実測高さを捨てない（append で jump しない）', () => {
+  const items = signal(Array.from({ length: 10 }, (_, i) => ({ id: i })));
+  const vp = windowedVar(items, { estimate: 30, height: 200 });
+  for (let i = 0; i < 10; i++) vp.measure(i, 100); // 全部 100px に実測
+  assert.equal(vp.total(), 10 * 100, '実測反映');
+  items.set([...items(), { id: 10 }]); // append 1
+  assert.equal(vp.total(), 10 * 100 + 30, '既存 10 件の実測を保持＋新規のみ estimate（全捨てしない）');
+});
+
 test('② 可変高仮想化 windowedVar(): estimate→実測補正で total/visible/top が正しく動く', () => {
   const items = signal(Array.from({ length: 1000 }, (_, i) => ({ id: i })));
   const vp = windowedVar(items, { estimate: 50, height: 200, overscan: 1 });
