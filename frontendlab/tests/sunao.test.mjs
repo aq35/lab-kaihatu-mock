@@ -1180,3 +1180,13 @@ test('templates: 外部フォント依存が無い（全部自前ホスト・fai
     }
   }
 });
+
+test('fonts/stock: OFL フォントストックが有効（woff2＋ライセンス＋索引）', async () => {
+  const { readdirSync } = await import('node:fs');
+  const dir = resolve('fonts/stock');
+  const woffs = readdirSync(dir).filter((f) => f.endsWith('.woff2'));
+  assert.ok(woffs.length >= 25, `十分な数を stock: ${woffs.length}`);
+  for (const w of woffs) assert.equal(readFileSync(join(dir, w)).slice(0, 4).toString('latin1'), 'wOF2', `${w} が WOFF2`);
+  assert.ok(existsSync(join(dir, 'INDEX.md')), '索引 INDEX.md');
+  assert.ok(readdirSync(join(dir, 'licenses')).some((f) => /OFL/i.test(f)), 'OFL ライセンス同梱');
+});

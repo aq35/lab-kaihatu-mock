@@ -82,3 +82,13 @@ python3 fonts/subset-ofl.py    # Comfortaa を DL→subset→リネーム→suna
 ### 3 つの生成フォントの使い分け（正直）
 - **sunao Icons / Pixel / Round** = 「コードで一から作れる」実証（アイコン・ドット文字・曲線文字）。軽いが表示用。
 - **sunao Rounded** = 「読みやすさが要るならプロの OFL を subset」＝実務の正解。**自作 ≠ 常に最適**、を正直に。
+
+
+## fonts/stock/ — OFL 名作フォントのストック（自前ホスト用・34書体）
+
+`python3 fonts/stock.py` で作る **subset 済み WOFF2 ライブラリ**。欧文20＋和文14＝計34書体、合計 ~950KB。
+各ライセンス(OFL.txt)は `fonts/stock/licenses/`、一覧は `fonts/stock/INDEX.md`。
+
+- そのまま自前ホストで使える: `@font-face{src:url('./stock/comfortaa.woff2') format('woff2')}`。
+- 欧文=ASCII 全部 / 和文=かな＋記号＋全角英数（**常用漢字は非同梱**でサイズ抑制）。漢字が要る字は charset に足して再 subset。
+- これらは元フォントの **subset**。原典・作者は INDEX.md、ライセンス全文は licenses/ を参照（OFL 順守）。
