@@ -206,6 +206,22 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 
 これで **書く（new でテンプレ）→ 動かす（dev）→ 確かめる（verify）** が、動画ストリーミングのような実アプリまで一続きになった。
 
+## v0.15 で実装した「ヒューリスティックの根治＋ファズで先取り」
+
+「使うとバグが出る」＝**文字列/正規表現/brace 数えの"推測"が未知入力で崩れる**、という傾向への根治。`<script>` の `export default {}` を自前パーサで **AST 化**して解析に切り替えた（パース失敗時は既存ヒューリスティックに fallback＝非回帰）。
+
+| 対象 | before（ヒューリスティック） | after（AST） |
+|---|---|---|
+| **`returnNames`** | brace 深度スキャンで setup の `return {}` を推定（ネスト return を誤認しうる） | setup の **直下 `return`** を AST で正確に取得。`.map(()=>{ return {...} })` に一切惑わされない |
+| **`scanSignals`** | `const x = signal(` の regex（分割代入・順序に弱い） | setup 本体を walk して factory 呼び出し束縛を収集（分割代入も） |
+| **`analyze` props** | `props:{}` を brace スキャン＋regex | props 値を AST で読む（型/enum はリテラルのみ＝既存と同義・文字列内カンマ等に強い） |
+
+**共通基盤**: `export default {}` を `parseExpressionString`（v0.13 の自前パーサ）で ObjectExpression として parse。そのため式パーサを **文レベル（for/while/switch/try/throw/function 宣言・for-of/in）まで拡張**した。
+
+**先取り（ファズ）**: `tests/sunao.test.mjs` に**プロパティ/ファズテスト**を追加。ネスト return・for・switch・try・分割代入を乱択で混ぜた setup を 30+ 本コンパイルし、**返却済みの名前が false な未宣言エラーにならない**ことを検証。＝「使って初めて出る」バグ族を **CI で先取り**する。dashboard テンプレで踏んだ returnNames の穴も、この形が回帰テストに入っている（92→107 green）。
+
+> 効いた場所の傾向が明確だったので（＝推測ロジック）、**バグ族ごと**を AST で断ち、ファズで再発を止めた。式解析（v0.13）に続き、script 解析も推測から AST へ。
+
 ## v0.2 の柱（維持）
 
 ① 細粒度更新（thunk→箇所ごと effect・render 1 回・所有権つき破棄） ② 既定 static（非対話は runtime 0, **8x 小**）

@@ -172,9 +172,76 @@ class Parser {
     }
     if (t.t === 'name' && (t.v === 'const' || t.v === 'let' || t.v === 'var')) return this.parseVarDecl();
     if (t.t === 'name' && t.v === 'if') return this.parseIf();
+    if (t.t === 'name' && t.v === 'for') return this.parseFor();
+    if (t.t === 'name' && t.v === 'while') return this.parseWhile();
+    if (t.t === 'name' && t.v === 'do') return this.parseDoWhile();
+    if (t.t === 'name' && t.v === 'switch') return this.parseSwitch();
+    if (t.t === 'name' && t.v === 'try') return this.parseTry();
+    if (t.t === 'name' && t.v === 'throw') { this.next(); const argument = this.parseExpression(); if (this.isPunct(';')) this.next(); return { type: 'ThrowStatement', argument }; }
+    if (t.t === 'name' && (t.v === 'break' || t.v === 'continue')) { this.next(); let label = null; if (this.peek().t === 'name' && !this.isPunct(';')) label = { type: 'Identifier', name: this.next().v }; if (this.isPunct(';')) this.next(); return { type: t.v === 'break' ? 'BreakStatement' : 'ContinueStatement', label }; }
+    if (t.t === 'name' && t.v === 'function' && this.peek(1).t === 'name') return this.parseFunctionDecl();
     const expr = this.parseExpression();
     if (this.isPunct(';')) this.next();
     return { type: 'ExpressionStatement', expression: expr };
+  }
+  parseFunctionDecl() {
+    this.next(); // function
+    const id = { type: 'Identifier', name: this.next().v };
+    const params = this.parseParams();
+    const body = this.parseBlock();
+    return { type: 'FunctionDeclaration', id, params, body };
+  }
+  parseWhile() { this.next(); this.eat('('); const test = this.parseExpression(); this.eat(')'); const body = this.parseStatement(); return { type: 'WhileStatement', test, body }; }
+  parseDoWhile() { this.next(); const body = this.parseStatement(); if (this.isName('while')) this.next(); this.eat('('); const test = this.parseExpression(); this.eat(')'); if (this.isPunct(';')) this.next(); return { type: 'DoWhileStatement', body, test }; }
+  parseFor() {
+    this.next(); this.eat('(');
+    // 初期部: var 宣言 / 式 / 空。for-of / for-in を検出する。
+    let left = null;
+    if (!this.isPunct(';')) {
+      if (this.isName('const') || this.isName('let') || this.isName('var')) {
+        const kind = this.next().v;
+        const id = this.parseBindingTarget();
+        if (this.isName('of') || this.isName('in')) {
+          const k = this.next().v; const right = this.parseAssign(); this.eat(')'); const body = this.parseStatement();
+          return { type: k === 'of' ? 'ForOfStatement' : 'ForInStatement', left: { type: 'VariableDeclaration', kind, declarations: [{ type: 'VariableDeclarator', id, init: null }] }, right, body };
+        }
+        let init = null; if (this.isPunct('=')) { this.next(); init = this.parseAssign(); }
+        const decls = [{ type: 'VariableDeclarator', id, init }];
+        while (this.isPunct(',')) { this.next(); const id2 = this.parseBindingTarget(); let i2 = null; if (this.isPunct('=')) { this.next(); i2 = this.parseAssign(); } decls.push({ type: 'VariableDeclarator', id: id2, init: i2 }); }
+        left = { type: 'VariableDeclaration', kind, declarations: decls };
+      } else {
+        const expr = this.parseExpression();
+        if (this.isName('of') || this.isName('in')) { const k = this.next().v; const right = this.parseAssign(); this.eat(')'); const body = this.parseStatement(); return { type: k === 'of' ? 'ForOfStatement' : 'ForInStatement', left: expr, right, body }; }
+        left = expr;
+      }
+    }
+    this.eat(';');
+    const test = this.isPunct(';') ? null : this.parseExpression(); this.eat(';');
+    const update = this.isPunct(')') ? null : this.parseExpression(); this.eat(')');
+    const body = this.parseStatement();
+    return { type: 'ForStatement', init: left, test, update, body };
+  }
+  parseSwitch() {
+    this.next(); this.eat('('); const discriminant = this.parseExpression(); this.eat(')'); this.eat('{');
+    const cases = [];
+    while (!this.isPunct('}') && this.peek().t !== 'eof') {
+      let test = null;
+      if (this.isName('case')) { this.next(); test = this.parseExpression(); this.eat(':'); }
+      else if (this.isName('default')) { this.next(); this.eat(':'); }
+      else break;
+      const consequent = [];
+      while (!this.isName('case') && !this.isName('default') && !this.isPunct('}') && this.peek().t !== 'eof') consequent.push(this.parseStatement());
+      cases.push({ type: 'SwitchCase', test, consequent });
+    }
+    this.eat('}');
+    return { type: 'SwitchStatement', discriminant, cases };
+  }
+  parseTry() {
+    this.next(); const block = this.parseBlock();
+    let handler = null, finalizer = null;
+    if (this.isName('catch')) { this.next(); let param = null; if (this.isPunct('(')) { this.next(); param = this.parseBindingTarget(); this.eat(')'); } const body = this.parseBlock(); handler = { type: 'CatchClause', param, body }; }
+    if (this.isName('finally')) { this.next(); finalizer = this.parseBlock(); }
+    return { type: 'TryStatement', block, handler, finalizer };
   }
   parseVarDecl() {
     const kind = this.next().v;

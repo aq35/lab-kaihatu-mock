@@ -179,7 +179,8 @@ KIND_ACCENT / KIND_LABEL / themeCSS
 - **`editor/vscode/`** … VSCode 拡張（F5 で LSP に繋がる）。`editor/sunao.tmLanguage.json` + `language-configuration.json` が構文ハイライト。導入は `GETTING_STARTED.md` / `editor/vscode/README.md`。
 - 式解析は **依存ゼロの自前パーサ `sunao/expr.mjs`**（build 時のみ・アプリ bundle には入らない）。Babel 互換 AST を出す Pratt パーサで、arrow/分割の仮引数を正しくスコープするので `items.map(x => x.a)` の `x` を ctx 参照と誤検出しない。パース不能な稀式は regex fallback（安全網）。**sunao の core（compile/runtime）は第三者依存なし**（`sass` は `lang="scss"` 時のみ lazy、`esbuild` はホストのバンドラ）。
 - **テンプレ式の対応文法**（＝ここを増やせば文法が増える。`expr.mjs` 冒頭に一覧）: 識別子/リテラル/テンプレリテラル/配列・オブジェクト(shorthand・computed・method・spread)/アロー(式・ブロック・**async**)/関数式/new/メンバ(`.` `?.` `[]`)/呼び出し(`()` `?.()`)/単項(`! - + ~ typeof void delete await ++ --`)/二項・論理(全演算子)/三項/代入/カンマ列/spread。**非対応**（→ 安全に regex 落ち）: generator/yield・正規表現リテラル・ラベル文・class 式・decorator。増やすなら Pratt テーブルに 1 行 or 集合に 1 語。
-- **文法ドリフト検出ガード**: `tests/sunao.test.mjs` は `@babel/parser` が居るとき（dev）だけ **自前 vs Babel の差分テスト**を走らせる（実 fixtures 全式＝完全一致必須／難式＝silent-wrong 検出）。core に無ければ skip。**将来 JS 文法が増えて自前が Babel とズレた瞬間に赤くなる**＝依存を捨てても追従漏れを自動検出。
+- **文法ドリフト検出ガード**: `tests/sunao.test.mjs` は `@babel/parser` が居るとき（dev）だけ **自前 vs Babel の差分テスト**を走らせる（実 examples 全式＝完全一致必須／難式＝silent-wrong 検出）。core に無ければ skip。**将来 JS 文法が増えて自前が Babel とズレた瞬間に赤くなる**＝依存を捨てても追従漏れを自動検出。
+- **`<script>` 解析も AST**（v0.15）: `returnNames`（setup の返却）/ `scanSignals`（signal 束縛）/ props 契約は、`export default {}` を自前パーサで AST 化して抽出（文字列/regex/brace 推測をやめた）。パース不能時のみ旧ヒューリスティックに fallback。プロパティ/ファズテストで「ネスト return 等で false な未宣言エラーが出ない」ことを CI で先取り。
 - 未実装（正直）: リネーム/シグネチャヘルプ（土台 `symbols()` はある）・`.vsix` パッケージ配布。
 
 ## 決定論・予算（factory）

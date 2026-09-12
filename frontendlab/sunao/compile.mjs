@@ -327,6 +327,11 @@ function noteBare(expr, bound, ctx) {
 // これらが値位置に裸で出れば、他所で呼ばれていなくても呼び忘れ濃厚（穴を塞ぐ）。
 const SIGNAL_FACTORIES = 'signal|computed|resource|now|useRoute|store|machine';
 export function scanSignals(script) {
+  const obj = parseDefaultExport(script);
+  if (obj) return astScanSignals(obj); // AST が取れれば分割代入も含め正確
+  return scanSignalsHeuristic(script);
+}
+function scanSignalsHeuristic(script) {
   const s = new Set();
   const re = new RegExp(`\\b(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:${SIGNAL_FACTORIES})\\s*\\(`, 'g');
   for (const m of script.matchAll(re)) s.add(m[1]);
@@ -734,9 +739,102 @@ function maskStringsComments(s) {
   }
   return out;
 }
+// ---- AST ベースの <script> 解析（根治: 文字列/brace ヒューリスティックを AST に置換） ----
+// `export default { ... }` の object literal を自前パーサで AST 化。失敗は null（呼び出し側が
+// 既存ヒューリスティックに fallback＝非回帰）。直近 1 件だけ memo（同一 script の複数抽出を高速化）。
+let _defExportCache = { script: null, ast: undefined };
+function parseDefaultExport(script) {
+  if (_defExportCache.script === script) return _defExportCache.ast;
+  let ast = null;
+  const masked = maskStringsComments(script);
+  const m = /export\s+default\s*\{/.exec(masked);
+  if (m) {
+    const open = m.index + m[0].length - 1;
+    let depth = 0, end = -1;
+    for (let i = open; i < masked.length; i++) { const c = masked[i]; if (c === '{') depth++; else if (c === '}' && --depth === 0) { end = i; break; } }
+    if (end >= 0) {
+      try { const node = parseExpressionString(script.slice(open, end + 1)); if (node && node.type === 'ObjectExpression') ast = node; }
+      catch { ast = null; }
+    }
+  }
+  _defExportCache = { script, ast };
+  return ast;
+}
+function _findMember(obj, name) {
+  return obj.properties.find((p) => (p.type === 'ObjectProperty' || p.type === 'ObjectMethod') && !p.computed && p.key && (p.key.name === name || p.key.value === name));
+}
+function _setupBody(obj) {
+  const s = _findMember(obj, 'setup');
+  if (!s) return null;
+  if (s.type === 'ObjectMethod') return s.body;
+  const v = s.value;
+  if (v && (v.type === 'FunctionExpression' || v.type === 'ArrowFunctionExpression') && v.body && v.body.type === 'BlockStatement') return v.body;
+  return null;
+}
+const _keyName = (k) => (k ? (k.name != null ? k.name : k.value) : null);
+// setup の **直下** return { ... } のキー（複数 return は union）。ネスト return は構造上拾わない。
+function astReturnNames(obj) {
+  const body = _setupBody(obj);
+  if (!body) return null;
+  const names = [];
+  for (const st of body.body) {
+    if (st.type === 'ReturnStatement' && st.argument && st.argument.type === 'ObjectExpression') {
+      for (const p of st.argument.properties) {
+        if (p.type === 'SpreadElement') continue;
+        const n = _keyName(p.key); if (n) names.push(n);
+      }
+    }
+  }
+  return names.length ? names : null; // 直下 return が無ければ fallback に委ねる
+}
+// setup 本体の signal 系束縛（分割代入も）＋ props キー。
+function astScanSignals(obj) {
+  const s = new Set();
+  const factories = new Set(SIGNAL_FACTORIES.split('|'));
+  const body = _setupBody(obj);
+  if (body) {
+    (function walk(n) {
+      if (!n || typeof n !== 'object') return;
+      if (n.type === 'VariableDeclarator' && n.init && (n.init.type === 'CallExpression' || n.init.type === 'OptionalCallExpression') && n.init.callee && n.init.callee.type === 'Identifier' && factories.has(n.init.callee.name)) {
+        collectBindingNames(n.id, s);
+      }
+      for (const k in n) { if (_AST_META.has(k)) continue; const v = n[k]; if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === 'object' && typeof v.type === 'string') walk(v); }
+    })(body);
+  }
+  const props = _findMember(obj, 'props');
+  if (props && props.value && props.value.type === 'ObjectExpression') for (const p of props.value.properties) { const n = _keyName(p.key); if (n) s.add(n); }
+  return s;
+}
+// props 契約を AST から（既存 regex と同義: type/enum はリテラルのみ・識別子 enum は解決不能で null）。
+function astProps(obj) {
+  const props = _findMember(obj, 'props');
+  if (!props || !props.value || props.value.type !== 'ObjectExpression') return null;
+  const out = {};
+  for (const p of props.value.properties) {
+    if (p.type === 'SpreadElement') continue;
+    const name = _keyName(p.key); if (!name) continue;
+    let required = false, type = null, en = null;
+    const v = p.value;
+    if (v && v.type === 'ObjectExpression') {
+      for (const q of v.properties) {
+        const k = _keyName(q.key);
+        if (k === 'required' && q.value && q.value.type === 'BooleanLiteral') required = q.value.value === true;
+        else if (k === 'type' && q.value && q.value.type === 'StringLiteral') type = q.value.value;
+        else if (k === 'enum' && q.value && q.value.type === 'ArrayExpression') en = q.value.elements.filter((e) => e && e.type === 'StringLiteral').map((e) => e.value);
+      }
+    }
+    out[name] = { required, type, enum: en };
+  }
+  return out;
+}
 function returnNames(script) {
+  const obj = parseDefaultExport(script);
+  if (obj) { const ast = astReturnNames(obj); if (ast) return ast; }
+  return returnNamesHeuristic(script);
+}
+function returnNamesHeuristic(script) {
   // setup 自身の返却＝**最も浅い brace 深度**の `return {`。ネストした arrow 内 return を誤って拾わない。
-  // 文字列/コメントは潰して深度を測る（位置・長さは保存）。
+  // 文字列/コメントは潰して深度を測る（位置・長さは保存）。fallback（AST が使えない時）。
   const masked = maskStringsComments(script);
   const re = /\breturn\s*\{/g;
   let mm, open = -1, bestDepth = Infinity;
@@ -769,10 +867,12 @@ function returnNames(script) {
 export function analyze(source) {
   const { template, script } = extractBlocks(source);
   const nameM = /name\s*:\s*['"]([A-Za-z0-9_$]+)['"]/.exec(script);
-  const props = {};
-  const propsBody = balancedBlock(script, 'props');
+  const objAst = parseDefaultExport(script);
+  let props = objAst ? astProps(objAst) : null;
+  const propsBody = props ? null : balancedBlock(script, 'props'); // AST が取れれば regex 抽出は不要
+  if (!props) props = {};
   if (propsBody) {
-    // トップレベルのキーを深さ 0 で拾う（値が {…} でも識別子でも登録。spread(...X) は無視）。
+    // トップレベルのキーを深さ 0 で拾う（値が {…} でも識別子でも登録。spread(...X) は無視）。fallback。
     let i = 0, depth = 0;
     while (i < propsBody.length) {
       const ch = propsBody[i];

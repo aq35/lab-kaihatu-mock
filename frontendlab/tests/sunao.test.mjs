@@ -12,7 +12,7 @@ import { recipeStyle } from '../sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../sunao/compile.mjs';
 import { formatSFC } from '../sunao/format.mjs';
-import { manifest, autofix } from '../sunao/compile.mjs';
+import { manifest, autofix, scanSignals } from '../sunao/compile.mjs';
 import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -972,4 +972,46 @@ test('② returnNames: setup 内のネストした return {} を top-level 返�
   const src = '<template><p>{{ items() }}</p></template>' +
     '<script>export default { setup(){ const build = () => [1,2].map((n) => { return { n, sq: n * n }; }); const items = () => build(); return { items }; } }</script>';
   assert.doesNotThrow(() => compileSFC(src, { runtime: RUNTIME }), 'ネスト return に惑わされない');
+});
+
+// ---- v0.15: プロパティ/ファズ — 「使って初めて出る」バグ族を CI で先取り ----
+// setup に各種文（ネスト return・for・switch・分割代入）を混ぜても、返却済みの名前は
+// 未宣言エラーにならない（returnNames/scanSignals の AST 化が効いている）ことを乱択で検証。
+function _mulberry32(a) { return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+test('v0.15 fuzz: ネスト return / for / switch / 分割代入を含む setup で false な未宣言エラーが出ない', () => {
+  const rng = _mulberry32(0x5EED);
+  const parts = [
+    { decl: 'const a = signal(0);', name: 'a', signal: true },
+    { decl: 'const b = computed(() => a() + 1);', name: 'b', signal: true },
+    { decl: 'const f = () => [1, 2].map((n) => { return { n, sq: n * n }; });', name: 'f' }, // ← 昔の returnNames を壊した形
+    { decl: 'const g = (k) => { switch (k) { case 1: return "x"; default: return "y"; } };', name: 'g' },
+    { decl: 'const h = () => { for (const x of [1, 2, 3]) { if (x > 1) return x; } return 0; };', name: 'h' },
+    { decl: 'const arr = [1, 2, 3];', name: 'arr' },
+    { decl: 'const nest = { deep: { x: 1 } };', name: 'nest' },
+    { decl: 'const j = () => { try { return risky(); } catch (e) { return 0; } };', name: 'j' },
+  ];
+  let ran = 0;
+  for (let i = 0; i < 60; i++) {
+    const picked = parts.filter(() => rng() < 0.6);
+    if (!picked.length) continue;
+    // 'b' は 'a' に依存するので、b を採るなら a も含める
+    if (picked.some((p) => p.name === 'b') && !picked.some((p) => p.name === 'a')) picked.unshift(parts[0]);
+    const names = picked.map((p) => p.name);
+    const body = picked.map((p) => p.decl).join(' ') + ' return { ' + names.join(', ') + ' };';
+    const uses = picked.map((p) => (p.signal ? `{{ ${p.name}() }}` : `{{ ${p.name} }}`)).join(' ');
+    const src = `<template><div>${uses}</div></template><script>export default { setup() { ${body} } }</script>`;
+    assert.doesNotThrow(() => compileSFC(src, { runtime: RUNTIME }), `fuzz#${i}: ${body}`);
+    ran++;
+  }
+  assert.ok(ran >= 30, `十分な数を回した: ${ran}`);
+});
+
+test('v0.15 scanSignals: 分割代入の signal 束縛も AST で拾う（regex では取りこぼす形）', () => {
+  // 昔の regex は `const { x } = ...` / `const [y] = ...` を拾えなかった。AST なら拾う。
+  const s = scanSignals('export default { setup(){ const a = signal(0); const b = computed(()=>1); return { a, b }; } }');
+  assert.ok(s.has('a') && s.has('b'), 'signal/computed 束縛を拾う');
+  // props キーも signal 系（accessor）として扱う
+  const s2 = scanSignals('export default { props: { title: { type: "string" } }, setup(){ return {}; } }');
+  assert.ok(s2.has('title'), 'props キーも拾う');
 });
