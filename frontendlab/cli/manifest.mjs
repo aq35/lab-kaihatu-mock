@@ -6,7 +6,7 @@
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { manifest } from '../plugins/sunao/compile.mjs';
+import { manifest } from '../sunao/compile.mjs';
 
 const args = process.argv.slice(2);
 const pretty = args.includes('--pretty');

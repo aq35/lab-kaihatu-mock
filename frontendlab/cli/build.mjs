@@ -15,7 +15,7 @@ import { createHash } from 'node:crypto';
 import os from 'node:os';
 import { createRequire } from 'node:module';
 import esbuild from 'esbuild';
-import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
+import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const require = createRequire(import.meta.url);
 const args = process.argv.slice(2);

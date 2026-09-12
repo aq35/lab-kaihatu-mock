@@ -7,16 +7,16 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import esbuild from 'esbuild';
-import { signal, effect, computed, batch, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, windowed, windowedVar, renderComponentToString } from '../plugins/sunao/runtime.mjs';
-import { recipeStyle } from '../plugins/sunao/theme.mjs';
-import { RECIPE_PROPS, RECIPE_KINDS } from '../plugins/sunao/recipe-vocab.mjs';
-import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../plugins/sunao/compile.mjs';
-import { formatSFC } from '../plugins/sunao/format.mjs';
-import { manifest, autofix } from '../plugins/sunao/compile.mjs';
-import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
+import { signal, effect, computed, batch, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, windowed, windowedVar, renderComponentToString } from '../sunao/runtime.mjs';
+import { recipeStyle } from '../sunao/theme.mjs';
+import { RECIPE_PROPS, RECIPE_KINDS } from '../sunao/recipe-vocab.mjs';
+import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../sunao/compile.mjs';
+import { formatSFC } from '../sunao/format.mjs';
+import { manifest, autofix } from '../sunao/compile.mjs';
+import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
-const RUNTIME = resolve('plugins/sunao/runtime.mjs');
+const RUNTIME = resolve('sunao/runtime.mjs');
 
 test('reactivity: effect re-runs on signal change', () => {
   const n = signal(1);
@@ -94,15 +94,15 @@ test('scaffold: npm run new が雛形を出し、そのままビルドできる'
   const dir = mkdtempSync(join(tmpdir(), 'scaf-'));
   const app = join(dir, 'todo');
   try {
-    execFileSync('node', ['create.mjs', app], { stdio: 'ignore' });
+    execFileSync('node', ['cli/create.mjs', app], { stdio: 'ignore' });
     for (const f of ['App.sunao', 'main.js', 'index.html', 'README.md']) assert.ok(existsSync(join(app, f)), `${f} が生成される`);
     // 生成物がそのまま esbuild+sunao で通る（scss 含む）
     const r = await esbuild.build({ entryPoints: [join(app, 'main.js')], bundle: true, minify: true, format: 'iife', write: false, plugins: [sunao()], logLevel: 'silent' });
     assert.ok(r.outputFiles[0].contents.length > 0, 'バンドルできる');
     // 上書きガード: 2 回目は既存ファイルを検出して非ゼロ終了（App.sunao だけでなく全ファイル）
-    assert.throws(() => execFileSync('node', ['create.mjs', app], { stdio: 'ignore' }), '既存 dir は上書きしない');
+    assert.throws(() => execFileSync('node', ['cli/create.mjs', app], { stdio: 'ignore' }), '既存 dir は上書きしない');
     // .. 脱出は拒否
-    assert.throws(() => execFileSync('node', ['create.mjs', '../evil'], { stdio: 'ignore' }), '.. は拒否');
+    assert.throws(() => execFileSync('node', ['cli/create.mjs', '../evil'], { stdio: 'ignore' }), '.. は拒否');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -647,9 +647,9 @@ test('slots: 親の子要素が子の <slot> に差し込まれる', async () =>
   }
 });
 
-test('③ factory: node check.mjs が全部品で通る（exit 0）', () => {
+test('③ factory: node cli/check.mjs が全部品で通る（exit 0）', () => {
   // 失敗なら execFileSync が throw する
-  execFileSync('node', ['check.mjs'], { stdio: 'pipe' });
+  execFileSync('node', ['cli/check.mjs'], { stdio: 'pipe' });
 });
 
 test('実例: カレンダーが作れる（コンパイル・描画・月移動・日付選択）', async () => {
@@ -722,7 +722,7 @@ test('reactivity + render: setup 経由で状態を進めると HTML が変わ�
     const ctx = comp.setup();
     ctx.inc();
     ctx.inc();
-    const { renderToString } = await import('../plugins/sunao/runtime.mjs');
+    const { renderToString } = await import('../sunao/runtime.mjs');
     const html = renderToString(comp.render(ctx));
     assert.match(html, /<output class="value">2<\/output>/);
     assert.match(html, /現在値は 2 です/); // v-if 真
@@ -792,7 +792,7 @@ test('① warningsOf: SFC 全体から警告を非致命で取り出す', () => 
 });
 
 // ---- v0.13: 依存ゼロの自前式パーサ expr.mjs（@babel/parser 置換）----
-import { parseExpressionString, parseProgramString } from '../plugins/sunao/expr.mjs';
+import { parseExpressionString, parseProgramString } from '../sunao/expr.mjs';
 
 // テスト用に compile.mjs と同じ意味論の walker を最小再現し、free-var / call を確かめる。
 const _META = new Set(['type', 'start', 'end', 'loc', 'range', 'extra']);
@@ -853,11 +853,11 @@ test('v0.13 expr: 解析不能な稀式は throw（呼び出し側は regex に�
   assert.throws(() => parseExpressionString('@@@'));
 });
 test('v0.13 expr.mjs は第三者 import を一切持たない（依存ゼロ）', () => {
-  const src = readFileSync(resolve('plugins/sunao/expr.mjs'), 'utf8');
+  const src = readFileSync(resolve('sunao/expr.mjs'), 'utf8');
   const imports = [...src.matchAll(/^\s*import\s.+?from\s+['"]([^'"]+)['"]/gm)].map((m) => m[1]);
   assert.deepEqual(imports, [], 'expr.mjs は import を持たない');
   // compile.mjs も core は自前パーサ＋node標準のみ（@babel/parser 不使用）
-  const csrc = readFileSync(resolve('plugins/sunao/compile.mjs'), 'utf8');
+  const csrc = readFileSync(resolve('sunao/compile.mjs'), 'utf8');
   assert.ok(!/@babel\/parser/.test(csrc.replace(/^.*依存ゼロ.*$/gm, '')), 'compile.mjs は @babel/parser を import しない');
 });
 

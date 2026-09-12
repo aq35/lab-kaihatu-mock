@@ -7,7 +7,7 @@
  */
 import { writeFileSync, mkdirSync } from 'node:fs';
 import esbuild from 'esbuild';
-import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
+import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const args = process.argv.slice(2);
 // フラグの値が欠落 / 次が別フラグなら既定に戻す（--entry を末尾に置いても壊れない）。

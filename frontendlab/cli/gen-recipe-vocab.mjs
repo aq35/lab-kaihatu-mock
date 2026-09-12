@@ -2,7 +2,7 @@
  * Recipe → sunao props のコード生成（単一の真実）。
  *   node tools/gen-recipe-vocab.mjs
  * repo の contracts/{presentation-recipe,cards}.schema.json を読み、
- * plugins/sunao/recipe-vocab.mjs（RECIPE_PROPS / RECIPE_KINDS）を書き出す。
+ * sunao/recipe-vocab.mjs（RECIPE_PROPS / RECIPE_KINDS）を書き出す。
  * → 語彙を手でコピーしないので drift が原理的に起きない。
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -33,5 +33,5 @@ const out =
   `// 出典: contracts/presentation-recipe.schema.json / contracts/cards.schema.json\n` +
   `export const RECIPE_PROPS = ${JSON.stringify(props, null, 2)};\n\n` +
   `export const RECIPE_KINDS = ${JSON.stringify(kinds)};\n`;
-writeFileSync('plugins/sunao/recipe-vocab.mjs', out);
-console.log(`generated plugins/sunao/recipe-vocab.mjs  (${Object.keys(props).length} recipe props, ${kinds.length} card kinds)`);
+writeFileSync('sunao/recipe-vocab.mjs', out);
+console.log(`generated sunao/recipe-vocab.mjs  (${Object.keys(props).length} recipe props, ${kinds.length} card kinds)`);

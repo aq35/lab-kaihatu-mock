@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { existsSync } from 'node:fs';
 import esbuild from 'esbuild';
-import { sunao } from '../plugins/sunao/esbuild-plugin.mjs';
+import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const EXE = process.env.PW_CHROMIUM ?? '/opt/pw-browsers/chromium';
 // 環境のブラウザは Playwright パッケージのリビジョンと異なるので実体を明示する。無ければ skip。
@@ -272,7 +272,7 @@ test('ブラウザ: Priority Board — scoped style 注入・FLIP アニメ・�
 
 test('ブラウザ: SEO ページを prerender→hydrate（中身入りHTML・骨格adopt・対話復帰）', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
-  const { renderPage, assembleHTML } = await import('../prerender.mjs');
+  const { renderPage, assembleHTML } = await import('../cli/prerender.mjs');
   // 1) server prerender で中身入り HTML
   const page = await renderPage('fixtures/seo/Landing.sunao');
   assert.match(page.html, /AI が好きそうなコンパイラ/, 'SSR HTML に H1 の中身');

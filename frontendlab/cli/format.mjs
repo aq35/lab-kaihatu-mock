@@ -6,7 +6,7 @@
  */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { formatSFC } from './plugins/sunao/format.mjs';
+import { formatSFC } from '../sunao/format.mjs';
 
 const args = process.argv.slice(2);
 const write = args.includes('--write');

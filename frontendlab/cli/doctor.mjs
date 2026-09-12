@@ -9,7 +9,7 @@
  */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, relative, basename } from 'node:path';
-import { diagnose, analyze, autofix } from '../plugins/sunao/compile.mjs';
+import { diagnose, analyze, autofix } from '../sunao/compile.mjs';
 
 const pretty = process.argv.includes('--pretty');
 const doFix = process.argv.includes('--fix'); // 安全な自動修正（() 呼び忘れ）を適用

@@ -91,7 +91,7 @@ const rule = (n = 78) => '─'.repeat(n);
 // EXP-1: transpiler-orders
 // ============================================================================
 function expTranspilerOrders() {
-  const src = readFileSync('fixtures/app.tsx', 'utf8');
+  const src = readFileSync('research/fixtures/app.tsx', 'utf8');
   const T = [
     {
       id: 'babel', lang: 'JavaScript',
@@ -123,7 +123,7 @@ function expTranspilerOrders() {
   console.log(rule());
   for (const r of results) console.log(`${pad(r.id, 10)}${pad(r.lang, 6)}${padL(r.bytes_raw, 8)}${padL(r.bytes_gzip, 8)}${padL(r.ms_median, 10)}${padL((r.ms_median / fastest).toFixed(1) + 'x', 10)}${padL(r.deterministic ? 'yes' : 'NO', 6)}`);
   console.log(rule());
-  const out = writeReceipt('transpiler-orders', { frozen: 'frontendlab/docs/_hypotheses-transpiler-orders.md', body: { fixture: 'frontendlab/fixtures/app.tsx', fixture_bytes: bytes(src), common_ground: 'TS 型除去 + JSX automatic, target=esnext, downlevel なし, 非圧縮', results } });
+  const out = writeReceipt('transpiler-orders', { frozen: 'frontendlab/research/docs/_hypotheses-transpiler-orders.md', body: { fixture: 'frontendlab/research/fixtures/app.tsx', fixture_bytes: bytes(src), common_ground: 'TS 型除去 + JSX automatic, target=esnext, downlevel なし, 非圧縮', results } });
   console.log(`受領書: ${out}\n`);
 }
 
@@ -174,7 +174,7 @@ async function expBundleOrders() {
     console.log(rule(84));
     const big = rows[rows.length - 1];
     console.log(`N=${big.N} で: esbuild bundle は transform×N の ${(big.esbuild_transformN_per_file / big.esbuild_bundle_per_file).toFixed(1)}x 速い（IPC 償却）。oxc は esbuild-per-file の ${(big.esbuild_transformN_per_file / big.oxc_transformN_per_file).toFixed(0)}x。`);
-    const out = writeReceipt('bundle-orders', { frozen: 'frontendlab/docs/_hypotheses-exp2-3-4.md', body: { note: 'per_file = median total ms / N。esbuild bundle は IPC 1回、transform×N は IPC N回。', versions: { esbuild: pkgVer('esbuild'), oxc: pkgVer('oxc-transform'), swc: pkgVer('@swc/core') }, rows } });
+    const out = writeReceipt('bundle-orders', { frozen: 'frontendlab/research/docs/_hypotheses-exp2-3-4.md', body: { note: 'per_file = median total ms / N。esbuild bundle は IPC 1回、transform×N は IPC N回。', versions: { esbuild: pkgVer('esbuild'), oxc: pkgVer('oxc-transform'), swc: pkgVer('@swc/core') }, rows } });
     console.log(`受領書: ${out}\n`);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -217,7 +217,7 @@ async function expDependencyCost() {
     for (const r of results) console.log(`${pad(r.rung, 22)}${padL(r.initial_bytes, 12)}${padL(r.total_bytes, 12)}${padL((r.initial_bytes / own).toFixed(0) + 'x', 14)}`);
     console.log(rule(72));
     console.log(`全体依存は自作の ${(results[2].initial_bytes / own).toFixed(0)}x。遅延は初期を ${(results[3].initial_bytes / own).toFixed(1)}x に保つが総 bytes は ${results[3].total_bytes} B（消えず後ろへ移動）。`);
-    const out = writeReceipt('dependency-cost', { frozen: 'frontendlab/docs/_hypotheses-exp2-3-4.md', body: { deps: { lodash: pkgVer('lodash'), 'lodash-es': pkgVer('lodash-es') }, note: 'initial=初期ロードされる entry chunk / total=全 chunk 合計。全て minify 済み。', results } });
+    const out = writeReceipt('dependency-cost', { frozen: 'frontendlab/research/docs/_hypotheses-exp2-3-4.md', body: { deps: { lodash: pkgVer('lodash'), 'lodash-es': pkgVer('lodash-es') }, note: 'initial=初期ロードされる entry chunk / total=全 chunk 合計。全て minify 済み。', results } });
     console.log(`受領書: ${out}\n`);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -228,7 +228,7 @@ async function expDependencyCost() {
 // EXP-4: minify-orders — 単一入力を 3 native minifier で圧縮して桁を見る。
 // ============================================================================
 async function expMinifyOrders() {
-  const raw = readFileSync('fixtures/app.tsx', 'utf8');
+  const raw = readFileSync('research/fixtures/app.tsx', 'utf8');
   // 公平のため単一入力: fixture を esbuild で型除去だけした JS（minify なし）を全 minifier に通す
   const stripped = esbuild.transformSync(raw, { loader: 'tsx', jsx: 'automatic', target: 'esnext' }).code;
   const M = [
@@ -250,7 +250,7 @@ async function expMinifyOrders() {
   for (const r of results) console.log(`${pad(r.id, 10)}${padL(r.bytes_min, 9)}${padL(r.bytes_min_gzip, 12)}${padL((r.bytes_min / smallest).toFixed(2) + 'x', 8)}${padL((r.bytes_min_gzip / smallestGz).toFixed(2) + 'x', 9)}${padL(r.deterministic ? 'yes' : 'NO', 7)}`);
   console.log(rule(74));
   console.log(`型除去後 ${strippedBytes} B → minify で最小 ${smallest} B（${(strippedBytes / smallest).toFixed(2)}x 圧縮）。minifier 間の幅: raw ${(Math.max(...results.map((r) => r.bytes_min)) / smallest).toFixed(2)}x / gzip ${(Math.max(...results.map((r) => r.bytes_min_gzip)) / smallestGz).toFixed(2)}x。`);
-  const out = writeReceipt('minify-orders', { frozen: 'frontendlab/docs/_hypotheses-exp2-3-4.md', body: { input: 'fixtures/app.tsx を esbuild で型除去した JS（単一入力）', input_bytes: strippedBytes, versions: { esbuild: pkgVer('esbuild'), swc: pkgVer('@swc/core'), 'oxc-minify': pkgVer('oxc-minify') }, results } });
+  const out = writeReceipt('minify-orders', { frozen: 'frontendlab/research/docs/_hypotheses-exp2-3-4.md', body: { input: 'fixtures/app.tsx を esbuild で型除去した JS（単一入力）', input_bytes: strippedBytes, versions: { esbuild: pkgVer('esbuild'), swc: pkgVer('@swc/core'), 'oxc-minify': pkgVer('oxc-minify') }, results } });
   console.log(`受領書: ${out}\n`);
 }
 

@@ -12,9 +12,9 @@ import { join, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import esbuild from 'esbuild';
-import { compileSFC, analyze, warningsOf, CompileError } from './plugins/sunao/compile.mjs';
+import { compileSFC, analyze, warningsOf, CompileError } from '../sunao/compile.mjs';
 import { basename } from 'node:path';
-import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
+import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const ROOT = 'fixtures';
 const BUDGET = { raw: 8192, gzip: 4096 }; // 入口ごとの既定予算

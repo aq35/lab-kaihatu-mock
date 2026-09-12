@@ -11,7 +11,7 @@
  *
  * これ単体で「Cargo 並みの思想」= 統合・決定論・fail-closed・エラーが教える、を LSP でも通す。
  */
-import { diagnose, symbols, manifest } from '../plugins/sunao/compile.mjs';
+import { diagnose, symbols, manifest } from '../sunao/compile.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';

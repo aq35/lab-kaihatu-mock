@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 
 // 最小 LSP クライアント: フレーミング・id 応答待ち・通知バッファ。
 function makeClient() {
-  const child = spawn('node', [resolve('tools/lsp.mjs')], { stdio: ['pipe', 'pipe', 'inherit'] });
+  const child = spawn('node', [resolve('cli/lsp.mjs')], { stdio: ['pipe', 'pipe', 'inherit'] });
   let buf = Buffer.alloc(0);
   const waiters = new Map(); // id -> resolve
   const notes = []; // {method, params}

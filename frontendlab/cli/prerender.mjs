@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import esbuild from 'esbuild';
-import { sunao } from './plugins/sunao/esbuild-plugin.mjs';
+import { sunao } from '../sunao/esbuild-plugin.mjs';
 
 const args = process.argv.slice(2);
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
