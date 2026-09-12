@@ -1070,3 +1070,44 @@ test('v0.15 fuzz: 生成式で自前パーサが Babel と一致（silent-wrong 
   }
   assert.ok(compared >= 150, `十分比較した: ${compared}`);
 });
+
+// ---- v0.15: テンプレ・ファズ — parseTemplate + genNode を生成空間で検証 ----
+// v-if / v-for(:key) / :bind / @event / コンポーネント合成 / 補間 / ネストを乱択生成し、
+// (1) コンパイルが通る (2) 生成 JS が構文として有効 (3) 決定論、を確かめる。
+test('v0.15 fuzz: 生成テンプレ（v-if/v-for/bind/event/component）がコンパイル＆有効な JS＆決定論', async () => {
+  const rng = _mulberry32(0xBEEF);
+  const pick = (a) => a[Math.floor(rng() * a.length)];
+  const TAGS = ['div', 'section', 'span', 'p', 'ul', 'li', 'button', 'strong', 'output', 'header'];
+  const SIG = ['s0', 's1'];
+  const H = ['h0', 'h1'];
+  const sigExpr = () => pick(SIG) + '()';
+  const cond = () => pick([sigExpr() + ' > 0', '!' + sigExpr(), sigExpr() + ' === 1']);
+  const bindExpr = (bound) => { const o = [sigExpr(), 'p0', cond() + " ? 'a' : 'b'"]; if (bound.has('it')) o.push('it.id'); return pick(o); };
+  const attrs = (bound) => { let s = ''; if (rng() < 0.5) s += ' class="c"'; const r = rng(); if (r < 0.3) s += ` :class="${bindExpr(bound)}"`; else if (r < 0.5) s += ` :title="${bindExpr(bound)}"`; if (rng() < 0.4) s += ` @click="${pick(H)}"`; return s; };
+  const text = (bound) => { const o = ['hi', '{{ ' + sigExpr() + ' }}', '{{ p0 }}']; if (bound.has('it')) o.push('{{ it.id }}'); return pick(o); };
+  function el(depth, bound) {
+    const tag = pick(TAGS);
+    let dir = '', childBound = bound;
+    const r = rng();
+    if (depth > 0 && r < 0.25) dir = ` v-if="${cond()}"`;
+    else if (depth > 0 && r < 0.45) { dir = ` v-for="it in items()" :key="it.id"`; childBound = new Set([...bound, 'it']); }
+    let inner;
+    if (depth <= 0 || rng() < 0.4) inner = text(childBound);
+    else { const k = 1 + Math.floor(rng() * 2); const parts = []; for (let i = 0; i < k; i++) parts.push(rng() < 0.5 ? text(childBound) : el(depth - 1, childBound)); inner = parts.join(''); }
+    return `<${tag}${attrs(childBound)}${dir}>${inner}</${tag}>`;
+  }
+  let n = 0;
+  for (let i = 0; i < 80; i++) {
+    const useChild = rng() < 0.25;
+    const imp = useChild ? "import Child from './Child.sunao';\n" : '';
+    const script = `<script>${imp}export default { setup(){ const s0 = signal(0); const s1 = signal(1); const items = signal([{ id: 1 }, { id: 2 }]); const h0 = () => {}; const h1 = () => {}; const p0 = 'x'; return { s0, s1, items, h0, h1, p0 }; } }</script>`;
+    const body = el(3, new Set()) + (useChild ? `<Child :n="${sigExpr()}" />` : '');
+    const src = `<template><div>${body}</div></template>${script}`;
+    let mod;
+    assert.doesNotThrow(() => { mod = compileSFC(src, { runtime: RUNTIME }); }, `compile: ${body}`);
+    await esbuild.transform(mod, { loader: 'js' });                 // 生成 JS が構文として有効
+    assert.equal(compileSFC(src, { runtime: RUNTIME }), mod, '決定論（2 回一致）');
+    n++;
+  }
+  assert.ok(n >= 60, `回した: ${n}`);
+});

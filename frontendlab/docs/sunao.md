@@ -221,6 +221,7 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 **先取り（ファズ）**: `tests/sunao.test.mjs` に**プロパティ/ファズテスト**を 2 段追加。
 1. **setup ファズ**: ネスト return・for・switch・try・分割代入を乱択で混ぜた setup を 30+ 本コンパイルし、**返却済みの名前が false な未宣言エラーにならない**ことを検証。dashboard で踏んだ returnNames の穴の形が回帰に入っている。
 2. **式ファズ（生成空間で差分ガード）**: メンバ/呼び出し/optional chaining/三項/アロー/オブジェクト/配列/テンプレリテラルを**乱択生成した式を 400 本**、自前パーサと Babel で解析して **used/calls が一致**することを検証（150+ 本比較・`@babel/parser` が居る dev のみ）。＝固定コーパスを超えて「未知の式で自前が Babel とズレないか」を CI で見張る。
+3. **テンプレファズ（parseTemplate＋genNode）**: `v-if`/`v-for(:key)`/`:bind`/`@event`/コンポーネント合成/補間/ネストを**乱択生成したテンプレを 80 本**、(1) コンパイルが通る (2) 生成 JS が **esbuild で構文的に有効** (3) **決定論（2 回一致）** を検証。＝テンプレ側の未知の組み合わせで codegen が壊れないかを CI で見張る。
 
 **入口の堅牢化**: `extractBlocks` を、`<script setup>` 等の**属性つき開始タグ**を許し、**未閉じ**（`</template>`/`</script>`/`</style>` 欠落）は専用コード（`SUNAO_*_UNCLOSED`）で fail-closed にした（誤解を招く「no template」エラーを解消）。
 
