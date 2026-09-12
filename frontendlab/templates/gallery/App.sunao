@@ -72,7 +72,7 @@ export default {
 <style lang="scss">
 $fg: oklch(24% 0.02 280);
 // 見出し用の筆記体スタック。Web フォント（Dancing Script）→ OS の筆記体 → 汎用 cursive の順に落ちる。
-$script: "Dancing Script", "Great Vibes", "Snell Roundhand", "Segoe Script", "Brush Script MT", cursive;
+$script: "sunao Script", "Dancing Script", "Great Vibes", "Snell Roundhand", "Segoe Script", "Brush Script MT", cursive;
 .gx { font-family: system-ui, "Noto Sans JP", sans-serif; color: $fg; max-width: 72rem; margin: 0 auto; padding: 0 1rem 3rem; }
 .top { display: flex; align-items: center; gap: .5rem 1rem; flex-wrap: wrap; padding: 1rem 0; position: sticky; top: 0; background: #fff; z-index: 1; }
 .brand { font-family: $script; font-size: 2.1rem; font-weight: 700; line-height: 1; border: 0; background: none; cursor: pointer; padding: 0; min-width: 0; max-width: 100%; overflow-wrap: anywhere; background: linear-gradient(90deg, oklch(60% 0.2 20), oklch(60% 0.2 320)); -webkit-background-clip: text; background-clip: text; color: transparent; }

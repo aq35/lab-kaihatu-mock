@@ -69,7 +69,7 @@ export default {
 <style lang="scss">
 $fg: oklch(24% 0.02 260);
 $accent: oklch(52% 0.16 250);
-$script: "Dancing Script", "Great Vibes", "Snell Roundhand", "Segoe Script", "Brush Script MT", cursive;
+$script: "sunao Script", "Dancing Script", "Great Vibes", "Snell Roundhand", "Segoe Script", "Brush Script MT", cursive;
 .wiki { font-family: system-ui, "Noto Sans JP", sans-serif; color: $fg; max-width: 66rem; margin: 0 auto; padding: 0 1rem 4rem; }
 .top { display: flex; align-items: center; gap: .5rem 1rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid #eef; }
 .brand { font-family: $script; font-size: 2rem; font-weight: 700; line-height: 1; border: 0; background: none; cursor: pointer; padding: 0; min-width: 0; max-width: 100%; overflow-wrap: anywhere; color: $accent; }

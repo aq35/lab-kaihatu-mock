@@ -1164,3 +1164,19 @@ test('fonts: OFL subset(sunao Rounded)が有効な WOFF2＋ライセンス同梱
   assert.ok(buf.length < 20000, `subset で軽量: ${buf.length}B`);
   assert.match(readFileSync(resolve('fonts/OFL-Comfortaa.txt'), 'utf8'), /SIL OPEN FONT LICENSE/i, 'ライセンス同梱');
 });
+
+test('templates: 外部フォント依存が無い（全部自前ホスト・fail-closed）', async () => {
+  const { readdirSync } = await import('node:fs');
+  const base = resolve('templates');
+  for (const t of readdirSync(base, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)) {
+    const idx = join(base, t, 'index.html');
+    if (!existsSync(idx)) continue;
+    const html = readFileSync(idx, 'utf8');
+    assert.doesNotMatch(html, /fonts\.googleapis|fonts\.gstatic|https?:\/\/[^"']*\.woff2?/i, `${t}: index.html に外部フォント参照がない`);
+    // 自前フォントを使うテンプレは woff2 とライセンスを同梱している
+    if (/@font-face/i.test(html)) {
+      assert.ok(existsSync(join(base, t, 'heading.woff2')), `${t}: 同梱 woff2 がある`);
+      assert.ok(existsSync(join(base, t, 'heading-font-OFL.txt')), `${t}: OFL ライセンス同梱`);
+    }
+  }
+});

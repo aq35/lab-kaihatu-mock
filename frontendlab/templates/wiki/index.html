@@ -3,11 +3,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>__APP_NAME__</title>
 <!--
-  見出し用の筆記体フォント（任意の外部リソース＝アプリ側だけ。sunao 本体に依存は足さない）。
-  ネットが無い環境では CSS の cursive フォールバック（OS の筆記体）に自動で落ちる。
+  見出し用の筆記体フォント＝自前ホスト（同梱の heading.woff2）。外部への通信ゼロ・オフライン可。
+  中身は Dancing Script(SIL OFL) を subset＋リネームしたもの（ライセンス: heading-font-OFL.txt）。
+  読み込めない環境では CSS の cursive フォールバック（OS の筆記体）に自動で落ちる。
 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'sunao Script'; src: url('./heading.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+</style>
 <div id="app"></div>
 <script type="module" src="./main.js"></script>
