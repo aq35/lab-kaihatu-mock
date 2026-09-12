@@ -1,17 +1,14 @@
 <template>
   <div class="watch">
     <button class="back" @click="back()">← 一覧へ</button>
-
     <div class="stage" :class="playing() ? 'is-playing' : 'is-paused'">
-      <video
-        class="tube-video" playsinline preload="metadata"
+      <video class="tube-video" playsinline preload="metadata"
         @loadedmetadata="onMeta($event)" @timeupdate="onTime($event)"
         @play="playing.set(true)" @pause="playing.set(false)"
         @waiting="buffering.set(true)" @playing="buffering.set(false)"
         @click="toggle()"></video>
       <div class="spinner" v-if="buffering()">読み込み中…</div>
     </div>
-
     <div class="bar">
       <button class="ctl" @click="toggle()">{{ playing() ? '⏸' : '▶' }}</button>
       <span class="time">{{ fmt(current()) }} / {{ fmt(duration()) }}</span>
@@ -21,7 +18,6 @@
       <button class="ctl rate" @click="cycleRate()">{{ rate() }}×</button>
       <button class="ctl" @click="full()">⛶</button>
     </div>
-
     <h1 class="title">{{ video().title }}</h1>
     <p class="chan">{{ video().channel }}・{{ video().views }}</p>
   </div>

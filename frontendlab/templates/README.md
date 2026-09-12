@@ -5,12 +5,18 @@
 
 | template | 中身 | 示すもの |
 |---|---|---|
-| `basic`（既定） | `App.sunao` / `main.js` / `index.html` / `README.md` | signal カウンタ・scoped SCSS。最小の出発点 |
-| `video` | ＋ `Player.sunao` / `stream.js` / `videos.js` | **YouTube 風ストリーミング**: hash ルーティング（一覧 ⇄ 視聴）・`<video>` のカスタムコントロール（signal 連動）・**HLS(adaptive) / progressive MP4 両対応**（`stream.js` は依存ゼロ、hls.js はアプリ側の任意 CDN 依存） |
+| `basic`（既定） | App / main / index / README | signal カウンタ・scoped SCSS。最小の出発点 |
+| `form` | ＋検証 | `v-model` 双方向・**派生値としての検証**（computed）・`@submit` |
+| `table` | 並び替え/絞り込み | keyed `v-for`・`computed`（filter→sort）・`v-model` フィルタ |
+| `dashboard` | KPI＋時計 | `now`（実時計）・`computed` メトリクス・グリッド |
+| `video` | ＋ `Player.sunao` / `stream.js` / `videos.js` | **YouTube 風ストリーミング**: ルーティング（一覧 ⇄ 視聴）・`<video>` のカスタムコントロール（signal 連動）・**HLS(adaptive) / progressive MP4 両対応**（`stream.js` は依存ゼロ、hls.js はアプリ側の任意 CDN 依存） |
 
 ```bash
-npm run new -- apps/todo                    # basic
-npm run new -- apps/tube --template video   # video
+npm run new -- apps/todo                     # basic（既定）
+npm run new -- apps/signup --template form
+npm run new -- apps/users  --template table
+npm run new -- apps/kpi    --template dashboard
+npm run new -- apps/tube   --template video
 ```
 
 - 展開先に同名ファイルがあれば**上書きせず中止**（fail-closed）。`..` での脱出も拒否。

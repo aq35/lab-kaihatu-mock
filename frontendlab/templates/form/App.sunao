@@ -1,0 +1,58 @@
+<template>
+  <main class="form">
+    <h1>{{ title }}</h1>
+    <form @submit="submit($event)">
+      <label class="field">
+        <span>名前</span>
+        <input type="text" v-model="name" placeholder="山田 太郎">
+        <em class="err" v-if="touched() && errName()">{{ errName() }}</em>
+      </label>
+      <label class="field">
+        <span>メール</span>
+        <input type="email" v-model="email" placeholder="you@example.com">
+        <em class="err" v-if="touched() && errEmail()">{{ errEmail() }}</em>
+      </label>
+      <label class="field">
+        <span>年齢</span>
+        <input type="number" v-model="age" min="0">
+        <em class="err" v-if="touched() && errAge()">{{ errAge() }}</em>
+      </label>
+      <button class="submit" type="submit">登録</button>
+    </form>
+    <p class="ok" v-if="done()">✓ {{ name() }} さんを登録しました</p>
+  </main>
+</template>
+
+<script>
+export default {
+  name: '__APP_NAME__',
+  setup() {
+    const title = '__APP_NAME__';
+    const name = signal('');
+    const email = signal('');
+    const age = signal('');
+    const touched = signal(false);
+    const done = signal(false);
+    // 検証は「派生値」= computed/関数（テンプレでも呼んで読む）。
+    const errName = () => (name().trim() ? '' : '名前は必須です');
+    const errEmail = () => (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email()) ? '' : '正しいメール形式で');
+    const errAge = () => { const n = Number(age()); return age() !== '' && n >= 0 && n < 200 ? '' : '0〜199 の数値で'; };
+    const valid = () => !errName() && !errEmail() && !errAge();
+    const submit = (e) => { e.preventDefault(); touched.set(true); if (valid()) done.set(true); };
+    return { title, name, email, age, touched, done, errName, errEmail, errAge, submit };
+  },
+};
+</script>
+
+<style lang="scss">
+$accent: oklch(55% 0.18 250);
+$bad: oklch(58% 0.2 25);
+.form { max-width: 26rem; margin: 3rem auto; font-family: system-ui, "Noto Sans JP", sans-serif; }
+h1 { font-size: 1.3rem; }
+.field { display: flex; flex-direction: column; gap: .3rem; margin: 1rem 0; }
+.field > span { font-size: .85rem; color: #556; }
+input { font: inherit; padding: .5rem .6rem; border: 1px solid #ccd; border-radius: 8px; }
+.err { color: $bad; font-size: .8rem; font-style: normal; }
+.submit { font: inherit; font-weight: 600; padding: .55rem 1.1rem; border: 0; border-radius: 10px; background: $accent; color: #fff; cursor: pointer; }
+.ok { margin-top: 1rem; color: oklch(55% 0.15 150); font-weight: 600; }
+</style>

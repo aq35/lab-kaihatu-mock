@@ -966,3 +966,10 @@ test('examples: README index が全 .sunao を網羅し、参照先が実在す�
   const refs = new Set([...readme.matchAll(/[`/]((?:examples\/)?[\w-]+\/[\w-]+\.(?:sunao|js))/g)].map((m) => m[1].replace(/^examples\//, '')));
   for (const r of refs) assert.ok(existsSync(join(base, r)), `README が参照する例が存在しない: ${r}`);
 });
+
+test('② returnNames: setup 内のネストした return {} を top-level 返却と誤認しない（回帰）', () => {
+  // .map(() => { return {...} }) が先に出ても、setup の return { items } を正しく top-level とみなす。
+  const src = '<template><p>{{ items() }}</p></template>' +
+    '<script>export default { setup(){ const build = () => [1,2].map((n) => { return { n, sq: n * n }; }); const items = () => build(); return { items }; } }</script>';
+  assert.doesNotThrow(() => compileSFC(src, { runtime: RUNTIME }), 'ネスト return に惑わされない');
+});

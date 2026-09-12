@@ -36,7 +36,7 @@ npm run verify                              # check（決定論/予算/契約）
 | [`sunao/`](sunao/) | 本体（依存ゼロ）: compile / runtime / expr（自前式パーサ）/ esbuild-plugin / theme / format / recipe-vocab |
 | [`cli/`](cli/) | コマンド: build / dev / check / create / prerender / format / diagnose / doctor / manifest / lsp / budget-gate / gen-recipe-vocab |
 | [`examples/`](examples/) | 動くデモ兼 few-shot: app-ui（対話・DnD・カレンダー・ルーティング・FLIP）/ seo（SSG→hydrate）/ static-ui |
-| [`templates/`](templates/) | `npm run new` の雛形: `basic` / `video`（YouTube 風ストリーミング） |
+| [`templates/`](templates/) | `npm run new` の雛形: `basic` / `form` / `table` / `dashboard` / `video`（YouTube 風ストリーミング） |
 | [`docs/`](docs/) | reference.md（AI 向け 1 枚）/ sunao.md（変遷）/ borrowings.md ほか設計 doc |
 | `tests/` | unit + 実機(Playwright) + LSP。`tests/fixtures/` はテスト専用入力 |
 | `bench/` | sunao vs Vue3 の実測（受領書つき） |

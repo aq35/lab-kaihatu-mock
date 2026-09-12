@@ -4,17 +4,17 @@
       <button class="brand" @click="go('/')">▶ __APP_NAME__</button>
       <span class="sub">sunao streaming demo</span>
     </header>
-
     <section class="feed" v-if="!watching()">
       <button class="card" v-for="v in videos" :key="v.id" @click="go('/watch/' + v.id)">
-        <span class="thumb" :style="thumbStyle(v)"><span class="dur">{{ v.duration }}</span></span>
+        <span class="thumb" :style="thumbStyle(v)">
+          <span class="dur">{{ v.duration }}</span>
+        </span>
         <span class="meta">
           <strong class="t">{{ v.title }}</strong>
           <span class="c">{{ v.channel }}・{{ v.views }}</span>
         </span>
       </button>
     </section>
-
     <Player v-if="watching()" :video="current()" />
   </div>
 </template>

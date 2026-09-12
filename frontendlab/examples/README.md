@@ -18,6 +18,7 @@ sunao で「このパターンはどう書くか」を **1 例 1 パターン**�
 | 非同期取得（loading/error）・実時計 | `app-ui/OwnerCardDemo.sunao` | `resource` `now` `recipeStyle` |
 | ステートマシン・store・provide/inject・入力検証 | `app-ui/DeployConsole.sunao` ＋ `app-ui/StatusBadge.sunao` | `machine` `store` `provide`/`inject` `decode` |
 | SSG（中身入り HTML）→ hydrate（SEO） | `seo/Landing.sunao` | `prerender` `hydrate` |
+| ストリーミング動画（YouTube 風・HLS/MP4） | `video/App.sunao` ＋ `video/Player.sunao` | `useRoute` `<video>` `onMount` `effect` |
 | 静的（runtime を一切積まない） | `static-ui/Hello.sunao` | —（純出力） |
 
 ## そのまま動かせる入口（entry = `*-main.js`）
@@ -39,6 +40,7 @@ npm run prerender -- --entry examples/seo/Landing.sunao --out dist/seo/index.htm
 | `app-ui/owner-main.js` | OwnerCardDemo | resource・now・enum props |
 | `app-ui/deploy-main.js` | DeployConsole | machine・store・provide・resource・decode（全部盛り） |
 | `seo/landing-main.js` | Landing | SSG → hydrate |
+| `video/video-main.js` | App（＋Player） | ルーティング＋`<video>` プレーヤ（HLS/MP4 ストリーミング） |
 | `static-ui/main.js` | Hello | 静的 |
 
 ## import される部品（単体では動かさない）

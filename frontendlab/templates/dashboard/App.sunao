@@ -1,0 +1,59 @@
+<template>
+  <main class="dash">
+    <header class="head">
+      <h1>{{ title }}</h1>
+      <span class="clock">{{ clock() }}</span>
+      <button class="refresh" @click="refresh()">↻ 更新</button>
+    </header>
+    <section class="kpis">
+      <article class="kpi" v-for="m in metrics()" :key="m.key">
+        <span class="label">{{ m.label }}</span>
+        <strong class="value">{{ m.value }}</strong>
+        <span class="delta" :class="m.delta >= 0 ? 'up' : 'down'">
+          {{ m.delta >= 0 ? '▲' : '▼' }} {{ m.abs }}%
+        </span>
+      </article>
+    </section>
+  </main>
+</template>
+
+<script>
+export default {
+  name: '__APP_NAME__',
+  setup() {
+    const title = '__APP_NAME__';
+    const t = now(1000);                                   // 実時計 signal（1 秒 tick・SSR では止まる）
+    const clock = () => new Date(t()).toLocaleTimeString('ja-JP');
+    const seed = signal(0);
+    const defs = [
+      { key: 'active', label: 'アクティブユーザ' },
+      { key: 'rev', label: '売上（万円）' },
+      { key: 'conv', label: 'CVR（%）' },
+      { key: 'err', label: 'エラー率（‰）' },
+    ];
+    const rnd = (n) => Math.floor((Math.sin(seed() * 9 + n * 3) * 0.5 + 0.5) * 100); // 決定論的な擬似乱数
+    const metrics = computed(() => defs.map((m, i) => {
+      const delta = rnd(i) - 50;
+      return { ...m, value: rnd(i) * 13, delta, abs: Math.abs(delta) };
+    }));
+    const refresh = () => seed.update((v) => v + 1);
+    return { title, clock, metrics, refresh };
+  },
+};
+</script>
+
+<style lang="scss">
+$accent: oklch(55% 0.18 250);
+.dash { max-width: 52rem; margin: 2.5rem auto; font-family: system-ui, "Noto Sans JP", sans-serif; padding: 0 1rem; }
+.head { display: flex; align-items: baseline; gap: .8rem; }
+h1 { font-size: 1.3rem; margin: 0; }
+.clock { color: #889; font-variant-numeric: tabular-nums; }
+.refresh { margin-left: auto; font: inherit; border: 1px solid #ccd; background: #fff; border-radius: 8px; padding: .35rem .7rem; cursor: pointer; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 1rem; margin-top: 1.2rem; }
+.kpi { border: 1px solid #eef; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: .3rem; }
+.label { color: #667; font-size: .82rem; }
+.value { font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.delta { font-size: .82rem; }
+.delta.up { color: oklch(55% 0.15 150); }
+.delta.down { color: oklch(58% 0.2 25); }
+</style>

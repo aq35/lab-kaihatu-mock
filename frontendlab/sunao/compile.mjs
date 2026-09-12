@@ -722,14 +722,35 @@ function balancedBlock(script, keyword) {
 }
 // `return { ... }` の **トップレベルのキー名**を balanced に取り出す（ネストした {…} でも壊れない）。
 // 旧実装は /return\s*\{([^{}]*)\}/ でネスト object があると空になり、未宣言参照を誤検出していた。
+// 文字列/コメント内の中身を空白で潰す（brace 深度を正しく測るため。長さ・改行は保つ）。
+function maskStringsComments(s) {
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '/' && s[i + 1] === '/') { out += '  '; i += 2; while (i < s.length && s[i] !== '\n') { out += ' '; i++; } if (i < s.length) out += '\n'; continue; }
+    if (c === '/' && s[i + 1] === '*') { out += '  '; i += 2; while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) { out += s[i] === '\n' ? '\n' : ' '; i++; } out += '  '; i++; continue; }
+    if (c === '"' || c === "'" || c === '`') { const q = c; out += ' '; i++; while (i < s.length && s[i] !== q) { if (s[i] === '\\') { out += '  '; i++; } else out += s[i] === '\n' ? '\n' : ' '; i++; } out += ' '; continue; }
+    out += c;
+  }
+  return out;
+}
 function returnNames(script) {
-  const m = /\breturn\s*\{/.exec(script);
-  if (!m) return [];
-  const open = m.index + m[0].length - 1;
+  // setup 自身の返却＝**最も浅い brace 深度**の `return {`。ネストした arrow 内 return を誤って拾わない。
+  // 文字列/コメントは潰して深度を測る（位置・長さは保存）。
+  const masked = maskStringsComments(script);
+  const re = /\breturn\s*\{/g;
+  let mm, open = -1, bestDepth = Infinity;
+  while ((mm = re.exec(masked))) {
+    let depth = 0;
+    for (let i = 0; i < mm.index; i++) { const c = masked[i]; if (c === '{') depth++; else if (c === '}') depth--; }
+    if (depth <= bestDepth) { bestDepth = depth; open = mm.index + mm[0].length - 1; } // 同深度は後勝ち（最終 return）
+  }
+  if (open < 0) return [];
   let depth = 0, body = null;
   for (let i = open; i < script.length; i++) {
-    if (script[i] === '{') depth++;
-    else if (script[i] === '}' && --depth === 0) { body = script.slice(open + 1, i); break; }
+    const c = masked[i];
+    if (c === '{') depth++;
+    else if (c === '}' && --depth === 0) { body = script.slice(open + 1, i); break; }
   }
   if (body == null) return [];
   const names = [];

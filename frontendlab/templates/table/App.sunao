@@ -1,0 +1,65 @@
+<template>
+  <main class="tbl">
+    <h1>{{ title }}</h1>
+    <input class="q" type="search" v-model="q" placeholder="名前・役割で絞り込み…">
+    <table>
+      <thead>
+        <tr>
+          <th @click="sortBy('name')">名前 {{ arrow('name') }}</th>
+          <th @click="sortBy('role')">役割 {{ arrow('role') }}</th>
+          <th class="num" @click="sortBy('score')">スコア {{ arrow('score') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="r in rows()" :key="r.id">
+          <td>{{ r.name }}</td>
+          <td>{{ r.role }}</td>
+          <td class="num">{{ r.score }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="empty" v-if="!rows().length">該当なし</p>
+    <p class="count">{{ rows().length }} 件</p>
+  </main>
+</template>
+
+<script>
+export default {
+  name: '__APP_NAME__',
+  setup() {
+    const title = '__APP_NAME__';
+    const data = [
+      { id: 1, name: 'Alice', role: 'admin', score: 92 },
+      { id: 2, name: 'Bob', role: 'editor', score: 76 },
+      { id: 3, name: 'Carol', role: 'viewer', score: 63 },
+      { id: 4, name: 'Dave', role: 'editor', score: 88 },
+      { id: 5, name: 'Erin', role: 'admin', score: 71 },
+      { id: 6, name: 'Frank', role: 'viewer', score: 54 },
+    ];
+    const q = signal('');
+    const key = signal('score');
+    const dir = signal(-1); // 1=昇順 / -1=降順
+    const sortBy = (k) => { if (key() === k) dir.update((d) => -d); else { key.set(k); dir.set(1); } };
+    const arrow = (k) => (key() === k ? (dir() > 0 ? '▲' : '▼') : '');
+    const rows = computed(() => {
+      const t = q().trim().toLowerCase();
+      const f = data.filter((r) => !t || (r.name + ' ' + r.role).toLowerCase().includes(t));
+      const k = key(); const s = dir();
+      return [...f].sort((a, b) => (a[k] < b[k] ? -s : a[k] > b[k] ? s : 0));
+    });
+    return { title, q, sortBy, arrow, rows };
+  },
+};
+</script>
+
+<style lang="scss">
+.tbl { max-width: 40rem; margin: 3rem auto; font-family: system-ui, "Noto Sans JP", sans-serif; }
+h1 { font-size: 1.3rem; }
+.q { font: inherit; padding: .5rem .6rem; border: 1px solid #ccd; border-radius: 8px; width: 100%; margin: .5rem 0 1rem; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid #eef; }
+th { cursor: pointer; user-select: none; font-size: .9rem; color: #445; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.empty { color: #889; }
+.count { color: #889; font-size: .85rem; text-align: right; }
+</style>

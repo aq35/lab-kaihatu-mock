@@ -188,7 +188,23 @@ LSP フレーミングも手書き（Content-Length + JSON-RPC）＝依存ゼロ
 | **明文化＋先回り** | `expr.mjs` 冒頭に対応/非対応文法を列挙。一番来そうな **async アロー/`await`** は先に AST 対応（`@click="async ()=>await save()"` も解析される） |
 | **拡張が安い** | 新演算子＝Pratt テーブルに 1 行、新単項＝集合に 1 語。Babel と違いリリース待ち不要 |
 
-実証: 実 fixtures 116 式は Babel と**完全一致・regex 落ちゼロ**、難式 53 で **silent-wrong 0**（テスト 92→101 green）。
+実証: 実 examples 116 式は Babel と**完全一致・regex 落ちゼロ**、難式 53 で **silent-wrong 0**（テスト 92→101 green）。
+
+## v0.14 で実装した「テンプレ量産・ストリーミング動画・リポジトリ再構成」
+
+「展開しやすく」を一段進め、`npm run new` を**テンプレ機構**にし、**YouTube 風ストリーミング**まで雛形化した。あわせてディレクトリを **sunao 主役**に再構成（`sunao/` `cli/` `examples/` `templates/` `research/`）。
+
+| 項目 | 実装 | 検証 |
+|---|---|---|
+| **リポジトリ再構成** | `plugins/sunao→sunao`・CLI を `cli/` に集約・デモを `examples/`（few-shot 兼）・計測実験を `research/` に隔離。全 import/scripts/docs 追随 | verify green・`git mv` で履歴保持・研究実験(exp1)も再配置後に動作確認 |
+| **few-shot index** | `examples/README.md`（パターン → 見る例）。drift チェックで**全 .sunao 掲載＋参照先実在**を検証 | 腐らない正例（載せ忘れ・リンク切れは test 赤） |
+| **context の載せ方（型）** | AGENTS.md に「reference＋近い正例1〜2＋doctor」の 3 点セットを明記。学習データ非依存を in-context で埋める運用 | — |
+| **テンプレ機構** | `node cli/create.mjs <dir> [--template <name>]`。`templates/<name>/` を再帰コピー＋`__APP_NAME__`/`__APP_DIR__` 置換。上書き/`..`/不明テンプレは fail-closed | 各テンプレを**展開→ビルド**で検証 |
+| **テンプレ 5 種** | `basic`（カウンタ）・`form`（`v-model`＋派生検証）・`table`（keyed＋computed 並替/絞込）・`dashboard`（`now` 実時計＋KPI）・`video`（YouTube 風） | 5 種すべてバンドル可 |
+| **ストリーミング動画** | `video` テンプレ＋`examples/video`: hash ルーティング（一覧⇄視聴）・`<video>` を `onMount` で掴み `effect` で stream 貼り直し・signal 連動のカスタムコントロール。`stream.js`（**依存ゼロ**）が ネイティブHLS / hls.js(CDN・任意) / progressive を選択＝**HLS(adaptive)＋MP4 両対応** | **実機ブラウザテスト**: フィード→視聴の routing・メディアイベント→signal→UI の配線・戻ると unmount |
+| **compiler 修正** | `returnNames` が **最も浅い brace 深度の `return {`**（＝setup 自身の返却）を選ぶよう修正。`.map(()=>{ return {...} })` 等のネスト return を top-level と誤認しなくなった（文字列/コメントは潰して深度計測） | 回帰テスト追加。dashboard テンプレで顕在化→修正（92→105 green） |
+
+これで **書く（new でテンプレ）→ 動かす（dev）→ 確かめる（verify）** が、動画ストリーミングのような実アプリまで一続きになった。
 
 ## v0.2 の柱（維持）
 

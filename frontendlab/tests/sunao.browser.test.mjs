@@ -432,3 +432,43 @@ test('ブラウザ: onMount は DOM 挿入後に走る（setup 時は未挿入�
     } finally { await browser.close(); server.close(); }
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('ブラウザ: video 例 — フィード→視聴の routing と <video> コントロール配線', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({ entryPoints: ['examples/video/video-main.js'], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); }
+    else { res.setHeader('content-type', 'text/html'); res.end(html); }
+  });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'domcontentloaded' });
+    // フィード（一覧）
+    await page.waitForSelector('.card');
+    assert.equal(await page.locator('.card').count(), 4, 'カタログ 4 件が並ぶ');
+    // 視聴ページへ（hash routing）
+    await page.locator('.card').first().click();
+    await page.waitForSelector('.tube-video');
+    assert.ok((await page.textContent('.title')).trim().length > 0, 'タイトルが出る＝Player mount');
+    assert.equal(await page.locator('.seek').count(), 1, 'シークバーがある');
+    assert.equal(await page.locator('.vol').count(), 1, '音量バーがある');
+    // メディアイベント → signal → UI の配線（実再生は不要・headless で決定論的に検証）
+    const playBtn = page.locator('.bar .ctl').first();
+    await page.evaluate(() => document.querySelector('.tube-video').dispatchEvent(new Event('play')));
+    assert.equal((await playBtn.textContent()).trim(), '⏸', 'play イベントで ⏸ に');
+    await page.evaluate(() => document.querySelector('.tube-video').dispatchEvent(new Event('pause')));
+    assert.equal((await playBtn.textContent()).trim(), '▶', 'pause イベントで ▶ に');
+    // 一覧へ戻る
+    await page.locator('.back').click();
+    await page.waitForSelector('.card');
+    assert.equal(await page.locator('.tube-video').count(), 0, '戻ると Player は unmount');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
