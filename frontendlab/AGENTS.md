@@ -64,6 +64,6 @@ sunao は**学習データが無い**（世間の AI は sunao を知らない�
 - **`sunao/`** = framework 本体（第三者依存ゼロ）: `compile` / `runtime` / `expr`（自前式パーサ）/ `esbuild-plugin` / `theme` / `format` / `recipe-vocab`。
 - **`cli/`** = コマンド一式: `build` / `dev` / `check` / `create` / `prerender` / `format` / `diagnose` / `doctor` / `manifest` / `lsp` / `budget-gate` / `gen-recipe-vocab`。
 - **`examples/`** = 動くデモ兼 few-shot 正例: `app-ui/`（対話・DnD・カレンダー・ルーティング・スロット・FLIP）/ `seo/`（SSG→hydrate）/ `static-ui/`（静的）。
-- **`templates/`** = `npm run new` の雛形: `basic`（カウンタ）/ `form`（検証）/ `table`（並替・絞込）/ `dashboard`（KPI＋時計）/ `video`（YouTube 風ストリーミング＝ルーティング＋`<video>`＋HLS/MP4）。`__APP_NAME__`/`__APP_DIR__` を置換して展開。
+- **`templates/`** = `npm run new` の雛形: `basic`（カウンタ）/ `form`（検証）/ `table`（並替・絞込）/ `dashboard`（KPI＋時計）/ `gallery`（イラスト投稿サイト風）/ `video`（YouTube 風ストリーミング＝ルーティング＋`<video>`＋HLS/MP4）。`__APP_NAME__`/`__APP_DIR__` を置換して展開。
 - **`docs/`** = sunao ドキュメント（`reference.md` が AI 向け 1 枚）。**`tests/`** = unit+browser+lsp（`tests/fixtures/` はテスト専用入力）。**`bench/`** = Vue 比較。**`editor/`** = VSCode 拡張。
 - **`research/`** = frontendlab の生みの親（トランスパイラ/バンドラ計測実験）。sunao 本体とは無関係なので普段は触らない。

@@ -1111,3 +1111,19 @@ test('v0.15 fuzz: 生成テンプレ（v-if/v-for/bind/event/component）がコ�
   }
   assert.ok(n >= 60, `回した: ${n}`);
 });
+
+test('scaffold: 全テンプレが 展開→ビルド できる（テンプレ追加を自動でカバー）', async () => {
+  const { readdirSync } = await import('node:fs');
+  const templates = readdirSync(resolve('templates'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+  assert.ok(templates.length >= 5, `テンプレが複数ある: ${templates.join(',')}`);
+  const tmp = mkdtempSync(join(tmpdir(), 'scaf-all-'));
+  try {
+    for (const t of templates) {
+      const app = join(tmp, t);
+      execFileSync('node', ['cli/create.mjs', app, '--template', t], { stdio: 'ignore' });
+      assert.ok(existsSync(join(app, 'main.js')) && existsSync(join(app, 'App.sunao')), `${t}: 生成物`);
+      const r = await esbuild.build({ entryPoints: [join(app, 'main.js')], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+      assert.ok(r.outputFiles[0].contents.length > 0, `${t}: バンドルできる`);
+    }
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
+});

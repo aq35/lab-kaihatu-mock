@@ -1,0 +1,102 @@
+<template>
+  <div class="gx">
+    <header class="top">
+      <button class="brand" @click="home()">🎨 __APP_NAME__</button>
+      <nav class="tabs">
+        <button class="tab" :class="sort() === 'new' ? 'on' : ''" @click="sort.set('new')">新着</button>
+        <button class="tab" :class="sort() === 'pop' ? 'on' : ''" @click="sort.set('pop')">人気</button>
+      </nav>
+    </header>
+
+    <!-- 作品詳細 -->
+    <section class="detail" v-if="current()">
+      <button class="back" @click="home()">← もどる</button>
+      <div class="canvas" :style="artStyle(current())"></div>
+      <h1 class="d-title">{{ current().title }}</h1>
+      <p class="d-artist">by {{ current().artist }}</p>
+      <div class="tags">
+        <button class="tag" v-for="t in current().tags" :key="t" @click="pickTag(t)">#{{ t }}</button>
+      </div>
+      <button class="bm" :class="isBm(current().id) ? 'on' : ''" @click="toggleBm(current().id)">♥ {{ bmCount(current()) }}</button>
+    </section>
+
+    <!-- 一覧（フィード） -->
+    <section v-if="!current()">
+      <div class="filterbar" v-if="tag()">
+        <span class="chip">#{{ tag() }}</span>
+        <button class="clr" @click="pickTag('')">解除 ×</button>
+      </div>
+      <div class="grid">
+        <article class="card" v-for="a in shown()" :key="a.id" @click="open(a.id)">
+          <div class="thumb" :style="artStyle(a)"></div>
+          <div class="meta">
+            <strong class="t">{{ a.title }}</strong>
+            <span class="ar">{{ a.artist }}</span>
+            <span class="bm-mini" :class="isBm(a.id) ? 'on' : ''">♥ {{ bmCount(a) }}</span>
+          </div>
+        </article>
+      </div>
+      <p class="empty" v-if="!shown().length">作品がありません</p>
+    </section>
+  </div>
+</template>
+
+<script>
+import { ARTWORKS } from './artworks.js';
+
+export default {
+  name: 'App',
+  setup() {
+    const route = useRoute();
+    const sort = signal('new');
+    const tag = signal('');
+    const bookmarks = signal({});                        // { [id]: true }
+    const artStyle = (a) => `background:linear-gradient(135deg,oklch(72% .17 ${a.hue}),oklch(45% .16 ${(a.hue + 80) % 360}))`;
+    const isBm = (id) => !!bookmarks()[id];
+    const bmCount = (a) => a.likes + (bookmarks()[a.id] ? 1 : 0);
+    const toggleBm = (id) => bookmarks.update((m) => ({ ...m, [id]: !m[id] }));
+    const currentId = () => (route().startsWith('/art/') ? route().replace('/art/', '') : '');
+    const current = computed(() => ARTWORKS.find((a) => a.id === currentId()) || null);
+    const shown = computed(() => {
+      const xs = ARTWORKS.filter((a) => !tag() || a.tags.includes(tag()));
+      return [...xs].sort(sort() === 'pop' ? (a, b) => bmCount(b) - bmCount(a) : (a, b) => b.posted - a.posted);
+    });
+    const open = (id) => navigate('/art/' + id);
+    const home = () => navigate('/');
+    const pickTag = (t) => { tag.set(t); navigate('/'); };
+    return { sort, tag, current, shown, artStyle, isBm, bmCount, toggleBm, open, home, pickTag };
+  },
+};
+</script>
+
+<style lang="scss">
+$fg: oklch(24% 0.02 280);
+.gx { font-family: system-ui, "Noto Sans JP", sans-serif; color: $fg; max-width: 72rem; margin: 0 auto; padding: 0 1rem 3rem; }
+.top { display: flex; align-items: center; gap: 1rem; padding: 1rem 0; position: sticky; top: 0; background: #fff; z-index: 1; }
+.brand { font: inherit; font-size: 1.25rem; font-weight: 800; border: 0; background: none; cursor: pointer; color: oklch(58% 0.2 20); }
+.tabs { display: flex; gap: .3rem; margin-left: auto; }
+.tab { font: inherit; border: 1px solid #dde; background: #fff; border-radius: 999px; padding: .3rem .9rem; cursor: pointer; }
+.tab.on { background: oklch(58% 0.2 20); border-color: transparent; color: #fff; }
+.filterbar { display: flex; align-items: center; gap: .6rem; margin-bottom: .8rem; }
+.chip { background: #eef; border-radius: 999px; padding: .2rem .7rem; font-size: .85rem; }
+.clr { font: inherit; border: 0; background: none; cursor: pointer; color: #778; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 1.1rem; }
+.card { text-align: left; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+.thumb { aspect-ratio: 1 / 1; border-radius: 12px; }
+.meta { display: flex; flex-direction: column; gap: .1rem; margin-top: .45rem; }
+.t { font-size: .95rem; line-height: 1.25; }
+.ar { color: #778; font-size: .82rem; }
+.bm-mini { color: #99a; font-size: .8rem; }
+.bm-mini.on { color: oklch(58% 0.2 20); }
+.empty { color: #889; }
+/* 詳細 */
+.detail { max-width: 40rem; margin: 0 auto; }
+.back { font: inherit; border: 0; background: none; cursor: pointer; color: #556; padding: .25rem 0 .6rem; }
+.canvas { aspect-ratio: 4 / 3; border-radius: 16px; }
+.d-title { font-size: 1.5rem; margin: 1rem 0 .1rem; }
+.d-artist { color: #778; margin: 0 0 .8rem; }
+.tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+.tag { font: inherit; border: 1px solid #dde; background: #fff; border-radius: 999px; padding: .25rem .7rem; cursor: pointer; color: oklch(50% 0.12 250); }
+.bm { font: inherit; font-size: 1rem; border: 1px solid oklch(58% 0.2 20); background: #fff; color: oklch(58% 0.2 20); border-radius: 999px; padding: .5rem 1.3rem; cursor: pointer; }
+.bm.on { background: oklch(58% 0.2 20); color: #fff; }
+</style>
