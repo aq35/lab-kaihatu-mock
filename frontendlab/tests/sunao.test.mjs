@@ -1135,3 +1135,11 @@ test('v0.15 keyed v-for が index を renderFn に渡す（回帰: 以前 undefi
   assert.match(html, /1:a/); assert.match(html, /2:b/); assert.match(html, /3:c/);
   assert.doesNotMatch(html, /NaN/);
 });
+
+test('fonts: 生成した自作アイコンフォントが有効な WOFF2（signature 検証）', () => {
+  const buf = readFileSync(resolve('fonts/sunao-icons.woff2'));
+  assert.equal(buf.slice(0, 4).toString('latin1'), 'wOF2', 'WOFF2 signature');
+  assert.ok(buf.length < 4096, `アイコンフォントは軽量: ${buf.length}B`);
+  const html = readFileSync(resolve('fonts/demo.html'), 'utf8');
+  assert.match(html, /@font-face/); assert.match(html, /base64,/, 'data URI 埋め込みで自己完結');
+});
