@@ -72,6 +72,7 @@ cd editor/vscode && npm install     # vscode-languageclient
 | `sunao/` | 本体（依存ゼロ）: `compile.mjs`(コンパイラ) / `runtime.mjs`(極小 runtime) / `expr.mjs`(自前式パーサ) / `esbuild-plugin.mjs` / `theme.mjs` / `format.mjs` / `recipe-vocab.mjs` |
 | `cli/` | コマンド一式: `build` / `dev` / `check` / `create`(new) / `prerender` / `format`(fmt) / `diagnose` / `doctor` / `manifest` / `lsp` / `budget-gate` / `gen-recipe-vocab` |
 | `examples/` | 動くデモ兼 few-shot: `app-ui/`(対話) / `seo/`(SSG) / `static-ui/`(静的) |
+| `templates/` | `npm run new` の雛形: `basic`(カウンタ) / `video`(YouTube 風ストリーミング) |
 | `editor/` | `sunao.tmLanguage.json`(ハイライト) / `language-configuration.json` / `vscode/`(拡張) |
 | `bench/` | sunao vs Vue3 の実測（`README.md` に受領書） |
 | `tests/` | `sunao.test.mjs`(unit) / `sunao.browser.test.mjs`(実機) / `lsp.test.mjs`(LSP)。`tests/fixtures/` はテスト専用入力 |

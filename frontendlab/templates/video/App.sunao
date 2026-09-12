@@ -1,0 +1,54 @@
+<template>
+  <div class="tube">
+    <header class="topbar">
+      <button class="brand" @click="go('#/')">▶ __APP_NAME__</button>
+      <span class="sub">sunao streaming demo</span>
+    </header>
+
+    <section class="feed" v-if="!watching()">
+      <button class="card" v-for="v in videos" :key="v.id" @click="go('#/watch/' + v.id)">
+        <span class="thumb" :style="thumbStyle(v)"><span class="dur">{{ v.duration }}</span></span>
+        <span class="meta">
+          <strong class="t">{{ v.title }}</strong>
+          <span class="c">{{ v.channel }}・{{ v.views }}</span>
+        </span>
+      </button>
+    </section>
+
+    <Player v-if="watching()" :video="current()" />
+  </div>
+</template>
+
+<script>
+import Player from './Player.sunao';
+import { VIDEOS } from './videos.js';
+
+export default {
+  name: 'App',
+  setup() {
+    const route = useRoute();                                   // '#/watch/2' 等（hash signal）
+    const videos = VIDEOS;                                      // 静的カタログ（本番は resource へ）
+    const watching = computed(() => route().startsWith('#/watch/'));
+    const watchId = () => route().replace('#/watch/', '');
+    const current = computed(() => videos.find((v) => v.id === watchId()) || videos[0]);
+    const go = (to) => navigate(to);
+    const thumbStyle = (v) => `background:linear-gradient(135deg,oklch(60% .16 ${v.hue}),oklch(42% .12 ${(v.hue + 60) % 360}))`;
+    return { videos, watching, current, go, thumbStyle };
+  },
+};
+</script>
+
+<style lang="scss">
+$fg: oklch(22% 0.02 260);
+.tube { font-family: system-ui, "Noto Sans JP", sans-serif; color: $fg; max-width: 68rem; margin: 0 auto; padding: 0 1rem 3rem; }
+.topbar { display: flex; align-items: baseline; gap: .75rem; padding: 1rem 0; position: sticky; top: 0; background: #fff; }
+.brand { font: inherit; font-size: 1.25rem; font-weight: 800; border: 0; background: none; cursor: pointer; color: oklch(55% 0.2 25); }
+.sub { color: #889; font-size: .85rem; }
+.feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1.25rem; }
+.card { text-align: left; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+.thumb { display: flex; align-items: flex-end; justify-content: flex-end; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; }
+.dur { background: rgba(0,0,0,.75); color: #fff; font-size: .72rem; padding: .1rem .4rem; border-radius: 6px; margin: .5rem; }
+.meta { display: flex; flex-direction: column; gap: .15rem; margin-top: .55rem; }
+.t { font-size: .98rem; line-height: 1.25; }
+.c { color: #778; font-size: .82rem; }
+</style>

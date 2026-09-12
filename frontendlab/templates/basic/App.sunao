@@ -1,0 +1,37 @@
+<template>
+  <main class="app">
+    <h1>{{ title }}</h1>
+    <div class="row">
+      <button class="btn" @click="dec()">−</button>
+      <output class="val">{{ count() }}</output>
+      <button class="btn primary" @click="inc()">＋</button>
+    </div>
+    <p class="hint" v-if="count() > 4">いい感じ！</p>
+  </main>
+</template>
+
+<script>
+export default {
+  name: '__APP_NAME__',
+  setup() {
+    const title = '__APP_NAME__';                   // 静的（呼ばない）
+    const count = signal(0);                          // signal は「呼んで読む」→ count()
+    const inc = () => count.update((v) => v + 1);
+    const dec = () => count.update((v) => v - 1);
+    return { title, count, inc, dec };
+  },
+};
+</script>
+
+<style lang="scss">
+$accent: oklch(55% 0.18 250);
+.app { max-width: 32rem; margin: 3rem auto; font-family: system-ui, "Noto Sans JP", sans-serif; text-align: center; }
+.row { display: flex; gap: .75rem; justify-content: center; align-items: center; margin-top: 1rem; }
+.val { min-width: 3rem; font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.btn {
+  font: inherit; font-weight: 600; padding: .5rem 1rem; border-radius: 10px; border: 1px solid #ccd;
+  background: #fff; cursor: pointer;
+  &.primary { background: $accent; border-color: $accent; color: #fff; }
+}
+.hint { color: $accent; margin-top: 1rem; }
+</style>

@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__APP_NAME__ — sunao streaming</title>
+<!--
+  hls.js は「アプリ側の任意依存」。Safari/iOS はネイティブ HLS で無くても再生できる。
+  Chrome/Firefox で HLS(adaptive) を再生したい時だけ、この 1 行を残す（sunao 本体には依存を足さない）。
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+<div id="app"></div>
+<script type="module" src="./main.js"></script>

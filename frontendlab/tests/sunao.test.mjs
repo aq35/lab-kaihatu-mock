@@ -103,6 +103,25 @@ test('scaffold: npm run new が雛形を出し、そのままビルドできる'
     assert.throws(() => execFileSync('node', ['cli/create.mjs', app], { stdio: 'ignore' }), '既存 dir は上書きしない');
     // .. 脱出は拒否
     assert.throws(() => execFileSync('node', ['cli/create.mjs', '../evil'], { stdio: 'ignore' }), '.. は拒否');
+    // 不明な template は fail-closed
+    assert.throws(() => execFileSync('node', ['cli/create.mjs', join(dir, 'x'), '--template', 'nope'], { stdio: 'ignore' }), '不明 template は拒否');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffold: --template video（YouTube 風ストリーミング）が雛形を出し、そのままビルドできる', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'scaf-vid-'));
+  const app = join(dir, 'tube');
+  try {
+    execFileSync('node', ['cli/create.mjs', app, '--template', 'video'], { stdio: 'ignore' });
+    for (const f of ['App.sunao', 'Player.sunao', 'stream.js', 'videos.js', 'main.js', 'index.html', 'README.md']) assert.ok(existsSync(join(app, f)), `${f} が生成される`);
+    // ルーティング＋<video>＋カスタムコントロールの合成がそのまま通る
+    const r = await esbuild.build({ entryPoints: [join(app, 'main.js')], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+    assert.ok(r.outputFiles[0].contents.length > 0, 'バンドルできる');
+    // トークン置換（__APP_NAME__ → tube）
+    assert.match(readFileSync(join(app, 'index.html'), 'utf8'), /<title>tube/, 'app 名が置換される');
+    assert.doesNotMatch(readFileSync(join(app, 'App.sunao'), 'utf8'), /__APP_NAME__/, '未置換トークンが残らない');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -36,7 +36,7 @@ sunao は**学習データが無い**（世間の AI は sunao を知らない�
 
 | 目的 | コマンド |
 |---|---|
-| 新規アプリ雛形 | `npm run new -- apps/foo` |
+| 新規アプリ雛形 | `npm run new -- apps/foo`（テンプレ指定: `--template video`。既定 `basic`）|
 | 開発（保存で自動リロード） | `node cli/dev.mjs --entry apps/foo/main.js` |
 | 検診（AI 向け JSON） | `npm run doctor` / `npm run manifest` |
 | 整形 | `npm run fmt`（`node cli/format.mjs --write <file>` で修正） |
@@ -64,5 +64,6 @@ sunao は**学習データが無い**（世間の AI は sunao を知らない�
 - **`sunao/`** = framework 本体（第三者依存ゼロ）: `compile` / `runtime` / `expr`（自前式パーサ）/ `esbuild-plugin` / `theme` / `format` / `recipe-vocab`。
 - **`cli/`** = コマンド一式: `build` / `dev` / `check` / `create` / `prerender` / `format` / `diagnose` / `doctor` / `manifest` / `lsp` / `budget-gate` / `gen-recipe-vocab`。
 - **`examples/`** = 動くデモ兼 few-shot 正例: `app-ui/`（対話・DnD・カレンダー・ルーティング・スロット・FLIP）/ `seo/`（SSG→hydrate）/ `static-ui/`（静的）。
+- **`templates/`** = `npm run new` の雛形: `basic`（signal カウンタ）/ `video`（YouTube 風ストリーミング＝ルーティング＋`<video>`＋HLS/MP4）。`__APP_NAME__`/`__APP_DIR__` を置換して展開。
 - **`docs/`** = sunao ドキュメント（`reference.md` が AI 向け 1 枚）。**`tests/`** = unit+browser+lsp（`tests/fixtures/` はテスト専用入力）。**`bench/`** = Vue 比較。**`editor/`** = VSCode 拡張。
 - **`research/`** = frontendlab の生みの親（トランスパイラ/バンドラ計測実験）。sunao 本体とは無関係なので普段は触らない。

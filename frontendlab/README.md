@@ -13,9 +13,10 @@
 ```bash
 cd frontendlab
 npm install
-npm run new -- apps/todo      # 雛形（App.sunao / main.js / index.html / README）
-npm run dev -- --entry apps/todo/main.js   # 保存→自動リロード
-npm run verify                # check（決定論/予算/契約）＋ fmt ＋ test を 1 ゲートで
+npm run new -- apps/todo                    # 雛形（既定 basic テンプレ）
+npm run new -- apps/tube --template video   # YouTube 風ストリーミングの雛形
+npm run dev -- --entry apps/todo/main.js    # 保存→自動リロード
+npm run verify                              # check（決定論/予算/契約）＋ fmt ＋ test を 1 ゲートで
 ```
 
 - **AI/エージェントで作業するなら**: まず [`AGENTS.md`](AGENTS.md)（覚えることは 3 つ・自己修正ループ）。
@@ -35,6 +36,7 @@ npm run verify                # check（決定論/予算/契約）＋ fmt ＋ te
 | [`sunao/`](sunao/) | 本体（依存ゼロ）: compile / runtime / expr（自前式パーサ）/ esbuild-plugin / theme / format / recipe-vocab |
 | [`cli/`](cli/) | コマンド: build / dev / check / create / prerender / format / diagnose / doctor / manifest / lsp / budget-gate / gen-recipe-vocab |
 | [`examples/`](examples/) | 動くデモ兼 few-shot: app-ui（対話・DnD・カレンダー・ルーティング・FLIP）/ seo（SSG→hydrate）/ static-ui |
+| [`templates/`](templates/) | `npm run new` の雛形: `basic` / `video`（YouTube 風ストリーミング） |
 | [`docs/`](docs/) | reference.md（AI 向け 1 枚）/ sunao.md（変遷）/ borrowings.md ほか設計 doc |
 | `tests/` | unit + 実機(Playwright) + LSP。`tests/fixtures/` はテスト専用入力 |
 | `bench/` | sunao vs Vue3 の実測（受領書つき） |

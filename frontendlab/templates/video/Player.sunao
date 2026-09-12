@@ -1,0 +1,94 @@
+<template>
+  <div class="watch">
+    <button class="back" @click="back()">← 一覧へ</button>
+
+    <div class="stage" :class="playing() ? 'is-playing' : 'is-paused'">
+      <video
+        class="tube-video" playsinline preload="metadata"
+        @loadedmetadata="onMeta($event)" @timeupdate="onTime($event)"
+        @play="playing.set(true)" @pause="playing.set(false)"
+        @waiting="buffering.set(true)" @playing="buffering.set(false)"
+        @click="toggle()"></video>
+      <div class="spinner" v-if="buffering()">読み込み中…</div>
+    </div>
+
+    <div class="bar">
+      <button class="ctl" @click="toggle()">{{ playing() ? '⏸' : '▶' }}</button>
+      <span class="time">{{ fmt(current()) }} / {{ fmt(duration()) }}</span>
+      <input class="seek" type="range" min="0" step="0.1" :max="duration()" :value="current()" @input="seek($event)">
+      <button class="ctl" @click="toggleMute()">{{ muted() ? '🔇' : '🔊' }}</button>
+      <input class="vol" type="range" min="0" max="1" step="0.05" :value="volume()" @input="setVol($event)">
+      <button class="ctl rate" @click="cycleRate()">{{ rate() }}×</button>
+      <button class="ctl" @click="full()">⛶</button>
+    </div>
+
+    <h1 class="title">{{ video().title }}</h1>
+    <p class="chan">{{ video().channel }}・{{ video().views }}</p>
+  </div>
+</template>
+
+<script>
+import { attachStream } from './stream.js';
+
+export default {
+  name: 'Player',
+  props: { video: { required: true } },     // 親から accessor で reactive に渡る
+  setup(props) {
+    const playing = signal(false);
+    const buffering = signal(false);
+    const current = signal(0);
+    const duration = signal(0);
+    const volume = signal(1);
+    const muted = signal(false);
+    const rate = signal(1);
+    const elRef = signal(null);               // <video> の参照（onMount 後に入る）
+
+    const fmt = (s) => { const n = Math.max(0, Math.floor(Number(s) || 0)); const m = Math.floor(n / 60); const r = n % 60; return m + ':' + String(r).padStart(2, '0'); };
+    const onMeta = (e) => duration.set(e.target.duration || 0);
+    const onTime = (e) => current.set(e.target.currentTime || 0);
+    const toggle = () => { const el = elRef(); if (el) { el.paused ? el.play().catch(() => {}) : el.pause(); } };
+    const seek = (e) => { const el = elRef(); if (el) el.currentTime = Number(e.target.value); };
+    const setVol = (e) => { const el = elRef(); const v = Number(e.target.value); volume.set(v); if (el) { el.volume = v; el.muted = v === 0; muted.set(v === 0); } };
+    const toggleMute = () => { const el = elRef(); if (el) { el.muted = !el.muted; muted.set(el.muted); } };
+    const cycleRate = () => { const seq = [1, 1.25, 1.5, 2, 0.5]; const next = seq[(seq.indexOf(rate()) + 1) % seq.length]; rate.set(next); const el = elRef(); if (el) el.playbackRate = next; };
+    const full = () => { const el = elRef(); const stage = el && el.closest('.stage'); if (stage && stage.requestFullscreen) stage.requestFullscreen().catch(() => {}); };
+    const back = () => navigate('#/');
+
+    onMount(() => {
+      const el = document.querySelector('.tube-video');
+      if (el) { el.volume = volume(); el.playbackRate = rate(); }
+      elRef.set(el);
+    });
+
+    // video（route の id）か el が変わるたび stream を貼り直す（fine-grained）。
+    let destroy = null;
+    effect(() => {
+      const el = elRef();
+      const v = props.video();
+      if (!el || !v) return;
+      if (destroy) destroy();
+      destroy = attachStream(el, v.hls || v.mp4);
+      el.play && el.play().catch(() => {});
+    });
+    onCleanup(() => { if (destroy) destroy(); });
+
+    return { playing, buffering, current, duration, volume, muted, rate, fmt, onMeta, onTime, toggle, seek, setVol, toggleMute, cycleRate, full, back };
+  },
+};
+</script>
+
+<style lang="scss">
+.watch { max-width: 60rem; margin: 0 auto; }
+.back { font: inherit; border: 0; background: none; cursor: pointer; color: #556; padding: .25rem 0 .5rem; }
+.stage { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 14px; overflow: hidden; }
+.tube-video { width: 100%; height: 100%; display: block; background: #000; }
+.spinner { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; background: rgba(0,0,0,.35); font-size: .9rem; }
+.bar { display: flex; align-items: center; gap: .6rem; margin-top: .6rem; flex-wrap: wrap; }
+.ctl { font: inherit; font-size: 1rem; border: 1px solid #ccd; background: #fff; border-radius: 8px; padding: .3rem .6rem; cursor: pointer; }
+.ctl.rate { min-width: 3.2rem; }
+.time { font-variant-numeric: tabular-nums; color: #445; font-size: .9rem; }
+.seek { flex: 1 1 12rem; }
+.vol { width: 6rem; }
+.title { font-size: 1.3rem; margin: 1rem 0 .2rem; }
+.chan { color: #778; margin: 0; }
+</style>
