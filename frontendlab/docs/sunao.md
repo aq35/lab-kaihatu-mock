@@ -1,10 +1,10 @@
 # sunao — 個人用途の「Vue 風プラグイン」＋ビルドツール（P3）
 
-方針 [`plugin-policy.md`](plugin-policy.md) の P3「Recipe → 決定論出力」を、
+方針 [`design-history.md`（プラグイン方針）](design-history.md#方針-個人用途に閉じたプラグイン--reactvuevite-の代替ではなく上下に置く) の P3「Recipe → 決定論出力」を、
 **Vue の形（SFC コンパイラ ＋ 極小リアクティブ runtime）**で実装。EXP-1〜4 の結論に沿って
 **変換器・bundler は native(esbuild) に任せ**、自作するのは「入力の型・fail-closed・決定論・低 context」だけ。
-**v0.2** で [いいところ取り洗い出し](framework-cherrypick.md) のロードマップを実装。
-**v0.3** で [レバレッジ地図](leverage-map.md) の最優先（型付き契約・診断・量産ガードレール・合成）を実装した。
+**v0.2** で [いいところ取り洗い出し](design-history.md#フレームワークのいいところ洗い出しとsunao-への採否) のロードマップを実装。
+**v0.3** で [レバレッジ地図](design-history.md#どこを作りまくると見返りが大きいかレバレッジ地図) の最優先（型付き契約・診断・量産ガードレール・合成）を実装した。
 
 ```
 再現: cd frontendlab && npm run build && npm run check && npm test
@@ -306,7 +306,7 @@ reactivity / computed / 決定論（compile・render）/ fail-closed（未知デ
 
 ## 方針との整合（正直に）
 
-`plugin-policy.md` の「自作 runtime は作らない（公開競合しない）」に、sunao は runtime を持つ点で触れる。区別:
+[`design-history.md`（プラグイン方針）](design-history.md#方針-個人用途に閉じたプラグイン--reactvuevite-の代替ではなく上下に置く) の「自作 runtime は作らない（公開競合しない）」に、sunao は runtime を持つ点で触れる。区別:
 - **公開競合でなく個人利用・実験**。依存はここだけ（root に出さない）。
 - runtime は出力に残る唯一の依存 → **極小に保ち budget で監視**。**対話しない画面は 0 runtime**（②）。
 - 変換エンジンは native 委譲。自作は契約層（fail-closed・決定論・低 context・宣言）だけ。

@@ -76,5 +76,5 @@ cd editor/vscode && npm install     # vscode-languageclient
 | `editor/` | `sunao.tmLanguage.json`(ハイライト) / `language-configuration.json` / `vscode/`(拡張) |
 | `bench/` | sunao vs Vue3 の実測（`README.md` に受領書） |
 | `tests/` | `sunao.test.mjs`(unit) / `sunao.browser.test.mjs`(実機) / `lsp.test.mjs`(LSP)。`tests/fixtures/` はテスト専用入力 |
-| `docs/` | `reference.md`(API 1 枚) / `sunao.md`(変遷) / `borrowings.md` ほか |
+| `docs/` | `reference.md`(API 1 枚) / `sunao.md`(変遷) / `design-history.md`(事前設計ノート集) |
 | `research/` | frontendlab の生みの親（トランスパイラ/バンドラ計測実験）。sunao 本体とは無関係 |

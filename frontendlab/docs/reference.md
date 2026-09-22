@@ -119,7 +119,7 @@ go(fn)                   // 中断可能な非同期タスク
 resource(fetcher, { key, swr:true })   // キャッシュ + stale-while-revalidate
 ```
 
-### 他言語からの借用（[borrowings.md](borrowings.md)）
+### 他言語からの借用（[design-history.md](design-history.md#他言語フレームワークからの借用実装済み)）
 ```js
 machine({ initial, states })    // 状態機械（宣言外の遷移は throw）
 store(init, update)             // Elm/Redux + undo/redo/history

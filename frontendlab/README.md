@@ -37,7 +37,7 @@ npm run verify                              # check（決定論/予算/契約）
 | [`cli/`](cli/) | コマンド: build / dev / check / create / prerender / format / diagnose / doctor / manifest / lsp / budget-gate / gen-recipe-vocab |
 | [`examples/`](examples/) | 動くデモ兼 few-shot: app-ui（対話・DnD・カレンダー・ルーティング・FLIP）/ seo（SSG→hydrate）/ static-ui |
 | [`templates/`](templates/) | `npm run new` の雛形: `basic` / `form` / `table` / `dashboard` / `gallery`（Pixiv 的ギャラリー）/ `wiki`（Wiki記事・目次）/ `video`（YouTube 風ストリーミング） |
-| [`docs/`](docs/) | reference.md（AI 向け 1 枚）/ sunao.md（変遷）/ borrowings.md ほか設計 doc |
+| [`docs/`](docs/) | reference.md（AI 向け 1 枚）/ sunao.md（変遷）/ design-history.md（事前設計ノート集） |
 | `tests/` | unit + 実機(Playwright) + LSP。`tests/fixtures/` はテスト専用入力 |
 | `bench/` | sunao vs Vue3 の実測（受領書つき） |
 | `editor/` | 構文ハイライト + VSCode 拡張 |
@@ -54,4 +54,5 @@ AI にとって扱いやすい compiler の性質を、測れる軸に落とし�
 
 ## 設計 doc（sunao の背骨）
 
-**→ [方針: 個人用途に閉じたプラグイン](docs/plugin-policy.md)** ・ **[いいところ取り洗い出し](docs/framework-cherrypick.md)** ・ **[ダメなところ洗い出し](docs/framework-pitfalls.md)** ・ **[レバレッジ地図](docs/leverage-map.md)** ・ **[向かうべき道](docs/direction.md)** ・ **[Recipe ブリッジ](docs/recipe-bridge.md)** ・ **[他言語・FW からの借用](docs/borrowings.md)**
+**→ [設計変遷（design history）](docs/design-history.md)** — 事前設計ノートを 1 枚に集約:
+**[方針: 個人用途に閉じたプラグイン](docs/design-history.md#方針-個人用途に閉じたプラグイン--reactvuevite-の代替ではなく上下に置く)** ・ **[いいところ取り洗い出し](docs/design-history.md#フレームワークのいいところ洗い出しとsunao-への採否)** ・ **[ダメなところ洗い出し](docs/design-history.md#フレームワークのダメなところ洗い出しとsunao-の-guardrail)** ・ **[レバレッジ地図](docs/design-history.md#どこを作りまくると見返りが大きいかレバレッジ地図)** ・ **[向かうべき道](docs/design-history.md#向かうべき道sunao--frontendlab-の-direction)** ・ **[Recipe ブリッジ](docs/design-history.md#recipe-ブリッジ--sunao-と-repo-の条件-ef-をつなぐ)** ・ **[他言語・FW からの借用](docs/design-history.md#他言語フレームワークからの借用実装済み)**

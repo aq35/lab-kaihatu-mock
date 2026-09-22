@@ -1,6 +1,6 @@
 # P1 — 依存予算ゲート（fail-closed）
 
-方針 [`plugin-policy.md`](plugin-policy.md) の最初の実装。EXP-3 が示した「サイズを 2〜3 桁動かすのは
+方針 [`design-history.md`（プラグイン方針）](../../docs/design-history.md#方針-個人用途に閉じたプラグイン--reactvuevite-の代替ではなく上下に置く) の最初の実装。EXP-3 が示した「サイズを 2〜3 桁動かすのは
 依存の判断だけ（全体 lodash = 自作の 753x）」を、**build を止める機械**にした。
 
 ```
