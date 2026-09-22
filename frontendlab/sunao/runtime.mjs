@@ -650,6 +650,23 @@ export function timeout(ms, fn) {
   onCleanup(cancel);
   return cancel;
 }
+// 毎フレーム描画ループ（canvas / WebGL / WASM の命令的な島を onMount からここに載せる）。
+// fn(dt) の dt は前フレームからの経過 ms（初回 0）。stop() で止まり、scope 破棄でも自動停止。
+// server / rAF 非対応では張らない（noop・prerender で hang しない＝決定論）。interval/now と同族。
+export function raf(fn) {
+  if (_server || typeof requestAnimationFrame === 'undefined') return () => {};
+  let id = 0, prev = 0, stopped = false;
+  const tick = (t) => {
+    if (stopped) return;
+    const dt = prev ? t - prev : 0; prev = t;
+    fn(dt);
+    if (!stopped) id = requestAnimationFrame(tick);
+  };
+  id = requestAnimationFrame(tick);
+  const stop = () => { stopped = true; if (typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(id); };
+  onCleanup(stop);
+  return stop;
+}
 // デバウンス／スロットル（入力・スクロール等）。
 export function debounce(fn, ms) {
   let t;

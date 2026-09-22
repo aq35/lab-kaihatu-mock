@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import esbuild from 'esbuild';
-import { signal, effect, computed, batch, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, windowed, windowedVar, renderComponentToString } from '../sunao/runtime.mjs';
+import { signal, effect, computed, batch, component, validateProps, matchRoute, createRoot, useRoute, navigate, setRouteGuard, interval, raf, debounce, resource, machine, store, decode, match, produce, boundary, provide, inject, windowed, windowedVar, renderComponentToString } from '../sunao/runtime.mjs';
 import { recipeStyle } from '../sunao/theme.mjs';
 import { RECIPE_PROPS, RECIPE_KINDS } from '../sunao/recipe-vocab.mjs';
 import { compileSFC, compileTemplate, analyze, warningsOf, diagnose, CompileError } from '../sunao/compile.mjs';
@@ -518,6 +518,62 @@ test('time: interval は発火し stop で止まる / debounce は最後の一�
   d(); d(); d();
   await new Promise((r) => setTimeout(r, 60));
   assert.equal(calls, 1, 'debounce は最後の一回だけ');
+});
+
+test('raf: 毎フレーム発火し stop で止まる / scope 破棄で自動停止 / rAF 非対応は noop', async () => {
+  // rAF/cancel を setTimeout で駆動するスタブ（Node には無い）
+  const timers = new Map(); let seq = 0;
+  const origRAF = globalThis.requestAnimationFrame, origCancel = globalThis.cancelAnimationFrame;
+  globalThis.requestAnimationFrame = (cb) => { const id = ++seq; timers.set(id, setTimeout(() => { timers.delete(id); cb(performance.now()); }, 16)); return id; };
+  globalThis.cancelAnimationFrame = (id) => { const t = timers.get(id); if (t) { clearTimeout(t); timers.delete(id); } };
+  try {
+    // 1) 発火 + dt が数値 + stop で止まる
+    let frames = 0, sawNumberDt = true;
+    const stop = raf((dt) => { frames++; if (typeof dt !== 'number') sawNumberDt = false; });
+    await new Promise((r) => setTimeout(r, 80));
+    stop();
+    const after = frames;
+    assert.ok(frames >= 2, 'raf が複数回発火');
+    assert.ok(sawNumberDt, 'dt は数値');
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(frames, after, 'stop 後は増えない');
+
+    // 2) createRoot dispose（unmount 相当）で自動停止 = rAF リークしない
+    let f2 = 0;
+    const root = createRoot(() => { raf(() => f2++); });
+    await new Promise((r) => setTimeout(r, 50));
+    root.dispose();
+    const held = f2;
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(f2, held, 'scope 破棄で raf が止まる（onCleanup）');
+
+    // 3) rAF 非対応環境（prerender/server 相当）は noop で一度も発火しない
+    globalThis.requestAnimationFrame = undefined;
+    let f3 = 0;
+    const stop3 = raf(() => f3++);
+    assert.equal(typeof stop3, 'function', 'noop でも stop() は関数を返す');
+    await new Promise((r) => setTimeout(r, 40));
+    assert.equal(f3, 0, 'rAF 非対応では張らない（決定論・prerender で hang しない）');
+  } finally {
+    globalThis.requestAnimationFrame = origRAF; globalThis.cancelAnimationFrame = origCancel;
+  }
+});
+
+test('scaffold: --template canvas（canvas/WASM の島）が雛形を出し、そのままビルドできる', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'scaf-cv-'));
+  const app = join(dir, 'viz');
+  try {
+    execFileSync('node', ['cli/create.mjs', app, '--template', 'canvas'], { stdio: 'ignore' });
+    for (const f of ['App.sunao', 'wasm.mjs', 'main.js', 'index.html', 'README.md']) assert.ok(existsSync(join(app, f)), `${f} が生成される`);
+    // 宣言的コントロール＋onMount＋raf の合成がそのまま通る
+    const r = await esbuild.build({ entryPoints: [join(app, 'main.js')], bundle: true, minify: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+    assert.ok(r.outputFiles[0].contents.length > 0, 'バンドルできる');
+    // トークン置換（__APP_NAME__ → viz）
+    assert.match(readFileSync(join(app, 'index.html'), 'utf8'), /<title>viz/, 'app 名が置換される');
+    assert.doesNotMatch(readFileSync(join(app, 'App.sunao'), 'utf8'), /__APP_NAME__/, '未置換トークンが残らない');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('async: resource は loading→data、失敗は error（Go の context 相当で abort 可能）', async () => {

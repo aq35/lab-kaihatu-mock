@@ -12,6 +12,7 @@
 | `wiki` | ＋ `articles.js` | **Wiki/ドキュメント記事**（atwiki 風）: 目次(TOC)＋スクロール連動ハイライト・見出し折りたたみ・ページ切替・レスポンシブ2カラム |
 | `gallery` | ＋ `artworks.js` | **イラスト投稿サイト風**（Pixiv 的）: 作品フィード・タグ絞り込み・新着/人気ソート・詳細ページ（ルーティング）・ブックマーク（signal で即反映） |
 | `video` | ＋ `Player.sunao` / `stream.js` / `videos.js` | **YouTube 風ストリーミング**: ルーティング（一覧 ⇄ 視聴）・`<video>` のカスタムコントロール（signal 連動）・**HLS(adaptive) / progressive MP4 両対応**（`stream.js` は依存ゼロ、hls.js はアプリ側の任意 CDN 依存） |
+| `canvas` | ＋ `wasm.mjs` | **canvas / WebGL / WASM の島**: 宣言的コントロール（`v-model`/`@click`）＋ `onMount` で attach ＋ `raf(dt=>…)` 毎フレーム描画（自動停止・server で張らない）。毎フレーム計算の **WASM 差し替え口**（`loadWasm`）つき。3D 表示・ゲーム・可視化の出発点 |
 
 ```bash
 npm run new -- apps/todo                     # basic（既定）
@@ -21,6 +22,7 @@ npm run new -- apps/kpi    --template dashboard
 npm run new -- apps/art    --template gallery
 npm run new -- apps/docs   --template wiki
 npm run new -- apps/tube   --template video
+npm run new -- apps/viz    --template canvas
 ```
 
 - 展開先に同名ファイルがあれば**上書きせず中止**（fail-closed）。`..` での脱出も拒否。

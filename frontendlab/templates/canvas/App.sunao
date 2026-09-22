@@ -1,0 +1,74 @@
+<template>
+  <main class="app"><h1>{{ title }}</h1><!-- 宣言的な殻（sunao の得意分野）: コントロールは signal に束ねる --><div class="bar"><button class="btn primary" @click="toggle()">{{ spin() ? '⏸ 停止' : '▶ 回転' }}</button><label class="ctl">速度<input type="range" min="0" max="200" v-model="speed"><span class="v">{{ speed() }}</span></label><label class="ctl">色相<input type="range" min="0" max="360" v-model="hue"><span class="v">{{ hue() }}</span></label><span class="fps">{{ fps() }} fps</span></div><!-- 命令的な島: canvas は onMount で掴んで raf で毎フレーム描く --><canvas id="stage" class="stage" width="480" height="320"></canvas><p class="hint">描画ループは<code>raf()</code>（毎フレーム・scope 破棄で自動停止・server では張らない）。 毎フレーム計算を WASM 化するなら<code>./wasm.mjs</code>の<code>loadWasm()</code>で差し替え。</p></main>
+</template>
+
+<script>
+export default {
+  name: '__APP_NAME__',
+  setup() {
+    const title = '__APP_NAME__';        // 静的（呼ばない）
+    const spin = signal(true);           // signal は「呼んで読む」→ spin()
+    const speed = signal(80);            // v-model で slider と双方向
+    const hue = signal(210);
+    const fps = signal(0);               // 描画ループ → 宣言的 UI への書き戻し
+    const toggle = () => spin.update((v) => !v);
+
+    // 立方体（8頂点・12辺）＝依存ゼロの自前3D。WASM に出すならこの計算を置き換える。
+    const V = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+    const E = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+
+    // DOM を触る初期化は onMount（setup は DOM 挿入前）。
+    onMount(() => {
+      const cv = document.getElementById('stage');
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
+      const W = cv.width, H = cv.height;
+      let ax = 0, ay = 0, acc = 0, frames = 0;
+
+      raf((dt) => {                      // ← 毎フレーム。dt=前フレームからの ms
+        const sp = speed.peek() / 100;   // ループ内は peek（購読しない）
+        if (spin.peek()) { ax += 0.9 * sp * (dt / 16.7); ay += 1.3 * sp * (dt / 16.7); }
+
+        // 自前レンダリング: 回転 → 投影 → 線を引く（WASM に出すならこの3行群）
+        const cx = Math.cos(ax), sx = Math.sin(ax), cy = Math.cos(ay), sy = Math.sin(ay);
+        const P = V.map(([x, y, z]) => {
+          let y1 = y * cx - z * sx, z1 = y * sx + z * cx;   // X 軸回転
+          let x2 = x * cy + z1 * sy, z2 = -x * sy + z1 * cy; // Y 軸回転
+          const s = 260 / (5 - z2);                          // 透視投影
+          return [W / 2 + x2 * s, H / 2 + y1 * s];
+        });
+
+        ctx.clearRect(0, 0, W, H);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = `hsl(${hue.peek()} 70% 58%)`;
+        ctx.beginPath();
+        for (const [a, b] of E) { ctx.moveTo(P[a][0], P[a][1]); ctx.lineTo(P[b][0], P[b][1]); }
+        ctx.stroke();
+
+        // ループ → signal 書き戻し（宣言的 UI に反映）。~2 回/秒だけ更新。
+        acc += dt; frames++;
+        if (acc >= 500) { fps.set(Math.round((frames * 1000) / acc)); acc = 0; frames = 0; }
+      });
+    });
+
+    return { title, spin, speed, hue, fps, toggle };
+  },
+};
+</script>
+
+<style lang="scss">
+$accent: oklch(60% 0.15 230);
+.app { max-width: 40rem; margin: 2.5rem auto; font-family: system-ui, "Noto Sans JP", sans-serif; }
+h1 { text-align: center; }
+.bar { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 1rem; }
+.ctl { display: inline-flex; gap: .4rem; align-items: center; font-size: .9rem; }
+.v { min-width: 2.2rem; font-variant-numeric: tabular-nums; text-align: right; }
+.fps { margin-left: auto; font-variant-numeric: tabular-nums; opacity: .7; font-size: .85rem; }
+.stage { display: block; width: 100%; max-width: 480px; margin: 0 auto; background: #0f1115; border-radius: 12px; }
+.btn {
+  font: inherit; font-weight: 600; padding: .45rem .9rem; border-radius: 10px; border: 1px solid #ccd;
+  background: #fff; cursor: pointer;
+  &.primary { background: $accent; border-color: $accent; color: #fff; }
+}
+.hint { color: #6b6459; font-size: .85rem; margin-top: 1rem; text-align: center; }
+</style>

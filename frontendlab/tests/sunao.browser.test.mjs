@@ -498,6 +498,34 @@ test('ブラウザ: gallery テンプレが phone〜desktop で崩れない（�
   } finally { await browser.close(); server.close(); }
 });
 
+test('ブラウザ: canvas テンプレ — raf が毎フレーム描画し、停止で静止・fps が書き戻る', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({ entryPoints: ['templates/canvas/main.js'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = '<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><div id=app></div><script type=module src=/main.js></script>';
+  const server = http.createServer((req, res) => { if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); } else { res.setHeader('content-type', 'text/html'); res.end(html); } });
+  await new Promise((ok) => server.listen(0, ok));
+  const port = server.address().port;
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 800, height: 640 } });
+    await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.stage');
+    const sig = () => page.evaluate(() => document.querySelector('.stage').toDataURL());
+    // 回転中: 連続フレームで pixel が変わる（＝raf が毎フレーム描いている）
+    const a = await sig(); await page.waitForTimeout(200); const b = await sig();
+    assert.notEqual(a, b, '回転中は連続フレームで描画が変化する（raf が動いている）');
+    // ループ → signal 書き戻し: fps が数値になる
+    await page.waitForFunction(() => /\d/.test(document.querySelector('.fps')?.textContent || ''), null, { timeout: 3000 });
+    assert.ok(parseInt(await page.locator('.fps').textContent(), 10) > 0, 'fps が 1 以上（描画ループが回った）');
+    // 停止: トグルすると静止する（peek で spin を読んでいる）
+    await page.locator('.btn.primary').click();
+    await page.waitForTimeout(120);
+    const c = await sig(); await page.waitForTimeout(200); const d = await sig();
+    assert.equal(c, d, '停止中はフレームが変化しない');
+  } finally { await browser.close(); server.close(); }
+});
+
 test('ブラウザ: wiki テンプレ — 検索フィルタ・見出し採番・折りたたみ・ページ切替・崩れなし', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
   const { chromium } = await import('playwright');
   const r = await esbuild.build({ entryPoints: ['templates/wiki/main.js'], bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent' });

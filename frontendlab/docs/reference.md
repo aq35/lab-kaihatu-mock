@@ -112,6 +112,7 @@ setRouteGuard(fn)        // 遷移可否
 ```js
 now()                    // 100ms 刻みの現在時刻 signal
 interval(fn, ms) / timeout(fn, ms)     // onCleanup で自動停止
+raf(dt => …)             // 毎フレーム描画ループ（canvas/WebGL/WASM の島）。onCleanup で自動停止・server では張らない。onMount 内で使う。ループ内は signal.peek()
 debounce(fn, ms) / throttle(fn, ms)
 context()                // { signal, cancel }（AbortController ラッパ）
 go(fn)                   // 中断可能な非同期タスク
