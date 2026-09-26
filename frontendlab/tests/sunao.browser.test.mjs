@@ -569,3 +569,38 @@ test('ブラウザ: wiki テンプレ — 検索フィルタ・見出し採番�
     await m.close();
   } finally { await browser.close(); server.close(); }
 });
+
+// 断片（配列）の中に動的な子がある場合: 複数ルート部品の {{ }} / v-if、再帰部品を v-for で並べる。
+// 以前は createNode が関数を要素と誤認し <undefined> を作っていた。
+test('ブラウザ: 複数ルート・再帰部品の動的な子が断片の中でも描ける', { skip: existsSync(EXE) ? false : 'Chromium 不在' }, async () => {
+  const { chromium } = await import('playwright');
+  const r = await esbuild.build({
+    entryPoints: ['tests/fixtures/fragment/main.js'],
+    bundle: true, format: 'esm', write: false, plugins: [sunao()], logLevel: 'silent',
+  });
+  const js = Buffer.from(r.outputFiles[0].contents);
+  const html = `<!doctype html><meta charset="utf-8"><div id="app"></div><script type="module" src="/main.js"></script>`;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/main.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); }
+    else { res.setHeader('content-type', 'text/html'); res.end(html); }
+  });
+  await new Promise((ok) => server.listen(0, ok));
+  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
+    assert.deepEqual(errors, []);
+    assert.equal(await page.evaluate(() => document.querySelector('.out').innerHTML.replace(/<!---->/g, '')), 'a<b>b<i>c</i></b>d');
+    assert.equal(await page.evaluate(() => document.querySelectorAll('undefined').length), 0);
+    assert.equal(await page.textContent('.multi'), 'x!');
+    await page.click('.flip');
+    assert.equal(await page.textContent('.multi'), '');
+    await page.click('.flip');
+    assert.equal(await page.textContent('.multi'), 'x!', '断片経由で挿入されたマーカでも差し替えできる');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});

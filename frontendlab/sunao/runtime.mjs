@@ -372,6 +372,13 @@ function setProp(el, k, v) {
 function createNode(vnode, doc) {
   if (vnode == null || vnode === false || vnode === true) return doc.createComment('');
   if (typeof vnode === 'string' || typeof vnode === 'number') return doc.createTextNode(String(vnode));
+  // 断片（配列）の中の動的な子（複数ルート部品の {{ }} / v-if、v-for で並べた部品の動的ルート）。
+  // マーカ 2 つを断片に置き、挿入後は end.parentNode（実際の親）の中で差し替える。
+  if (typeof vnode === 'function') {
+    const frag = doc.createDocumentFragment();
+    insertExpression(frag, vnode, doc);
+    return frag;
+  }
   if (Array.isArray(vnode)) {
     const frag = doc.createDocumentFragment();
     for (const c of vnode) frag.appendChild(createNode(c, doc));
@@ -451,7 +458,7 @@ function insertExpression(parent, fn, doc) {
     if (value && value.__keyed) {
       for (const n of current) n.remove(); current = [];
       if (!itemsRoot) itemsRoot = makeScope(parentOwner); // 親 effect の再実行では壊れない安定スコープ
-      keyState = reconcileKeyed(parent, end, keyState, value, doc, itemsRoot);
+      keyState = reconcileKeyed(end.parentNode || parent, end, keyState, value, doc, itemsRoot);
       return;
     }
     if (keyState) { for (const rec of keyState.values()) { rec.dispose(); rec.node.remove?.(); } keyState = null; }
@@ -464,8 +471,9 @@ function insertExpression(parent, fn, doc) {
     }
     for (const n of current) n.remove();
     current = [];
+    const host = end.parentNode || parent; // 断片経由で挿入された場合、parent はもう空の断片
     for (const n of normalize(value, doc)) {
-      parent.insertBefore(n, end);
+      host.insertBefore(n, end);
       current.push(n);
     }
   });

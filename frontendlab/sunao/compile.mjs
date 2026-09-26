@@ -325,6 +325,15 @@ function noteCalled(expr, ctx) {
   const dummy = new Set();
   analyzeExpr(expr, new Set(), dummy, ctx.called);
 }
+// イベント値が関数そのもの（アロー / function 式）か。パース不能時は旧判定に落とす。
+function isFunctionExpr(v) {
+  try {
+    const t = parseExpressionString(v).type;
+    return t === 'ArrowFunctionExpression' || t === 'FunctionExpression';
+  } catch {
+    return v.startsWith('(') || v.startsWith('function') || /=>/.test(v);
+  }
+}
 const isBareIdent = (e) => /^[A-Za-z_$][\w$]*$/.test(String(e).trim());
 // 値位置の裸の識別子を記録（他所で name() と呼ばれ or signal 束縛なら () 呼び忘れ警告）。
 function noteBare(expr, bound, ctx) {
@@ -476,7 +485,8 @@ function genNode(node, bound, ctx) {
       // イベント引数の糖衣: 単なる参照/関数式はそのまま、式・文なら ($event) => {...} に包む（Vue 互換）。
       const v = a.value.trim();
       const isRef = /^[A-Za-z_$][\w$.]*$/.test(v);
-      const isFn = v.startsWith('(') || v.startsWith('function') || /=>/.test(v);
+      // 関数値かどうかは式の最上位で判定する（`on.update((v) => !v)` は中に => があっても「呼び出し文」）。
+      const isFn = isFunctionExpr(v);
       props.push(`${JSON.stringify(on)}: ${(isRef || isFn) ? `(${v})` : `($event) => { ${v}; }`}`);
     } else {
       props.push(`${JSON.stringify(a.name)}: ${JSON.stringify(a.value)}`);

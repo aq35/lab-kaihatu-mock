@@ -1,0 +1,19 @@
+<template>
+  <p class="out"><Tree v-for="c in nodes" :n="c" /></p>
+  <button class="flip" @click="on.update((v) => !v)">flip</button>
+  <p class="multi"><Pair v-if="on()" /></p>
+</template>
+
+<script>
+import Tree from './Tree.sunao';
+import Pair from './Pair.sunao';
+
+export default {
+  setup() {
+    const nodes = ['a', { t: 'b', c: ['b', { t: 'i', c: ['c'] }] }, 'd'];
+    const on = signal(true);
+    const toggle = () => on.update((v) => !v);
+    return { nodes, on, toggle };
+  },
+};
+</script>

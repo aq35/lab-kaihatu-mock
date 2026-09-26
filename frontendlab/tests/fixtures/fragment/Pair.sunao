@@ -1,0 +1,12 @@
+<template>
+  {{ label() }}<span v-if="label() === 'x'">!</span>
+</template>
+
+<script>
+export default {
+  setup() {
+    const label = signal('x');
+    return { label };
+  },
+};
+</script>

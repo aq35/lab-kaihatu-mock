@@ -1246,3 +1246,10 @@ test('fonts/stock: OFL フォントストックが有効（woff2＋ライセン�
   assert.ok(existsSync(join(dir, 'INDEX.md')), '索引 INDEX.md');
   assert.ok(readdirSync(join(dir, 'licenses')).some((f) => /OFL/i.test(f)), 'OFL ライセンス同梱');
 });
+
+test('@event: 中に => を含む呼び出し文は関数値ではなく文として包む', () => {
+  const out = compileSFC(`<template><button @click="n.update((v) => v + 1)">+</button><button @click="(e) => n.set(1)">1</button></template>
+<script>export default { setup() { const n = signal(0); return { n }; } };</script>`);
+  assert.match(out, /"onClick": \(\$event\) => \{ n\.update\(\(v\) => v \+ 1\); \}/);
+  assert.match(out, /"onClick": \(\(e\) => n\.set\(1\)\)/);
+});

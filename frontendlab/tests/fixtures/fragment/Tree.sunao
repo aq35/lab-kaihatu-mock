@@ -1,0 +1,16 @@
+<template>
+  {{ text }}<b v-for="x in one" v-if="x.t === 'b'"><Tree v-for="c in x.c" :n="c" /></b><i v-for="x in one" v-if="x.t === 'i'"><Tree v-for="c in x.c" :n="c" /></i>
+</template>
+
+<script>
+import Tree from './Tree.sunao';
+
+export default {
+  name: 'Tree',
+  props: { n: {} },
+  setup(props) {
+    const node = props.n();
+    return { text: typeof node === 'string' ? node : '', one: typeof node === 'string' ? [] : [node] };
+  },
+};
+</script>
